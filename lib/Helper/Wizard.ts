@@ -28,7 +28,7 @@ export function getCurrentIntegration(answers: Answers): BaseIntegration {
 
 export async function startWizard<M extends IStep>(
   argv: Args,
-  ...steps: Array<{ new (debug: Args): M }>
+  ...steps: Array<{ new(debug: Args): M }>
 ): Promise<Answers> {
   try {
     sanitizeAndValidateArgs(argv);
@@ -48,7 +48,7 @@ export async function startWizard<M extends IStep>(
   } catch (e) {
     BottomBar.hide();
     nl();
-    red('Sentry Wizard failed with:');
+    red('PostHog Wizard failed with:');
     red(argv.debug ? e : e.message);
     nl();
     red('Protip: Add --debug to see whats going on');

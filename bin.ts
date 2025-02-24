@@ -11,7 +11,7 @@ const NODE_VERSION_RANGE = '>=18.20.0';
 // has the problematic imports.
 if (!satisfies(process.version, NODE_VERSION_RANGE)) {
   red(
-    `Sentry wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
+    `CodeHog requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
   );
   process.exit(1);
 }
@@ -102,10 +102,10 @@ const argv = yargs(hideBin(process.argv)).options({
     defaultDescription: 'Select org during setup',
     default: undefined,
   },
-  saas: {
+  cloud: {
     default: false,
-    describe: 'Skip the self-hosted or SaaS URL selection process',
-    defaultDescription: 'Select self-hosted or SaaS during setup',
+    describe: 'Skip the self-hosted or PostHog Cloud selection process',
+    defaultDescription: 'Select PostHog Cloud during setup',
     type: 'boolean',
   },
   s: {

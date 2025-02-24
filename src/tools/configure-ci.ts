@@ -4,7 +4,7 @@ import { SENTRY_DOT_ENV_FILE } from "../utils/clack-utils";
 import clack from '@clack/prompts';
 import { abortIfCancelled } from "../utils/clack-utils";
 import { traceStep } from "../telemetry";
-import { setTag } from "../utils/tags";
+import * as Sentry from '@sentry/node';
 import type { SupportedTools } from "../utils/detect-tool";
 
 export async function configureCI(
@@ -30,7 +30,7 @@ export async function configureCI(
     }),
   );
 
-  setTag('using-ci', isUsingCI);
+  Sentry.setTag('using-ci', isUsingCI);
 
 
 
@@ -82,7 +82,7 @@ SENTRY_AUTH_TOKEN=${authToken}
     }),
   );
 
-  setTag('added-env-var-to-ci', addedEnvVarToCI);
+  Sentry.setTag('added-env-var-to-ci', addedEnvVarToCI);
 
   if (!addedEnvVarToCI) {
     clack.log.info("Don't forget! :)");

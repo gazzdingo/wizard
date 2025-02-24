@@ -12,8 +12,8 @@ export class Welcome extends BaseStep {
       return {};
     }
     if (this._argv.uninstall === false) {
-      green('Sentry Wizard will help you to configure your project');
-      dim('Thank you for using Sentry :)');
+      green('PostHog Wizard will help you to configure your project');
+      dim('Thank you for using PostHog :)');
     }
     Welcome._didShow = true;
     return {};

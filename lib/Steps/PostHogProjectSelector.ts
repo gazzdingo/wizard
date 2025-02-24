@@ -22,7 +22,7 @@ function sleep(n: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, n));
 }
 
-export class SentryProjectSelector extends BaseStep {
+export class PostHogProjectSelector extends BaseStep {
   public async emit(answers: Answers): Promise<any> {
     this.debug(answers);
 
@@ -33,7 +33,7 @@ export class SentryProjectSelector extends BaseStep {
 
     if (!answers.wizard.projects || answers.wizard.projects.length === 0) {
       throw new Error(
-        'No Projects found. Please create a new Project in Sentry and try again.',
+        'No Projects found. Please create a new Project in PostHog and try again.',
       );
     }
 
@@ -54,7 +54,7 @@ export class SentryProjectSelector extends BaseStep {
               value: project,
             };
           }),
-          message: 'Please select your project in Sentry:',
+          message: 'Please select your project in PostHog:',
           name: 'selectedProject',
           type: 'list',
         },

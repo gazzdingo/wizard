@@ -12,15 +12,15 @@ try {
   wizardPackage = process.env.npm_package_version
     ? { version: process.env.npm_package_version }
     : (JSON.parse(
-        readFileSync(
-          join(
-            dirname(require.resolve('@sentry/wizard')),
-            '..',
-            'package.json',
-          ),
-          'utf-8',
+      readFileSync(
+        join(
+          dirname(require.resolve('@posthog/wizard')),
+          '..',
+          'package.json',
         ),
-      ) as PackageJSON);
+        'utf-8',
+      ),
+    ) as PackageJSON);
 } catch {
   // We don't need to have this
 }
@@ -28,7 +28,7 @@ try {
 export class Initial extends BaseStep {
   // eslint-disable-next-line @typescript-eslint/require-await
   public async emit(_answers: Answers): Promise<Answers> {
-    dim('Running Sentry Wizard...');
+    dim('Running PostHog Wizard...');
     dim(`version: ${wizardPackage.version ?? 'DEV'}`);
     return {};
   }

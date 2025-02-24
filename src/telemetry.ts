@@ -8,9 +8,9 @@ import {
   makeMain,
   makeNodeTransport,
   runWithAsyncContext,
-  setTag,
   startSpan,
 } from '@sentry/node';
+import * as Sentry from '@sentry/node';
 import type { WizardOptions } from './utils/types';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -34,9 +34,9 @@ export async function withTelemetry<F>(
   sentryHub.captureSession();
 
   // Set tag for passed CLI args
-  sentryHub.setTag('args.project', !!options.wizardOptions.projectSlug);
-  sentryHub.setTag('args.org', !!options.wizardOptions.orgSlug);
-  sentryHub.setTag('args.saas', !!options.wizardOptions.saas);
+  Sentry.setTag('args.project', !!options.wizardOptions.projectSlug);
+  Sentry.setTag('args.org', !!options.wizardOptions.orgSlug);
+  Sentry.setTag('args.cloud', !!options.wizardOptions.cloud);
 
   try {
     return await startSpan(
@@ -72,15 +72,15 @@ function createSentryInstance(enabled: boolean, integration: string) {
   const { version } = process.env.npm_package_version
     ? { version: process.env.npm_package_version }
     : (JSON.parse(
-        readFileSync(
-          join(
-            dirname(require.resolve('@sentry/wizard')),
-            '..',
-            'package.json',
-          ),
-          'utf-8',
+      readFileSync(
+        join(
+          dirname(require.resolve('@sentry/wizard')),
+          '..',
+          'package.json',
         ),
-      ) as { version?: string });
+        'utf-8',
+      ),
+    ) as { version?: string });
 
   const client = new NodeClient({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',
@@ -134,5 +134,5 @@ export function traceStep<T>(
 }
 
 export function updateProgress(step: string) {
-  setTag('progress', step);
+  Sentry.setTag('progress', step);
 }

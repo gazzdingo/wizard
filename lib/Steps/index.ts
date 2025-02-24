@@ -1,8 +1,8 @@
 export { Welcome } from './Welcome';
-export { OpenSentry } from './OpenSentry';
-export { WaitForSentry } from './WaitForSentry';
+export { OpenPostHog } from './OpenPostHog';
+export { WaitForPostHog } from './WaitForPostHog';
 export { Initial } from './Initial';
-export { SentryProjectSelector } from './SentryProjectSelector';
+export { PostHogProjectSelector } from './PostHogProjectSelector';
 export { Result } from './Result';
 export { ConfigureProject } from './ConfigureProject';
 export { ChooseIntegration } from './ChooseIntegration';

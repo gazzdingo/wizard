@@ -7,8 +7,6 @@ import * as fs from 'fs';
 import { builders, generateCode, parseModule } from 'magicast';
 import * as path from 'path';
 
-import * as Sentry from '@sentry/node';
-
 import {
   abort,
   abortIfCancelled,
@@ -50,7 +48,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
 import { configureCI } from '../tools/configure-ci';
-import { setTag } from '../utils/tags';
+import * as Sentry from '@sentry/node';
 
 
 export function runNextjsWizard(options: WizardOptions) {
@@ -85,7 +83,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const nextVersion = getPackageVersion('next', packageJson);
 
-  setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
+  Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
   const { selectedProject, authToken, selfHosted, sentryUrl } =
     await getOrAskForProjectData(options, 'javascript-nextjs');
@@ -95,7 +93,7 @@ export async function runNextjsWizardWithTelemetry(
     packageJson,
   );
 
-  setTag('sdk-already-installed', sdkAlreadyInstalled);
+  Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({

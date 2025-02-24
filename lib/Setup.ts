@@ -28,9 +28,9 @@ export async function run(argv: any): Promise<any> {
   ];
   if (args.uninstall === false) {
     steps.push(
-      Step.OpenSentry,
-      Step.WaitForSentry,
-      Step.SentryProjectSelector,
+      Step.OpenPostHog,
+      Step.WaitForPostHog,
+      Step.PostHogProjectSelector,
       Step.PromptForParameters,
     );
   }

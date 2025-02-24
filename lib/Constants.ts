@@ -116,3 +116,4 @@ export interface Args {
 }
 
 export const DEFAULT_URL = 'https://sentry.io/';
+export const ISSUES_URL = 'ISSUES_URL';

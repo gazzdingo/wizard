@@ -48,10 +48,10 @@ export type WizardOptions = {
   projectSlug?: string;
 
   /**
-   * If this option is set, the wizard will skip the self-hosted or SaaS
-   * selection step and directly assume that the wizard is used for Sentry SaaS.
+   * If this option is set, the wizard will skip the self-hosted or PostHog Cloud
+   * selection step and directly assume that the wizard is used for PostHog Cloud.
    */
-  saas?: boolean;
+  cloud?: boolean;
 
   /**
    * If this is set, the wizard will skip the login and project selection step.

@@ -9,14 +9,14 @@ import { BaseStep } from './BaseStep';
 
 import opn from 'opn';
 
-export class OpenSentry extends BaseStep {
+export class OpenPostHog extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {
     if (!(await getCurrentIntegration(answers).shouldEmit(answers))) {
-      dim('Skipping connection to Sentry due files already patched');
+      dim('Skipping connection to PostHog due files already patched');
       return {};
     }
     if (this._argv.skipConnect) {
-      dim('Skipping connection to Sentry');
+      dim('Skipping connection to PostHog');
       return {};
     }
 
@@ -29,7 +29,7 @@ export class OpenSentry extends BaseStep {
       const response = await fetch(`${baseUrl}api/0/wizard/`);
       if (!response.ok) {
         throw new Error(
-          `Failed to connect to Sentry: ${response.status} ${response.statusText}`,
+          `Failed to connect to PostHog: ${response.status} ${response.statusText}`,
         );
       }
       const data = (await response.json()) as { hash: string };

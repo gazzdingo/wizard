@@ -20,12 +20,13 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, SentryProjectData, WizardOptions } from './types';
+import { ISSUES_URL } from '../../lib/Constants';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
-const SAAS_URL = 'https://sentry.io/';
+const CLOUD_URL = 'https://us.posthog.com/';
 
 const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
 
@@ -334,7 +335,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-        `Please upgrade to ${acceptableVersions} if you wish to use the Sentry Wizard.`,
+      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -404,8 +405,7 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
-            forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
           (err, stdout, stderr) => {
             if (err) {
@@ -436,7 +436,7 @@ export async function installPackage({
           'Encountered the following error during installation:',
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         )}\n\n${e}\n\n${chalk.dim(
-          "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the Sentry wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
+          "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the PostHog Wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
         )}`,
       );
       await abort();
@@ -489,8 +489,7 @@ export async function addSentryCliConfig(
       clack.log.warning(
         `Failed to add auth token to ${chalk.cyan(
           setupConfig.filename,
-        )}. Uploading ${
-          setupConfig.name
+        )}. Uploading ${setupConfig.name
         } during build will likely not work locally.`,
       );
     }
@@ -905,14 +904,14 @@ export async function getOrAskForProjectData(
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
-      sentryUrl: options.url ?? SAAS_URL,
+      sentryUrl: options.url ?? CLOUD_URL,
       authToken: options.preSelectedProject.authToken,
       selectedProject: options.preSelectedProject.project,
     };
   }
   const { url: sentryUrl, selfHosted } = await traceStep(
     'ask-self-hosted',
-    () => askForSelfHosted(options.url, options.saas),
+    () => askForSelfHosted(options.url, options.cloud),
   );
 
   const { projects, apiKeys } = await traceStep('login', () =>
@@ -927,7 +926,7 @@ export async function getOrAskForProjectData(
 
   if (!projects || !projects.length) {
     clack.log.error(
-      'No projects found. Please create a project in Sentry and try again.',
+      'No projects found. Please create a project in PostHog and try again.',
     );
     Sentry.setTag('no-projects-found', true);
     await abort();
@@ -952,10 +951,10 @@ ${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
     )}) for you to replace later.
 Create your auth token here:
 ${chalk.cyan(
-  selfHosted
-    ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
-    : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
-)}`);
+      selfHosted
+        ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
+        : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
+    )}`);
   }
 
   return {
@@ -967,7 +966,7 @@ ${chalk.cyan(
 }
 
 /**
- * Asks users if they are using SaaS or self-hosted Sentry and returns the validated URL.
+ * Asks users if they are using PostHog Cloud or self-hosted PostHog and returns the validated URL.
  *
  * If users started the wizard with a --url arg, that URL is used as the default and we skip
  * the self-hosted question. However, the passed url is still validated and in case it's
@@ -977,23 +976,23 @@ ${chalk.cyan(
  */
 async function askForSelfHosted(
   urlFromArgs?: string,
-  saas?: boolean,
+  cloud?: boolean,
 ): Promise<{
   url: string;
   selfHosted: boolean;
 }> {
-  if (saas) {
-    Sentry.setTag('url', SAAS_URL);
+  if (cloud) {
+    Sentry.setTag('url', CLOUD_URL);
     Sentry.setTag('self-hosted', false);
-    return { url: SAAS_URL, selfHosted: false };
+    return { url: CLOUD_URL, selfHosted: false };
   }
 
   if (!urlFromArgs) {
-    const choice: 'saas' | 'self-hosted' | symbol = await abortIfCancelled(
+    const choice: 'cloud' | 'self-hosted' | symbol = await abortIfCancelled(
       clack.select({
-        message: 'Are you using Sentry SaaS or self-hosted Sentry?',
+        message: 'Are you using PostHog Cloud or self-hosted PostHog?',
         options: [
-          { value: 'saas', label: 'Sentry SaaS (sentry.io)' },
+          { value: 'cloud', label: 'PostHog Cloud (posthog.com)' },
           {
             value: 'self-hosted',
             label: 'Self-hosted/on-premise/single-tenant',
@@ -1002,10 +1001,10 @@ async function askForSelfHosted(
       }),
     );
 
-    if (choice === 'saas') {
-      Sentry.setTag('url', SAAS_URL);
+    if (choice === 'cloud') {
+      Sentry.setTag('url', CLOUD_URL);
       Sentry.setTag('self-hosted', false);
-      return { url: SAAS_URL, selfHosted: false };
+      return { url: CLOUD_URL, selfHosted: false };
     }
   }
 
@@ -1017,9 +1016,8 @@ async function askForSelfHosted(
       tmpUrlFromArgs ||
       (await abortIfCancelled(
         clack.text({
-          message: `Please enter the URL of your ${
-            urlFromArgs ? '' : 'self-hosted '
-          }Sentry instance.`,
+          message: `Please enter the URL of your ${urlFromArgs ? '' : 'self-hosted '
+            }Sentry instance.`,
           placeholder: 'https://sentry.io/',
         }),
       ));
@@ -1039,7 +1037,7 @@ async function askForSelfHosted(
     }
   }
 
-  const isSelfHostedUrl = new URL(validUrl).host !== new URL(SAAS_URL).host;
+  const isSelfHostedUrl = new URL(validUrl).host !== new URL(CLOUD_URL).host;
 
   Sentry.setTag('url', validUrl);
   Sentry.setTag('self-hosted', isSelfHostedUrl);
@@ -1051,26 +1049,26 @@ async function askForWizardLogin(options: {
   url: string;
   promoCode?: string;
   platform?:
-    | 'javascript-nextjs'
-    | 'javascript-nuxt'
-    | 'javascript-remix'
-    | 'javascript-sveltekit'
-    | 'apple-ios'
-    | 'android'
-    | 'react-native'
-    | 'flutter';
+  | 'javascript-nextjs'
+  | 'javascript-nuxt'
+  | 'javascript-remix'
+  | 'javascript-sveltekit'
+  | 'apple-ios'
+  | 'android'
+  | 'react-native'
+  | 'flutter';
   orgSlug?: string;
   projectSlug?: string;
 }): Promise<WizardProjectData> {
   Sentry.setTag('has-promo-code', !!options.promoCode);
 
-  let hasSentryAccount = await clack.confirm({
-    message: 'Do you already have a Sentry account?',
+  let hasPostHogAccount = await clack.confirm({
+    message: 'Do you already have a PostHog account?',
   });
 
-  hasSentryAccount = await abortIfCancelled(hasSentryAccount);
+  hasPostHogAccount = await abortIfCancelled(hasPostHogAccount);
 
-  Sentry.setTag('already-has-sentry-account', hasSentryAccount);
+  Sentry.setTag('already-has-posthog-account', hasPostHogAccount);
 
   let wizardHash: string;
   try {
@@ -1078,12 +1076,12 @@ async function askForWizardLogin(options: {
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
     ).data.hash;
   } catch (e: unknown) {
-    if (options.url !== SAAS_URL) {
+    if (options.url !== CLOUD_URL) {
       clack.log.error('Loading Wizard failed. Did you provide the right URL?');
       clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
-          'Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or Sentry: https://github.com/getsentry/sentry-wizard/issues',
+          `Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or PostHog: ${ISSUES_URL}`,
         ),
       );
     } else {
@@ -1091,7 +1089,7 @@ async function askForWizardLogin(options: {
       clack.log.info(JSON.stringify(e, null, 2));
       await abort(
         chalk.red(
-          'Please try again in a few minutes and let us know if this issue persists: https://github.com/getsentry/sentry-wizard/issues',
+          `Please try again in a few minutes and let us know if this issue persists: ${ISSUES_URL}`,
         ),
       );
     }
@@ -1109,7 +1107,7 @@ async function askForWizardLogin(options: {
     loginUrl.searchParams.set('project_slug', options.projectSlug);
   }
 
-  if (!hasSentryAccount) {
+  if (!hasPostHogAccount) {
     loginUrl.searchParams.set('signup', '1');
   }
 
@@ -1124,9 +1122,8 @@ async function askForWizardLogin(options: {
   const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
-      `If the browser window didn't open automatically, please open the following link to ${
-        hasSentryAccount ? 'log' : 'sign'
-      } into Sentry:`,
+      `If the browser window didn't open automatically, please open the following link to ${hasPostHogAccount ? 'log' : 'sign'
+      } into PostHog:`,
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
 
@@ -1326,8 +1323,7 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
-      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 

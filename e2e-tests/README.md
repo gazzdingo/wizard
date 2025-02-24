@@ -1,4 +1,4 @@
-# End-to-end Tests for Sentry Wizard
+# End-to-end Tests for PostHog Wizard
 
 ## Structure
 
@@ -44,7 +44,7 @@ tests/
 
 #### `WizardTestEnv`
 
-`WizardTestEnv` is a class that can be used to run the Sentry Wizard in a test environment. It provides methods to run the wizard with specific arguments and stdio.
+`WizardTestEnv` is a class that can be used to run the PostHog Wizard in a test environment. It provides methods to run the wizard with specific arguments and stdio.
 
 ## Running Tests Locally
 
@@ -60,4 +60,4 @@ To run a specific test application
 
 ## Writing Tests
 
-Each test file should contain a single test suite that tests the Sentry Wizard for a specific framework. The test suite should contain a `beforeAll` and `afterAll` function that starts and stops the test application respectively.
+Each test file should contain a single test suite that tests the PostHog Wizard for a specific framework. The test suite should contain a `beforeAll` and `afterAll` function that starts and stops the test application respectively.

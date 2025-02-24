@@ -3,7 +3,7 @@
   "version": "3.42.1",
   "homepage": "https://github.com/getsentry/sentry-wizard",
   "repository": "https://github.com/getsentry/sentry-wizard",
-  "description": "Sentry wizard helping you to configure your project",
+  "description": "PostHog Wizard helping you to configure your project",
   "keywords": [
     "sentry",
     "wizard",

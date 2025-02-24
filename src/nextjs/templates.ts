@@ -23,9 +23,8 @@ export function getWithSentryConfigOptionsTemplate({
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
     org: "${orgSlug}",
-    project: "${projectSlug}",${
-    selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
-  }
+    project: "${projectSlug}",${selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+    }
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -34,18 +33,16 @@ export function getWithSentryConfigOptionsTemplate({
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
     // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,${
-      reactComponentAnnotation
-        ? `\n
+    widenClientFileUpload: true,${reactComponentAnnotation
+      ? `\n
     // Automatically annotate React components to show their full name in breadcrumbs and session replay
     reactComponentAnnotation: {
       enabled: true,
     },`
-        : ''
+      : ''
     }
 
-    // ${
-      tunnelRoute ? 'Route' : 'Uncomment to route'
+    // ${tunnelRoute ? 'Route' : 'Uncomment to route'
     } browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
     // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
@@ -98,7 +95,7 @@ export function getNextjsConfigCjsAppendix(
 ): string {
   return `
 
-// Injected content via Sentry wizard below
+// Injected content via PostHog Wizard below
 
 const { withSentryConfig } = require("@sentry/nextjs");
 
@@ -213,9 +210,8 @@ export function getSentryExamplePageContents(options: {
     ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
-  return `${
-    options.useClient ? '"use client";\n\n' : ''
-  }import Head from "next/head";
+  return `${options.useClient ? '"use client";\n\n' : ''
+    }import Head from "next/head";
 import * as Sentry from "@sentry/nextjs";
 
 export default function Page() {
@@ -344,8 +340,8 @@ ${chalk.green(`import * as Sentry from '@sentry/nextjs';`)}
 ${chalk.green(`import Error from "next/error";`)}
 
 ${chalk.dim(
-  '// Replace "YourCustomErrorComponent" with your custom error component!',
-)}
+    '// Replace "YourCustomErrorComponent" with your custom error component!',
+  )}
 YourCustomErrorComponent.getInitialProps = async (${chalk.green(
     'contextData',
   )}) => {
@@ -360,17 +356,15 @@ YourCustomErrorComponent.getInitialProps = async (${chalk.green(
 
 export function getFullUnderscoreErrorCopyPasteSnippet(isTs: boolean) {
   return `
-import * as Sentry from '@sentry/nextjs';${
-    isTs ? '\nimport type { NextPageContext } from "next";' : ''
-  }
+import * as Sentry from '@sentry/nextjs';${isTs ? '\nimport type { NextPageContext } from "next";' : ''
+    }
 import Error from "next/error";
 
 ${chalk.dim(
-  '// Replace "YourCustomErrorComponent" with your custom error component!',
-)}
-YourCustomErrorComponent.getInitialProps = async (contextData${
-    isTs ? ': NextPageContext' : ''
-  }) => {
+      '// Replace "YourCustomErrorComponent" with your custom error component!',
+    )}
+YourCustomErrorComponent.getInitialProps = async (contextData${isTs ? ': NextPageContext' : ''
+    }) => {
   await Sentry.captureUnderscoreErrorException(contextData);
 
   return Error.getInitialProps(contextData);
@@ -385,14 +379,12 @@ export function getInstrumentationHookContent(
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
     }/sentry.edge.config');
   }
 }
@@ -409,15 +401,13 @@ export function getInstrumentationHookCopyPasteSnippet(
 
 export ${plus('async')} function register() {
   ${plus(`if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.server.config');
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+      }/sentry.server.config');
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('${
-      instrumentationHookLocation === 'root' ? '.' : '..'
-    }/sentry.edge.config');
+    await import('${instrumentationHookLocation === 'root' ? '.' : '..'
+      }/sentry.edge.config');
   }`)}
 }
 

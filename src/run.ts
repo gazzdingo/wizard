@@ -37,7 +37,7 @@ type Args = {
   platform?: Platform[];
   org?: string;
   project?: string;
-  saas?: boolean;
+  cloud?: boolean;
   forceInstall?: boolean;
 };
 
@@ -78,7 +78,7 @@ export async function run(argv: Args) {
 
   let integration = finalArgs.integration;
   if (!integration) {
-    clack.intro(`Sentry Wizard ${tryGetWizardVersion()}`);
+    clack.intro(`PostHog Wizard ${tryGetWizardVersion()}`);
 
     integration = await abortIfCancelled(
       clack.select({
@@ -103,7 +103,7 @@ export async function run(argv: Args) {
     url: finalArgs.url,
     orgSlug: finalArgs.org,
     projectSlug: finalArgs.project,
-    saas: finalArgs.saas,
+    cloud: finalArgs.cloud,
     preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
     forceInstall: finalArgs.forceInstall,
   };

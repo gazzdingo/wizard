@@ -4,7 +4,7 @@ import { BottomBar } from '../Helper/BottomBar';
 import { getCurrentIntegration } from '../Helper/Wizard';
 import { BaseStep } from './BaseStep';
 
-export class WaitForSentry extends BaseStep {
+export class WaitForPostHog extends BaseStep {
   public async emit(answers: Answers): Promise<Answers> {
     if (!(await getCurrentIntegration(answers).shouldEmit(answers))) {
       return {};
@@ -20,10 +20,10 @@ export class WaitForSentry extends BaseStep {
     return new Promise((resolve, _reject) => {
       this.debug(answers);
 
-      BottomBar.show('Waiting for Sentry...');
+      BottomBar.show('Waiting for PostHog...');
       const baseUrl = this._argv.url;
 
-      const pingSentry = async (): Promise<void> => {
+      const pingPostHog = async (): Promise<void> => {
         const response = await fetch(`${baseUrl}api/0/wizard/${answers.hash}/`);
         this.debug('Polling received data');
         if (!response.ok) {
@@ -43,7 +43,7 @@ export class WaitForSentry extends BaseStep {
 
       const poll = (): void => {
         this.debug(`Polling: ${baseUrl}api/0/wizard/${answers.hash}/`);
-        pingSentry().catch((e) => {
+        pingPostHog().catch((e) => {
           this.debug('Polling received:');
           this.debug(e);
           setTimeout(poll, 1000);
