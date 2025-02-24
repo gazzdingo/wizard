@@ -7,14 +7,14 @@ import {
   abort,
   abortIfCancelled,
   getPackageDotJson,
-} from '../../utils/clack-utils';
+} from './clack-utils';
 import {
   findInstalledPackageFromList,
   hasPackageInstalled,
-} from '../../utils/package-json';
+} from './package-json';
 
 import * as Sentry from '@sentry/node';
-import { WizardOptions } from '../../utils/types';
+import { WizardOptions } from './types';
 
 import * as childProcess from 'child_process';
 

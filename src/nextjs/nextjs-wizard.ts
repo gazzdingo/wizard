@@ -49,7 +49,9 @@ import {
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsVersionBucket } from './utils';
-import { configureCI } from '../sourcemaps/sourcemaps-wizard';
+import { configureCI } from '../tools/configure-ci';
+import { setTag } from '../utils/tags';
+
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -68,7 +70,7 @@ export async function runNextjsWizardWithTelemetry(
   const { promoCode, telemetryEnabled, forceInstall } = options;
 
   printWelcome({
-    wizardName: 'Sentry Next.js Wizard',
+    wizardName: 'PostHog Next.js Wizard',
     promoCode,
     telemetryEnabled,
   });
@@ -82,22 +84,24 @@ export async function runNextjsWizardWithTelemetry(
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
   const nextVersion = getPackageVersion('next', packageJson);
-  Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
+
+  setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
   const { selectedProject, authToken, selfHosted, sentryUrl } =
     await getOrAskForProjectData(options, 'javascript-nextjs');
 
   const sdkAlreadyInstalled = hasPackageInstalled(
-    '@sentry/nextjs',
+    'posthog-js',
     packageJson,
   );
-  Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
+
+  setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@sentry/nextjs@^9',
-      packageNameDisplayLabel: '@sentry/nextjs',
-      alreadyInstalled: !!packageJson?.dependencies?.['@sentry/nextjs'],
+      packageName: 'posthog-js',
+      packageNameDisplayLabel: 'posthog-js',
+      alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
       forceInstall,
     });
 
@@ -119,12 +123,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const pagesLocation =
       fs.existsSync(maybePagesDirPath) &&
-      fs.lstatSync(maybePagesDirPath).isDirectory()
+        fs.lstatSync(maybePagesDirPath).isDirectory()
         ? ['pages']
         : fs.existsSync(maybeSrcPagesDirPath) &&
           fs.lstatSync(maybeSrcPagesDirPath).isDirectory()
-        ? ['src', 'pages']
-        : undefined;
+          ? ['src', 'pages']
+          : undefined;
 
     if (!pagesLocation) {
       return;
@@ -135,12 +139,12 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? '_error.tsx'
       : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.ts'))
-      ? '_error.ts'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
-      ? '_error.jsx'
-      : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
-      ? '_error.js'
-      : undefined;
+        ? '_error.ts'
+        : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.jsx'))
+          ? '_error.jsx'
+          : fs.existsSync(path.join(process.cwd(), ...pagesLocation, '_error.js'))
+            ? '_error.js'
+            : undefined;
 
     if (!underscoreErrorPageFile) {
       await fs.promises.writeFile(
@@ -195,7 +199,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getFullUnderscoreErrorCopyPasteSnippet(
           underscoreErrorPageFile === '_error.ts' ||
-            underscoreErrorPageFile === '_error.tsx',
+          underscoreErrorPageFile === '_error.tsx',
         ),
       );
 
@@ -221,12 +225,12 @@ export async function runNextjsWizardWithTelemetry(
 
     const appDirLocation =
       fs.existsSync(maybeAppDirPath) &&
-      fs.lstatSync(maybeAppDirPath).isDirectory()
+        fs.lstatSync(maybeAppDirPath).isDirectory()
         ? ['app']
         : fs.existsSync(maybeSrcAppDirPath) &&
           fs.lstatSync(maybeSrcAppDirPath).isDirectory()
-        ? ['src', 'app']
-        : undefined;
+          ? ['src', 'app']
+          : undefined;
 
     if (!appDirLocation) {
       return;
@@ -237,23 +241,22 @@ export async function runNextjsWizardWithTelemetry(
     )
       ? 'global-error.tsx'
       : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
-        )
-      ? 'global-error.ts'
-      : fs.existsSync(
+        path.join(process.cwd(), ...appDirLocation, 'global-error.ts'),
+      )
+        ? 'global-error.ts'
+        : fs.existsSync(
           path.join(process.cwd(), ...appDirLocation, 'global-error.jsx'),
         )
-      ? 'global-error.jsx'
-      : fs.existsSync(
-          path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
-        )
-      ? 'global-error.js'
-      : undefined;
+          ? 'global-error.jsx'
+          : fs.existsSync(
+            path.join(process.cwd(), ...appDirLocation, 'global-error.js'),
+          )
+            ? 'global-error.js'
+            : undefined;
 
     if (!globalErrorPageFile) {
-      const newGlobalErrorFileName = `global-error.${
-        typeScriptDetected ? 'tsx' : 'jsx'
-      }`;
+      const newGlobalErrorFileName = `global-error.${typeScriptDetected ? 'tsx' : 'jsx'
+        }`;
 
       await fs.promises.writeFile(
         path.join(process.cwd(), ...appDirLocation, newGlobalErrorFileName),
@@ -277,7 +280,7 @@ export async function runNextjsWizardWithTelemetry(
       console.log(
         getGlobalErrorCopyPasteSnippet(
           globalErrorPageFile === 'global-error.ts' ||
-            globalErrorPageFile === 'global-error.tsx',
+          globalErrorPageFile === 'global-error.tsx',
         ),
       );
 
@@ -342,21 +345,19 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled();
 
   clack.outro(`
-${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${
-    shouldCreateExamplePage
+${chalk.green('Successfully installed the Sentry Next.js SDK!')} ${shouldCreateExamplePage
       ? `\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-          `${packageManagerForOutro.runScriptCommand} dev`,
-        )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
+        `${packageManagerForOutro.runScriptCommand} dev`,
+      )}) and visiting ${chalk.cyan('"/sentry-example-page"')}`
       : ''
-  }${
-    shouldCreateExamplePage && isLikelyUsingTurbopack
+    }${shouldCreateExamplePage && isLikelyUsingTurbopack
       ? `\nDon't forget to remove \`--turbo\` from your dev command until you have verified the SDK is working. You can safely add it back afterwards.`
       : ''
-  }
+    }
 
 ${chalk.dim(
-  'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
-)}`);
+      'If you encounter any issues, let us know here: https://github.com/getsentry/sentry-javascript/issues',
+    )}`);
 }
 
 type SDKConfigOptions = {
@@ -499,9 +500,8 @@ async function createOrMergeNextJsFiles(
       }
     }
 
-    const newInstrumentationFileName = `instrumentation.${
-      typeScriptDetected ? 'ts' : 'js'
-    }`;
+    const newInstrumentationFileName = `instrumentation.${typeScriptDetected ? 'ts' : 'js'
+      }`;
 
     if (instrumentationHookLocation === 'does-not-exist') {
       let newInstrumentationHookLocation: 'root' | 'src';
@@ -536,8 +536,8 @@ async function createOrMergeNextJsFiles(
         srcInstrumentationTsExists || instrumentationTsExists
           ? 'instrumentation.ts'
           : srcInstrumentationJsExists || instrumentationJsExists
-          ? 'instrumentation.js'
-          : newInstrumentationFileName,
+            ? 'instrumentation.js'
+            : newInstrumentationFileName,
         getInstrumentationHookCopyPasteSnippet(instrumentationHookLocation),
       );
     }
@@ -783,14 +783,14 @@ async function createExamplePage(
   const appFolderLocation = hasRootAppDirectory
     ? ['app']
     : hasSrcAppDirectory
-    ? ['src', 'app']
-    : undefined;
+      ? ['src', 'app']
+      : undefined;
 
   let pagesFolderLocation = hasRootPagesDirectory
     ? ['pages']
     : hasSrcPagesDirectory
-    ? ['src', 'pages']
-    : undefined;
+      ? ['src', 'pages']
+      : undefined;
 
   // If the user has neither pages nor app directory we create a pages folder for them
   if (!appFolderLocation && !pagesFolderLocation) {

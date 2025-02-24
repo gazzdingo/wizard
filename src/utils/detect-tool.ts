@@ -1,5 +1,5 @@
-import { getPackageDotJson } from '../../utils/clack-utils';
-import { findInstalledPackageFromList } from '../../utils/package-json';
+import { getPackageDotJson } from './clack-utils';
+import { findInstalledPackageFromList } from './package-json';
 
 export type SupportedTools =
   | 'webpack'

@@ -6,10 +6,10 @@ import {
   abortIfCancelled,
   getPackageDotJson,
   installPackage,
-} from '../../utils/clack-utils';
+} from './clack-utils';
 
 import * as Sentry from '@sentry/node';
-import { findInstalledPackageFromList } from '../../utils/package-json';
+import { findInstalledPackageFromList } from './package-json';
 
 const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
 
