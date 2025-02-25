@@ -5,7 +5,7 @@ type WithSentryConfigOptions = {
   orgSlug: string;
   projectSlug: string;
   selfHosted: boolean;
-  sentryUrl: string;
+  posthogUrl: string;
   tunnelRoute: boolean;
   reactComponentAnnotation: boolean;
 };
@@ -16,14 +16,14 @@ export function getWithSentryConfigOptionsTemplate({
   selfHosted,
   tunnelRoute,
   reactComponentAnnotation,
-  sentryUrl,
+  posthogUrl,
 }: WithSentryConfigOptions): string {
   return `{
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
     org: "${orgSlug}",
-    project: "${projectSlug}",${selfHosted ? `\n    sentryUrl: "${sentryUrl}",` : ''
+    project: "${projectSlug}",${selfHosted ? `\n    posthogUrl: "${posthogUrl}",` : ''
     }
 
     // Only print logs for uploading source maps in CI
@@ -201,13 +201,13 @@ Sentry.init({
 
 export function getSentryExamplePageContents(options: {
   selfHosted: boolean;
-  sentryUrl: string;
+  posthogUrl: string;
   orgSlug: string;
   projectId: string;
   useClient: boolean;
 }): string {
   const issuesPageLink = options.selfHosted
-    ? `${options.sentryUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
+    ? `${options.posthogUrl}organizations/${options.orgSlug}/issues/?project=${options.projectId}`
     : `https://${options.orgSlug}.sentry.io/issues/?project=${options.projectId}`;
 
   return `${options.useClient ? '"use client";\n\n' : ''

@@ -245,7 +245,7 @@ describe('Next.js code templates', () => {
         orgSlug: 'my-org',
         projectSlug: 'my-project',
         selfHosted: false,
-        sentryUrl: 'https://dont-use-this-url.com',
+        posthogUrl: 'https://dont-use-this-url.com',
         tunnelRoute: true,
         reactComponentAnnotation: false,
       });
@@ -290,7 +290,7 @@ describe('Next.js code templates', () => {
         orgSlug: 'my-org',
         projectSlug: 'my-project',
         selfHosted: true,
-        sentryUrl: 'https://my-sentry.com',
+        posthogUrl: 'https://my-sentry.com',
         tunnelRoute: true,
         reactComponentAnnotation: false,
       });
@@ -302,7 +302,7 @@ describe('Next.js code templates', () => {
 
             org: "my-org",
             project: "my-project",
-            sentryUrl: "https://my-sentry.com",
+            posthogUrl: "https://my-sentry.com",
 
             // Only print logs for uploading source maps in CI
             silent: !process.env.CI,
@@ -336,7 +336,7 @@ describe('Next.js code templates', () => {
         orgSlug: 'my-org',
         projectSlug: 'my-project',
         selfHosted: false,
-        sentryUrl: 'https://dont-use-this-url.com',
+        posthogUrl: 'https://dont-use-this-url.com',
         tunnelRoute: false,
         reactComponentAnnotation: false,
       });
@@ -381,7 +381,7 @@ describe('Next.js code templates', () => {
         orgSlug: 'my-org',
         projectSlug: 'my-project',
         selfHosted: false,
-        sentryUrl: 'https://dont-use-this-url.com',
+        posthogUrl: 'https://dont-use-this-url.com',
         tunnelRoute: true,
         reactComponentAnnotation: true,
       });

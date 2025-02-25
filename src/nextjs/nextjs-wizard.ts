@@ -85,7 +85,7 @@ export async function runNextjsWizardWithTelemetry(
 
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { selectedProject, authToken, selfHosted, sentryUrl } =
+  const { selectedProject, authToken, selfHosted, posthogUrl } =
     await getOrAskForProjectData(options, 'javascript-nextjs');
 
   const sdkAlreadyInstalled = hasPackageInstalled(
@@ -108,7 +108,7 @@ export async function runNextjsWizardWithTelemetry(
     const reactComponentAnnotation =
       await askShouldEnableReactComponentAnnotation();
 
-    await createOrMergeNextJsFiles(selectedProject, selfHosted, sentryUrl, {
+    await createOrMergeNextJsFiles(selectedProject, selfHosted, posthogUrl, {
       tunnelRoute,
       reactComponentAnnotation,
     });
@@ -301,7 +301,7 @@ export async function runNextjsWizardWithTelemetry(
   const shouldCreateExamplePage = await askShouldCreateExamplePage();
   if (shouldCreateExamplePage) {
     await traceStep('create-example-page', async () =>
-      createExamplePage(selfHosted, selectedProject, sentryUrl),
+      createExamplePage(selfHosted, selectedProject, posthogUrl),
     );
   }
 
@@ -366,7 +366,7 @@ type SDKConfigOptions = {
 async function createOrMergeNextJsFiles(
   selectedProject: SentryProjectData,
   selfHosted: boolean,
-  sentryUrl: string,
+  posthogUrl: string,
   sdkConfigOptions: SDKConfigOptions,
 ) {
   const selectedFeatures = await featureSelectionPrompt([
@@ -546,7 +546,7 @@ async function createOrMergeNextJsFiles(
       orgSlug: selectedProject.organization.slug,
       projectSlug: selectedProject.slug,
       selfHosted,
-      sentryUrl,
+      posthogUrl,
       tunnelRoute: sdkConfigOptions.tunnelRoute,
       reactComponentAnnotation: sdkConfigOptions.reactComponentAnnotation,
     });
@@ -762,7 +762,7 @@ function hasDirectoryPathFromRoot(dirnameOrDirs: string | string[]): boolean {
 async function createExamplePage(
   selfHosted: boolean,
   selectedProject: SentryProjectData,
-  sentryUrl: string,
+  posthogUrl: string,
 ): Promise<void> {
   const hasSrcDirectory = hasDirectoryPathFromRoot('src');
   const hasRootAppDirectory = hasDirectoryPathFromRoot('app');
@@ -807,7 +807,7 @@ async function createExamplePage(
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
-      sentryUrl,
+      posthogUrl,
       useClient: true,
     });
 
@@ -878,7 +878,7 @@ async function createExamplePage(
       selfHosted,
       orgSlug: selectedProject.organization.slug,
       projectId: selectedProject.id,
-      sentryUrl,
+      posthogUrl,
       useClient: false,
     });
 

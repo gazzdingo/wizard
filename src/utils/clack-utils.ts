@@ -896,7 +896,7 @@ export async function getOrAskForProjectData(
     | 'react-native'
     | 'flutter',
 ): Promise<{
-  sentryUrl: string;
+  posthogUrl: string;
   selfHosted: boolean;
   selectedProject: SentryProjectData;
   authToken: string;
@@ -904,12 +904,12 @@ export async function getOrAskForProjectData(
   if (options.preSelectedProject) {
     return {
       selfHosted: options.preSelectedProject.selfHosted,
-      sentryUrl: options.url ?? CLOUD_URL,
+      posthogUrl: options.url ?? CLOUD_URL,
       authToken: options.preSelectedProject.authToken,
       selectedProject: options.preSelectedProject.project,
     };
   }
-  const { url: sentryUrl, selfHosted } = await traceStep(
+  const { url: posthogUrl, selfHosted } = await traceStep(
     'ask-self-hosted',
     () => askForSelfHosted(options.url, options.cloud),
   );
@@ -917,7 +917,7 @@ export async function getOrAskForProjectData(
   const { projects, apiKeys } = await traceStep('login', () =>
     askForWizardLogin({
       promoCode: options.promoCode,
-      url: sentryUrl,
+      url: posthogUrl,
       platform: platform,
       orgSlug: options.orgSlug,
       projectSlug: options.projectSlug,
@@ -952,13 +952,13 @@ ${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
 Create your auth token here:
 ${chalk.cyan(
       selfHosted
-        ? `${sentryUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
+        ? `${posthogUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
         : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
     )}`);
   }
 
   return {
-    sentryUrl,
+    posthogUrl,
     selfHosted,
     authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
     selectedProject,
@@ -1071,6 +1071,8 @@ async function askForWizardLogin(options: {
   Sentry.setTag('already-has-posthog-account', hasPostHogAccount);
 
   let wizardHash: string;
+
+  console.log('options.url', `${options.url}api/wizard/`);
   try {
     wizardHash = (
       await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
