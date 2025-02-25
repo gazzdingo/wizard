@@ -19,22 +19,20 @@ import {
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
-import type { Feature, SentryProjectData, WizardOptions } from './types';
+import type { Feature, PostHogProjectData, WizardOptions } from './types';
 import { ISSUES_URL } from '../../lib/Constants';
 
 export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
-const CLOUD_URL = 'https://us.posthog.com/';
+const CLOUD_URL = 'http://localhost:8010/';
 
-const DUMMY_AUTH_TOKEN = '_YOUR_SENTRY_AUTH_TOKEN_';
+const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
 
 interface WizardProjectData {
-  apiKeys?: {
-    token?: string;
-  };
-  projects?: SentryProjectData[];
+  projectApiKey: string;
+  project: PostHogProjectData;
 }
 
 export interface CliSetupConfig {
@@ -144,7 +142,6 @@ type PackageJSON = { version?: string };
 
 export function printWelcome(options: {
   wizardName: string;
-  promoCode?: string;
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
@@ -174,11 +171,7 @@ export function printWelcome(options: {
 
   let welcomeText =
     options.message ||
-    `The ${options.wizardName} will help you set up Sentry for your application.\nThank you for using Sentry :)`;
-
-  if (options.promoCode) {
-    welcomeText = `${welcomeText}\n\nUsing promo-code: ${options.promoCode}`;
-  }
+    `The ${options.wizardName} will help you set up PostHog for your application.\nThank you for using PostHog :)`;
 
   if (wizardVersion) {
     welcomeText = `${welcomeText}\n\nVersion: ${wizardVersion}`;
@@ -187,9 +180,9 @@ export function printWelcome(options: {
   if (options.telemetryEnabled) {
     welcomeText = `${welcomeText}
 
-This wizard sends telemetry data and crash reports to Sentry. This helps us improve the Wizard.
+This wizard sends telemetry data and crash reports to PostHog. This helps us improve the Wizard.
 You can turn this off at any time by running ${chalk.cyanBright(
-      'sentry-wizard --disable-telemetry',
+      'posthog-wizard --disable-telemetry',
     )}.`;
   }
 
@@ -898,184 +891,47 @@ export async function getOrAskForProjectData(
 ): Promise<{
   posthogUrl: string;
   selfHosted: boolean;
-  selectedProject: SentryProjectData;
+  selectedProject: PostHogProjectData;
   authToken: string;
 }> {
-  if (options.preSelectedProject) {
-    return {
-      selfHosted: options.preSelectedProject.selfHosted,
-      posthogUrl: options.url ?? CLOUD_URL,
-      authToken: options.preSelectedProject.authToken,
-      selectedProject: options.preSelectedProject.project,
-    };
-  }
-  const { url: posthogUrl, selfHosted } = await traceStep(
-    'ask-self-hosted',
-    () => askForSelfHosted(options.url, options.cloud),
-  );
-
-  const { projects, apiKeys } = await traceStep('login', () =>
+  const { project, projectApiKey } = await traceStep('login', () =>
     askForWizardLogin({
-      promoCode: options.promoCode,
-      url: posthogUrl,
-      platform: platform,
-      orgSlug: options.orgSlug,
-      projectSlug: options.projectSlug,
+      url: CLOUD_URL,
     }),
   );
 
-  if (!projects || !projects.length) {
-    clack.log.error(
-      'No projects found. Please create a project in PostHog and try again.',
-    );
-    Sentry.setTag('no-projects-found', true);
-    await abort();
-    // This rejection won't return due to the abort call but TS doesn't know that
-    return Promise.reject();
-  }
-
-  const selectedProject = await traceStep('select-project', () =>
-    askForProjectSelection(projects, options.orgSlug, options.projectSlug),
-  );
-
-  const { token } = apiKeys ?? {};
-
-  if (!token) {
-    clack.log.error(`Didn't receive an auth token. This shouldn't happen :(
+  if (!projectApiKey) {
+    clack.log.error(`Didn't receive a project API key. This shouldn't happen :(
 
 Please let us know if you think this is a bug in the wizard:
-${chalk.cyan('https://github.com/getsentry/sentry-wizard/issues')}`);
+${chalk.cyan(ISSUES_URL)}`);
 
-    clack.log.info(`In the meantime, we'll add a dummy auth token (${chalk.cyan(
-      `"${DUMMY_AUTH_TOKEN}"`,
-    )}) for you to replace later.
-Create your auth token here:
-${chalk.cyan(
-      selfHosted
-        ? `${posthogUrl}organizations/${selectedProject.organization.slug}/settings/auth-tokens`
-        : `https://${selectedProject.organization.slug}.sentry.io/settings/auth-tokens`,
-    )}`);
+    clack.log
+      .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
+        `"${DUMMY_PROJECT_API_KEY}"`,
+      )}) for you to replace later.
+You can find your project API key here:
+${chalk.cyan(`${CLOUD_URL}settings/project#variables`)}`);
   }
 
   return {
-    posthogUrl,
-    selfHosted,
-    authToken: apiKeys?.token || DUMMY_AUTH_TOKEN,
-    selectedProject,
+    posthogUrl: CLOUD_URL,
+    selfHosted: false,
+    authToken: projectApiKey || DUMMY_PROJECT_API_KEY,
+    selectedProject: project,
   };
-}
-
-/**
- * Asks users if they are using PostHog Cloud or self-hosted PostHog and returns the validated URL.
- *
- * If users started the wizard with a --url arg, that URL is used as the default and we skip
- * the self-hosted question. However, the passed url is still validated and in case it's
- * invalid, users are asked to enter a new one until it is valid.
- *
- * @param urlFromArgs the url passed via the --url arg
- */
-async function askForSelfHosted(
-  urlFromArgs?: string,
-  cloud?: boolean,
-): Promise<{
-  url: string;
-  selfHosted: boolean;
-}> {
-  if (cloud) {
-    Sentry.setTag('url', CLOUD_URL);
-    Sentry.setTag('self-hosted', false);
-    return { url: CLOUD_URL, selfHosted: false };
-  }
-
-  if (!urlFromArgs) {
-    const choice: 'cloud' | 'self-hosted' | symbol = await abortIfCancelled(
-      clack.select({
-        message: 'Are you using PostHog Cloud or self-hosted PostHog?',
-        options: [
-          { value: 'cloud', label: 'PostHog Cloud (posthog.com)' },
-          {
-            value: 'self-hosted',
-            label: 'Self-hosted/on-premise/single-tenant',
-          },
-        ],
-      }),
-    );
-
-    if (choice === 'cloud') {
-      Sentry.setTag('url', CLOUD_URL);
-      Sentry.setTag('self-hosted', false);
-      return { url: CLOUD_URL, selfHosted: false };
-    }
-  }
-
-  let validUrl: string | undefined;
-  let tmpUrlFromArgs = urlFromArgs;
-
-  while (validUrl === undefined) {
-    const url =
-      tmpUrlFromArgs ||
-      (await abortIfCancelled(
-        clack.text({
-          message: `Please enter the URL of your ${urlFromArgs ? '' : 'self-hosted '
-            }Sentry instance.`,
-          placeholder: 'https://sentry.io/',
-        }),
-      ));
-    tmpUrlFromArgs = undefined;
-
-    try {
-      validUrl = new URL(url).toString();
-
-      // We assume everywhere else that the URL ends in a slash
-      if (!validUrl.endsWith('/')) {
-        validUrl += '/';
-      }
-    } catch {
-      clack.log.error(
-        `Please enter a valid URL. (It should look something like "https://sentry.mydomain.com/", got ${url})`,
-      );
-    }
-  }
-
-  const isSelfHostedUrl = new URL(validUrl).host !== new URL(CLOUD_URL).host;
-
-  Sentry.setTag('url', validUrl);
-  Sentry.setTag('self-hosted', isSelfHostedUrl);
-
-  return { url: validUrl, selfHosted: true };
 }
 
 async function askForWizardLogin(options: {
   url: string;
-  promoCode?: string;
-  platform?:
-  | 'javascript-nextjs'
-  | 'javascript-nuxt'
-  | 'javascript-remix'
-  | 'javascript-sveltekit'
-  | 'apple-ios'
-  | 'android'
-  | 'react-native'
-  | 'flutter';
-  orgSlug?: string;
-  projectSlug?: string;
+  platform?: 'javascript-nextjs';
 }): Promise<WizardProjectData> {
-  Sentry.setTag('has-promo-code', !!options.promoCode);
-
-  let hasPostHogAccount = await clack.confirm({
-    message: 'Do you already have a PostHog account?',
-  });
-
-  hasPostHogAccount = await abortIfCancelled(hasPostHogAccount);
-
-  Sentry.setTag('already-has-posthog-account', hasPostHogAccount);
 
   let wizardHash: string;
 
-  console.log('options.url', `${options.url}api/wizard/`);
   try {
     wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/0/wizard/`)
+      await axios.get<{ hash: string }>(`${options.url}api/wizard/`)
     ).data.hash;
   } catch (e: unknown) {
     if (options.url !== CLOUD_URL) {
@@ -1097,35 +953,16 @@ async function askForWizardLogin(options: {
     }
   }
 
-  const loginUrl = new URL(
-    `${options.url}account/settings/wizard/${wizardHash!}/`,
-  );
-
-  if (options.orgSlug) {
-    loginUrl.searchParams.set('org_slug', options.orgSlug);
-  }
-
-  if (options.projectSlug) {
-    loginUrl.searchParams.set('project_slug', options.projectSlug);
-  }
-
-  if (!hasPostHogAccount) {
-    loginUrl.searchParams.set('signup', '1');
-  }
+  const loginUrl = new URL(`${options.url}wizard?hash=${wizardHash!}`);
 
   if (options.platform) {
     loginUrl.searchParams.set('project_platform', options.platform);
   }
 
-  if (options.promoCode) {
-    loginUrl.searchParams.set('code', options.promoCode);
-  }
-
   const urlToOpen = loginUrl.toString();
   clack.log.info(
     `${chalk.bold(
-      `If the browser window didn't open automatically, please open the following link to ${hasPostHogAccount ? 'log' : 'sign'
-      } into PostHog:`,
+      `If the browser window didn't open automatically, please open the following link to login into PostHog:`,
     )}\n\n${chalk.cyan(urlToOpen)}`,
   );
 
@@ -1140,16 +977,33 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<WizardProjectData>(`${options.url}api/0/wizard/${wizardHash}/`, {
-          headers: {
-            'Accept-Encoding': 'deflate',
+        .get<{ project_api_key: string }>(
+          `${options.url}api/wizard?hash=${wizardHash}`,
+          {
+            headers: {
+              'Accept-Encoding': 'deflate',
+            },
           },
-        })
+        )
         .then((result) => {
-          resolve(result.data);
+          const data: WizardProjectData = {
+            projectApiKey: result.data.project_api_key,
+            project: {
+              id: '2',
+              slug: 'test',
+              keys: [{ dsn: { public: 'test' } }],
+              organization: {
+                id: '1',
+                name: 'test',
+                slug: 'test',
+              },
+            },
+          };
+
+          resolve(data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/0/wizard/${wizardHash}/`);
+          void axios.delete(`${options.url}api/wizard?hash=${wizardHash}`);
         })
         .catch(() => {
           // noop - just try again
@@ -1171,79 +1025,6 @@ async function askForWizardLogin(options: {
   Sentry.setTag('opened-wizard-link', true);
 
   return data;
-}
-
-async function askForProjectSelection(
-  projects: SentryProjectData[],
-  orgSlug?: string,
-  projectSlug?: string,
-): Promise<SentryProjectData> {
-  const label = (project: SentryProjectData): string => {
-    return `${project.organization.slug}/${project.slug}`;
-  };
-
-  const filteredProjects = filterProjectsBySlugs(
-    projects,
-    orgSlug,
-    projectSlug,
-  );
-
-  if (filteredProjects.length === 1) {
-    const selection = filteredProjects[0];
-
-    Sentry.setTag('project', selection.slug);
-    Sentry.setUser({ id: selection.organization.slug });
-    clack.log.step(`Selected project ${label(selection)}`);
-
-    return selection;
-  }
-
-  if (filteredProjects.length === 0) {
-    clack.log.warn('Could not find a project with the provided slugs.');
-  }
-
-  const sortedProjects = filteredProjects.length ? filteredProjects : projects;
-  sortedProjects.sort((a: SentryProjectData, b: SentryProjectData) => {
-    return label(a).localeCompare(label(b));
-  });
-
-  const selection: SentryProjectData | symbol = await abortIfCancelled(
-    clack.select({
-      maxItems: 12,
-      message: 'Select your Sentry project.',
-      options: sortedProjects.map((project) => {
-        return {
-          value: project,
-          label: label(project),
-        };
-      }),
-    }),
-  );
-
-  Sentry.setTag('project', selection.slug);
-  Sentry.setUser({ id: selection.organization.slug });
-
-  return selection;
-}
-
-function filterProjectsBySlugs(
-  projects: SentryProjectData[],
-  orgSlug?: string,
-  projectSlug?: string,
-): SentryProjectData[] {
-  if (!orgSlug && !projectSlug) {
-    return projects;
-  }
-  if (orgSlug && !projectSlug) {
-    return projects.filter((p) => p.organization.slug === orgSlug);
-  }
-  if (!orgSlug && projectSlug) {
-    return projects.filter((p) => p.slug === projectSlug);
-  }
-
-  return projects.filter(
-    (p) => p.organization.slug === orgSlug && p.slug === projectSlug,
-  );
 }
 
 /**

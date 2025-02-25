@@ -1,4 +1,4 @@
-export interface SentryProjectData {
+export interface PostHogProjectData {
   id: string;
   slug: string;
   organization: {
@@ -10,53 +10,16 @@ export interface SentryProjectData {
 }
 
 export type PreselectedProject = {
-  project: SentryProjectData;
+  project: PostHogProjectData;
   authToken: string;
   selfHosted: boolean;
 };
 
 export type WizardOptions = {
   /**
-   * Controls whether the wizard should send telemetry data to Sentry.
+   * Controls whether the wizard should send telemetry data to PostHog.
    */
   telemetryEnabled: boolean;
-
-  /**
-   * The promo code to use while signing up for Sentry.
-   * This can be passed via the --promo-code arg.
-   */
-  promoCode?: string;
-
-  /**
-   * The url of the Sentry instance to use.
-   * This can be passed via the `-u` or `--url` arg.
-   */
-  url?: string;
-
-  /**
-   * The org to pre-select in the wizard.
-   * This can be passed via the `--org` arg.
-   * Example: `--org my-org`
-   */
-  orgSlug?: string;
-
-  /**
-   * Project slug to pre-select in the wizard.
-   * This can be passed via the `--project` arg.
-   * Example: `--project my-project`
-   */
-  projectSlug?: string;
-
-  /**
-   * If this option is set, the wizard will skip the self-hosted or PostHog Cloud
-   * selection step and directly assume that the wizard is used for PostHog Cloud.
-   */
-  cloud?: boolean;
-
-  /**
-   * If this is set, the wizard will skip the login and project selection step.
-   */
-  preSelectedProject?: PreselectedProject;
 
   /**
    * Force-install the SDK package to continue with the installation in case

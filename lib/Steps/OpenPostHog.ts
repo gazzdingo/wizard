@@ -26,7 +26,7 @@ export class OpenPostHog extends BaseStep {
     this.debug(`Loading wizard for ${baseUrl}`);
 
     try {
-      const response = await fetch(`${baseUrl}api/0/wizard/`);
+      const response = await fetch(`${baseUrl}api/wizard/`);
       if (!response.ok) {
         throw new Error(
           `Failed to connect to PostHog: ${response.status} ${response.statusText}`,
@@ -45,9 +45,6 @@ export class OpenPostHog extends BaseStep {
           if (platform) {
             urlObj.searchParams.set('project_platform', platform);
           }
-        }
-        if (this._argv.promoCode) {
-          urlObj.searchParams.set('code', this._argv.promoCode);
         }
       }
 

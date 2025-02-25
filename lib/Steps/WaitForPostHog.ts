@@ -24,7 +24,7 @@ export class WaitForPostHog extends BaseStep {
       const baseUrl = this._argv.url;
 
       const pingPostHog = async (): Promise<void> => {
-        const response = await fetch(`${baseUrl}api/0/wizard/${answers.hash}/`);
+        const response = await fetch(`${baseUrl}api/wizard?hash=${answers.hash}`);
         this.debug('Polling received data');
         if (!response.ok) {
           throw new Error(
@@ -33,7 +33,7 @@ export class WaitForPostHog extends BaseStep {
         }
         const data = await response.json();
         // Delete the wizard hash since we were able to fetch the data
-        await fetch(`${baseUrl}api/0/wizard/${answers.hash}/`, {
+        await fetch(`${baseUrl}api/wizard?hash=${answers.hash}`, {
           method: 'DELETE',
         });
         BottomBar.hide();
@@ -42,7 +42,7 @@ export class WaitForPostHog extends BaseStep {
       };
 
       const poll = (): void => {
-        this.debug(`Polling: ${baseUrl}api/0/wizard/${answers.hash}/`);
+        this.debug(`Polling: ${baseUrl}api/wizard?hash=${answers.hash}`);
         pingPostHog().catch((e) => {
           this.debug('Polling received:');
           this.debug(e);

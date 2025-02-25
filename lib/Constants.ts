@@ -111,7 +111,6 @@ export interface Args {
   skipConnect: boolean;
   quiet: boolean;
   signup: boolean;
-  promoCode?: string;
   disableTelemetry?: boolean;
 }
 

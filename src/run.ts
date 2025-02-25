@@ -9,8 +9,7 @@ import type { Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 import { readFileSync } from 'node:fs';
 
-type WizardIntegration =
-  | 'nextjs'
+type WizardIntegration = 'nextjs';
 
 type Args = {
   integration?: WizardIntegration;
@@ -21,7 +20,6 @@ type Args = {
   debug: boolean;
   quiet: boolean;
   disableTelemetry: boolean;
-  promoCode?: string;
   preSelectedProject?: {
     authToken: string;
     selfHosted: boolean;
@@ -83,9 +81,7 @@ export async function run(argv: Args) {
     integration = await abortIfCancelled(
       clack.select({
         message: 'What do you want to set up?',
-        options: [
-          { value: 'nextjs', label: 'Next.js' },
-        ],
+        options: [{ value: 'nextjs', label: 'Next.js' }],
       }),
     );
 
@@ -99,12 +95,6 @@ export async function run(argv: Args) {
 
   const wizardOptions: WizardOptions = {
     telemetryEnabled: !finalArgs.disableTelemetry,
-    promoCode: finalArgs.promoCode,
-    url: finalArgs.url,
-    orgSlug: finalArgs.org,
-    projectSlug: finalArgs.project,
-    cloud: finalArgs.cloud,
-    preSelectedProject: preSelectedProjectArgsToObject(finalArgs),
     forceInstall: finalArgs.forceInstall,
   };
 

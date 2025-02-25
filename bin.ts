@@ -119,11 +119,6 @@ const argv = yargs(hideBin(process.argv)).options({
     describe: "Don't send telemetry data to Sentry",
     type: 'boolean',
   },
-  'promo-code': {
-    alias: 'promo-code',
-    describe: 'A promo code that will be applied during signup',
-    type: 'string',
-  },
   'force-install': {
     default: false,
     describe: 'Force install the SDK NPM package',
