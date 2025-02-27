@@ -1,8 +1,15 @@
 import { ChatOpenAI } from "@langchain/openai";
 
-export const llm = new ChatOpenAI({
-  // These are ignored, the wizard uses whatever is set on the server.
-  model: 'o3-mini',
-  temperature: 0,
-  apiKey: process.env.POSTHOG_WIZARD_OPENAI_API_KEY,
-});
+let _openai: ChatOpenAI | undefined;
+
+export const getOpenAi = () => {
+  if (!_openai) {
+    _openai = new ChatOpenAI({
+      model: 'o3-mini',
+      temperature: 1,
+      apiKey: process.env.POSTHOG_WIZARD_OPENAI_API_KEY,
+
+    });
+  }
+  return _openai;
+};

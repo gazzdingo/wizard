@@ -2,13 +2,10 @@
 
 import chalk from 'chalk';
 import * as fs from 'fs';
-// @ts-ignore - magicast is ESM and TS complains about that. It works though
-import * as path from 'path';
 import { z } from 'zod';
 import {
   abort,
   abortIfCancelled,
-  addDotEnvSentryBuildPluginFile,
   confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   getPackageDotJson,
@@ -21,14 +18,15 @@ import {
 import type { WizardOptions } from '../utils/types';
 import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
-import { getNextJsRouter, getNextJsVersionBucket, NextJsRouter } from './utils';
+import { getNextJsRouter, getNextJsRouterName, getNextJsVersionBucket, NextJsRouter } from './utils';
 import * as Sentry from '@sentry/node';
 import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/Constants';
-import { getAllFilesInProject } from '../utils/file-utils';
 import { NEXTJS_APP_ROUTER_DOCS, NEXTJS_PAGES_ROUTER_DOCS } from './docs';
 import { filterFilesPromptTemplate, generateFileChangesPromptTemplate } from './prompts';
-import { llm } from '../utils/openai';
+import { getOpenAi } from '../utils/openai';
 import clack from '../utils/clack';
+import fg from 'fast-glob';
+import path from 'path';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -87,34 +85,56 @@ export async function runNextjsWizardWithTelemetry(
   await installPackage({
     packageName: 'posthog-node',
     packageNameDisplayLabel: 'posthog-node',
+    packageManager: packageManagerFromInstallStep,
     alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
     forceInstall,
     askBeforeUpdating: false,
   });
 
-  const allFiles = await getAllFilesInProject(INSTALL_DIR);
-
-  const router = await getNextJsRouter(allFiles);
+  const router = await getNextJsRouter();
 
   const relevantFiles = await getRelevantFilesForNextJs();
 
   const installationDocumentation = getInstallationDocumentation({ router });
 
+  clack.log.info(`Reviewing PostHog documentation for ${getNextJsRouterName(router)}...`);
+
   const filesToChange = await getFilesToChange({ relevantFiles, installationDocumentation });
 
-  const changes: { filePath: string, oldContent: string, newContent: string }[] = [];
+  const changes: FileChange[] = [];
 
-  for (const file of filesToChange) {
-    const oldContent = await fs.promises.readFile(file, 'utf8');
-    const newContent = await generateFileChanges({ filePath: file, content: oldContent, changes, installationDocumentation });
+  for (const filePath of filesToChange) {
 
-    if (newContent !== oldContent) {
-      await updateFile({ filePath: file, oldContent, newContent });
-      changes.push({ filePath: file, oldContent, newContent });
+    const fileChangeSpinner = clack.spinner();
+
+    try {
+      let oldContent = undefined;
+      try {
+        oldContent = await fs.promises.readFile(path.join(INSTALL_DIR, filePath), 'utf8');
+      } catch (readError) {
+        if (readError.code !== 'ENOENT') {
+          await abort(`Error reading file ${filePath}`);
+          continue;
+        }
+      }
+
+      fileChangeSpinner.start(`${oldContent ? 'Updating' : 'Creating'} file ${filePath}`);
+
+      const newContent = await generateFileChanges({ filePath, content: oldContent, changes, installationDocumentation });
+
+      if (newContent !== oldContent) {
+        await updateFile({ filePath, oldContent, newContent });
+        changes.push({ filePath, oldContent, newContent });
+        clack.log.info(`Updated file: ${filePath}`);
+      } else {
+        clack.log.info(`No changes needed for file: ${filePath}`);
+      }
+
+      fileChangeSpinner.stop();
+    } catch (error) {
+      await abort(`Error processing file ${filePath}`);
     }
   }
-
-  clack.log.info(`Made ${changes.length} changes.`);
 
 
   // TODO: Add environment variables.
@@ -163,16 +183,11 @@ async function askForAIConsent() {
 
 
 async function getRelevantFilesForNextJs() {
-  const allFiles = await getAllFilesInProject(INSTALL_DIR);
 
-  const filterPatterns = ["*.tsx", "*.ts", "*.jsx", "*.js"];
+  const filterPatterns = ["**/*.{tsx,ts,jsx,js}"];
   const ignorePatterns = ["node_modules", "dist", "build", "public", "static", "next-env.d.ts", "next-env.d.tsx"];
 
-  const filteredFiles = allFiles.filter((file) => {
-    return filterPatterns.some((pattern) => file.match(pattern)) && !ignorePatterns.some((pattern) => file.match(pattern));
-  })
-
-  clack.log.info(`Found ${filteredFiles.length} relevant files.`);
+  const filteredFiles = await fg(filterPatterns, { cwd: INSTALL_DIR, ignore: ignorePatterns });
 
   return filteredFiles;
 }
@@ -197,27 +212,35 @@ function getInstallationDocumentation({ router }: { router: NextJsRouter }) {
 
 async function getFilesToChange({ relevantFiles, installationDocumentation }: { relevantFiles: string[], installationDocumentation: string }) {
 
-  const filterFilesPrompt = await filterFilesPromptTemplate.format({
-    documentation: installationDocumentation,
-    file_list: relevantFiles.join('\n'),
-  });
+  const filterFilesSpinner = clack.spinner();
+
+  filterFilesSpinner.start('Selecting files to change...');
 
   const filterFilesResponseSchmea = z.object({
     files: z.array(z.string()),
   });
 
-  const structuredLlm = llm.withStructuredOutput(filterFilesResponseSchmea);
+  const filterFilesPrompt = await filterFilesPromptTemplate.format({
+    documentation: installationDocumentation,
+    file_list: relevantFiles.join('\n'),
+  });
+
+  const llm = getOpenAi();
+
+
+  const structuredLlm = llm.withStructuredOutput(filterFilesResponseSchmea, { method: "json_schema" });
+
 
   const filterFilesResponse = await structuredLlm.invoke(filterFilesPrompt);
 
-  return filterFilesResponse.files;
+  const filesToChange = filterFilesResponse.files;
+
+  filterFilesSpinner.stop(`Found ${filesToChange.length} files to change.`);
+
+  return filesToChange;
 }
 
 async function generateFileChanges({ filePath, content, changes, installationDocumentation }: { filePath: string, content: string | undefined, changes: FileChange[], installationDocumentation: string }) {
-
-  const fileChangeSpinner = clack.spinner();
-
-  fileChangeSpinner.start(`Generating changes for ${filePath}`);
 
   const generateFileChangesPrompt = await generateFileChangesPromptTemplate.format({
     file_path: filePath,
@@ -226,24 +249,25 @@ async function generateFileChanges({ filePath, content, changes, installationDoc
     documentation: installationDocumentation,
   });
 
+  const llm = getOpenAi();
+
   const structuredLlm = llm.withStructuredOutput(z.object({
     newContent: z.string(),
   }));
 
   const response = await structuredLlm.invoke(generateFileChangesPrompt);
 
-  fileChangeSpinner.stop();
-
   return response.newContent;
 }
 
 async function updateFile(change: FileChange) {
-  await fs.promises.writeFile(change.filePath, change.newContent);
-  clack.log.info(`Updated ${change.filePath}`);
+  const dir = path.dirname(path.join(INSTALL_DIR, change.filePath));
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(path.join(INSTALL_DIR, change.filePath), change.newContent);
 }
 
 type FileChange = {
   filePath: string;
-  oldContent: string;
+  oldContent?: string;
   newContent: string;
 }

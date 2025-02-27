@@ -41,8 +41,6 @@ export async function run(argv: Args) {
 
   const integration = await getIntegrationForSetup();
 
-  clack.outro(`Starting ${integration} setup`);
-
 
   const wizardOptions: WizardOptions = {
     telemetryEnabled: !finalArgs.disableTelemetry,
@@ -99,7 +97,7 @@ async function getIntegrationForSetup() {
   const detectedIntegration = await detectIntegration();
 
   if (detectedIntegration) {
-    clack.log.info(`Detected integration: ${detectedIntegration}`);
+    clack.log.info(`Detected integration: ${detectedIntegration.toUpperCase()}`);
     return detectedIntegration;
   }
 

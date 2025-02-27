@@ -1,6 +1,8 @@
 import { major, minVersion } from 'semver';
+import fg from 'fast-glob';
 import { abortIfCancelled } from '../utils/clack-utils';
 import clack from '../utils/clack';
+import { INSTALL_DIR } from '../../lib/Constants';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -27,29 +29,46 @@ export enum NextJsRouter {
   PAGES_ROUTER = 'pages-router',
 }
 
-export async function getNextJsRouter(allFiles: string[]): Promise<NextJsRouter> {
+export const IGNORE_PATTERNS = [
+  '**/node_modules/**',
+  '**/dist/**',
+  '**/build/**',
+  '**/public/**',
+]
+export async function getNextJsRouter(): Promise<NextJsRouter> {
+  const pagesMatches = await fg('**/pages/_app.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
 
-  const hasPagesDir = allFiles.some((file) => file.includes('_app.tsx'));
-  const hasAppDir = allFiles.some((file) => file.includes('app/layout.*'));
+  const hasPagesDir = pagesMatches.length > 0;
+
+  const appMatches = await fg('**/app/layout.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
+
+  const hasAppDir = appMatches.length > 0;
+
   if (hasPagesDir && !hasAppDir) {
-    clack.log.info('Detected Pages Router 📃');
+    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.PAGES_ROUTER)} 📃`);
     return NextJsRouter.PAGES_ROUTER;
   }
+
   if (hasAppDir && !hasPagesDir) {
-    clack.log.info('Detected App Router 📱');
+    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.APP_ROUTER)} 📱`);
     return NextJsRouter.APP_ROUTER;
   }
 
-
-  const result: NextJsRouter = await abortIfCancelled(clack.select({
-    message: 'What router are you using?',
-    options: [
-      { label: 'App Router', value: NextJsRouter.APP_ROUTER },
-      { label: 'Pages Router', value: NextJsRouter.PAGES_ROUTER },
-    ],
-  }))
+  const result: NextJsRouter = await abortIfCancelled(
+    clack.select({
+      message: 'What router are you using?',
+      options: [
+        { label: getNextJsRouterName(NextJsRouter.APP_ROUTER), value: NextJsRouter.APP_ROUTER },
+        { label: getNextJsRouterName(NextJsRouter.PAGES_ROUTER), value: NextJsRouter.PAGES_ROUTER },
+      ],
+    })
+  );
 
   return result;
+}
+
+export const getNextJsRouterName = (router: NextJsRouter) => {
+  return router === NextJsRouter.APP_ROUTER ? 'app router' : 'pages router';
 }
 
 

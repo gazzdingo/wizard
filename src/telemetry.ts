@@ -64,18 +64,8 @@ export async function withTelemetry<F>(
 }
 
 function createSentryInstance(enabled: boolean, integration: string) {
-  const { version } = process.env.npm_package_version
-    ? { version: process.env.npm_package_version }
-    : (JSON.parse(
-        readFileSync(
-          join(
-            dirname(require.resolve('@sentry/wizard')),
-            '..',
-            'package.json',
-          ),
-          'utf-8',
-        ),
-      ) as { version?: string });
+  const { version } = { version: process.env.npm_package_version };
+
 
   const client = new NodeClient({
     dsn: 'https://8871d3ff64814ed8960c96d1fcc98a27@o1.ingest.sentry.io/4505425820712960',

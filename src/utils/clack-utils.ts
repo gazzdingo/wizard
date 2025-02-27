@@ -139,32 +139,12 @@ export async function abortIfCancelled<T>(
   }
 }
 
-type PackageJSON = { version?: string };
-
 export function printWelcome(options: {
   wizardName: string;
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-  let wizardVersion = process.env.npm_package_version;
-  if (!wizardVersion) {
-    try {
-      wizardVersion = (
-        JSON.parse(
-          fs.readFileSync(
-            join(
-              dirname(require.resolve('@sentry/wizard')),
-              '..',
-              'package.json',
-            ),
-            'utf-8',
-          ),
-        ) as PackageJSON
-      ).version;
-    } catch {
-      // We don't need to have this
-    }
-  }
+  const wizardVersion = process.env.npm_package_version;
 
   // eslint-disable-next-line no-console
   console.log('');
@@ -401,6 +381,7 @@ export async function installPackage({
         childProcess.exec(
           `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
+          { cwd: INSTALL_DIR },
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
@@ -914,10 +895,20 @@ ${chalk.cyan(`${CLOUD_URL}settings/project#variables`)}`);
   };
 }
 
+const skipWizardLogin = true;
+
 async function askForWizardLogin(options: {
   url: string;
   platform?: string;
 }): Promise<WizardProjectData> {
+
+  if (skipWizardLogin) {
+    return {
+      temporaryAccessToken: 'dummy-token',
+      project: { id: 'dummy-project', name: 'Dummy Project' },
+      projectApiKey: 'dummy-project-api-key',
+    };
+  }
 
   let wizardHash: string;
 
@@ -926,7 +917,7 @@ async function askForWizardLogin(options: {
       await axios.get<{ hash: string }>(`${options.url}api/wizard/`)
     ).data.hash;
   } catch (e: unknown) {
-    clack.log.error('Loading Wizard failed.');
+    clack.log.error('Loading wizard failed.');
     clack.log.info(JSON.stringify(e, null, 2));
     await abort(
       chalk.red(
