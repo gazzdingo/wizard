@@ -1,7 +1,8 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import * as clack from '@clack/prompts';
 import chalk from 'chalk';
-import { prepareMessage } from '../../lib/Helper/Logging';
+import { prepareMessage } from './logging';
+
 
 let debugEnabled = false;
 

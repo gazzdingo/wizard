@@ -4,7 +4,7 @@ import * as path from 'path';
 import type { Integration } from '../../lib/Constants';
 import { spawn, execSync } from 'child_process';
 import type { ChildProcess } from 'child_process';
-import { dim, green, red } from '../../lib/Helper/Logging';
+import { dim, green, red } from '../../src/utils/logging';
 
 export const KEYS = {
   UP: '\u001b[A',

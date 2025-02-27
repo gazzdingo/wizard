@@ -20,13 +20,13 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsRouter, getNextJsRouterName, getNextJsVersionBucket, NextJsRouter } from './utils';
 import * as Sentry from '@sentry/node';
-import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/Constants';
 import { NEXTJS_APP_ROUTER_DOCS, NEXTJS_PAGES_ROUTER_DOCS } from './docs';
 import { filterFilesPromptTemplate, generateFileChangesPromptTemplate } from './prompts';
-import { getOpenAi } from '../utils/openai';
+import { query } from '../utils/query';
 import clack from '../utils/clack';
 import fg from 'fast-glob';
 import path from 'path';
+import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/Constants';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -97,7 +97,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const installationDocumentation = getInstallationDocumentation({ router });
 
-  clack.log.info(`Reviewing PostHog documentation for ${getNextJsRouterName(router)}...`);
+  clack.log.info(`Reviewing PostHog documentation for ${getNextJsRouterName(router)}`);
 
   const filesToChange = await getFilesToChange({ relevantFiles, installationDocumentation });
 
@@ -125,19 +125,18 @@ export async function runNextjsWizardWithTelemetry(
       if (newContent !== oldContent) {
         await updateFile({ filePath, oldContent, newContent });
         changes.push({ filePath, oldContent, newContent });
-        clack.log.info(`Updated file: ${filePath}`);
-      } else {
-        clack.log.info(`No changes needed for file: ${filePath}`);
       }
 
-      fileChangeSpinner.stop();
+      fileChangeSpinner.stop(`${oldContent ? 'Updated' : 'Created'} file ${filePath}`);
     } catch (error) {
       await abort(`Error processing file ${filePath}`);
     }
   }
 
-
-  // TODO: Add environment variables.
+  await addEnvironmentVariables({
+    projectApiKey,
+    host: "https://us.i.posthog.com",
+  });
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
@@ -225,17 +224,13 @@ async function getFilesToChange({ relevantFiles, installationDocumentation }: { 
     file_list: relevantFiles.join('\n'),
   });
 
-  const llm = getOpenAi();
+  console.log("query")
 
-
-  const structuredLlm = llm.withStructuredOutput(filterFilesResponseSchmea, { method: "json_schema" });
-
-
-  const filterFilesResponse = await structuredLlm.invoke(filterFilesPrompt);
+  const filterFilesResponse = await query({ message: filterFilesPrompt, schema: filterFilesResponseSchmea });
 
   const filesToChange = filterFilesResponse.files;
 
-  filterFilesSpinner.stop(`Found ${filesToChange.length} files to change.`);
+  filterFilesSpinner.stop(`Found ${filesToChange.length} files to change`);
 
   return filesToChange;
 }
@@ -249,13 +244,11 @@ async function generateFileChanges({ filePath, content, changes, installationDoc
     documentation: installationDocumentation,
   });
 
-  const llm = getOpenAi();
-
-  const structuredLlm = llm.withStructuredOutput(z.object({
-    newContent: z.string(),
-  }));
-
-  const response = await structuredLlm.invoke(generateFileChangesPrompt);
+  const response = await query({
+    message: generateFileChangesPrompt, schema: z.object({
+      newContent: z.string(),
+    })
+  });
 
   return response.newContent;
 }
@@ -270,4 +263,93 @@ type FileChange = {
   filePath: string;
   oldContent?: string;
   newContent: string;
+}
+
+
+export async function addEnvironmentVariables({
+  projectApiKey,
+  host,
+}: {
+  projectApiKey: string;
+  host: string;
+}): Promise<void> {
+  const envVarContent = `# Posthog
+NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
+NEXT_PUBLIC_POSTHOG_HOST=${host}
+`;
+
+  const dotEnvLocalFilePath = path.join(INSTALL_DIR, '.env.local');
+  const dotEnvFilePath = path.join(INSTALL_DIR, '.env');
+  const targetEnvFilePath = fs.existsSync(dotEnvLocalFilePath) ? dotEnvLocalFilePath : dotEnvFilePath;
+
+  const dotEnvFileExists = fs.existsSync(targetEnvFilePath);
+
+  const relativeEnvFilePath = path.relative(INSTALL_DIR, targetEnvFilePath);
+
+  if (dotEnvFileExists) {
+    const dotEnvFileContent = fs.readFileSync(targetEnvFilePath, 'utf8');
+
+    const hasProjectApiKey = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_API_KEY\s*=/m);
+    const hasHost = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_HOST\s*=/m);
+
+    if (hasProjectApiKey && hasHost) {
+      clack.log.warn(`${chalk.bold.cyan(relativeEnvFilePath)} already has the necessary environment variables. Will not add them.`);
+    } else {
+      try {
+        const newContent = `${dotEnvFileContent}
+${envVarContent}`;
+        await fs.promises.writeFile(targetEnvFilePath, newContent, {
+          encoding: 'utf8',
+          flag: 'w',
+        });
+        clack.log.success(`Added environment variables to ${chalk.bold.cyan(relativeEnvFilePath)}`);
+      } catch {
+        clack.log.warning(`Failed to add environment variables to ${chalk.bold.cyan(relativeEnvFilePath)}. Uploading source maps during build will likely not work locally.`);
+      }
+    }
+  } else {
+    try {
+      await fs.promises.writeFile(targetEnvFilePath, envVarContent, {
+        encoding: 'utf8',
+        flag: 'w',
+      });
+      clack.log.success(`Created ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables for you to test source map uploading locally.`);
+    } catch {
+      clack.log.warning(`Failed to create ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables. Uploading source maps during build will likely not work locally.`);
+    }
+  }
+
+  const gitignorePath = path.join(INSTALL_DIR, '.gitignore');
+  const gitignoreExists = fs.existsSync(gitignorePath);
+
+  if (gitignoreExists) {
+    const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    const envFiles = ['.env', '.env.local'];
+    const missingEnvFiles = envFiles.filter(file => !gitignoreContent.includes(file));
+
+    if (missingEnvFiles.length > 0) {
+      try {
+        const newGitignoreContent = `${gitignoreContent}
+${missingEnvFiles.join('\n')}`;
+        await fs.promises.writeFile(gitignorePath, newGitignoreContent, {
+          encoding: 'utf8',
+          flag: 'w',
+        });
+        clack.log.success(`Updated ${chalk.bold.cyan('.gitignore')} to include environment files.`);
+      } catch {
+        clack.log.warning(`Failed to update ${chalk.bold.cyan('.gitignore')} to include environment files.`);
+      }
+    }
+  } else {
+    try {
+      const newGitignoreContent = `.env\n.env.local\n`;
+      await fs.promises.writeFile(gitignorePath, newGitignoreContent, {
+        encoding: 'utf8',
+        flag: 'w',
+      });
+      clack.log.success(`Created ${chalk.bold.cyan('.gitignore')} with environment files.`);
+    } catch {
+      clack.log.warning(`Failed to create ${chalk.bold.cyan('.gitignore')} with environment files.`);
+    }
+  }
 }

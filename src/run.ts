@@ -3,13 +3,13 @@ import * as clack from '@clack/prompts';
 import { abortIfCancelled } from './utils/clack-utils';
 import 'dotenv/config'
 
-import type { PreselectedProject, WizardOptions } from './utils/types';
+import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
-import { readEnvironment } from '../lib/Helper/Env';
+
 import { Integration, type Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 import { readFileSync } from 'node:fs';
-import { getAllFilesInProject } from './utils/file-utils';
+import { readEnvironment } from './utils/environment';
 
 type WizardIntegration = 'nextjs';
 

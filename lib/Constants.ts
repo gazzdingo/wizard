@@ -1,19 +1,8 @@
 import path from "path";
 import "dotenv/config";
 
-/** Key value should be the same here */
 export enum Integration {
-  reactNative = 'reactNative',
-  flutter = 'flutter',
-  ios = 'ios',
-  android = 'android',
-  cordova = 'cordova',
-  electron = 'electron',
   nextjs = 'nextjs',
-  nuxt = 'nuxt',
-  remix = 'remix',
-  sveltekit = 'sveltekit',
-  sourcemaps = 'sourcemaps',
 }
 
 /** Key value should be the same here */
@@ -41,55 +30,19 @@ export function getPlatformDescription(type: string): string {
 
 export function getIntegrationDescription(type: string): string {
   switch (type) {
-    case Integration.android:
-      return 'Android';
-    case Integration.reactNative:
-      return 'React Native';
-    case Integration.flutter:
-      return 'Flutter';
-    case Integration.cordova:
-      return 'Cordova';
-    case Integration.electron:
-      return 'Electron';
     case Integration.nextjs:
       return 'Next.js';
-    case Integration.remix:
-      return 'Remix';
-    case Integration.sveltekit:
-      return 'SvelteKit';
-    case Integration.sourcemaps:
-      return 'Configure Source Maps Upload';
-    case Integration.ios:
-      return 'iOS';
     default:
-      return 'React Native';
+      throw new Error(`Unknown integration ${type}`);
   }
 }
 
 export function mapIntegrationToPlatform(type: string): string | undefined {
   switch (type) {
-    case Integration.android:
-      return 'android';
-    case Integration.reactNative:
-      return 'react-native';
-    case Integration.flutter:
-      return 'flutter';
-    case Integration.cordova:
-      return 'cordova';
-    case Integration.electron:
-      return 'javascript-electron';
     case Integration.nextjs:
       return 'javascript-nextjs';
-    case Integration.remix:
-      return 'javascript-remix';
-    case Integration.sveltekit:
-      return 'javascript-sveltekit';
-    case Integration.sourcemaps:
-      return undefined;
-    case Integration.ios:
-      return 'iOS';
     default:
-      throw new Error(`Unknown integration ${type}`);
+      return undefined;
   }
 }
 
@@ -117,6 +70,8 @@ export interface Args {
   disableTelemetry?: boolean;
 }
 
-export const DEFAULT_URL = 'https://sentry.io/';
+export const DEFAULT_URL = 'https://posthog.com/';
 export const ISSUES_URL = 'ISSUES_URL';
 export const INSTALL_DIR = path.join(process.cwd(), process.env.POSTHOG_WIZARD_INSTALL_DIR ?? "");
+export const CLOUD_URL = 'http://localhost:8010/';
+export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';

@@ -1,7 +1,7 @@
 import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
-import { basename, dirname, isAbsolute, join, relative } from 'node:path';
+import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
 // @ts-ignore - clack is ESM and TS complains about that. It works though
@@ -20,15 +20,8 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, PostHogProjectData, WizardOptions } from './types';
-import { INSTALL_DIR, ISSUES_URL } from '../../lib/Constants';
+import { CLOUD_URL, DUMMY_PROJECT_API_KEY, INSTALL_DIR, ISSUES_URL } from '../../lib/Constants';
 
-export const DOT_ENV_FILE = '.env';
-export const SENTRY_CLI_RC_FILE = '.sentryclirc';
-export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
-
-const CLOUD_URL = 'http://localhost:8010/';
-
-const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
 
 interface WizardProjectData {
   projectApiKey: string;
@@ -57,55 +50,6 @@ export interface CliSetupConfigContent {
   project?: string;
   url?: string;
 }
-
-export const rcCliSetupConfig: CliSetupConfig = {
-  filename: SENTRY_CLI_RC_FILE,
-  name: 'source maps',
-  gitignore: true,
-  likelyAlreadyHasAuthToken: function (contents: string): boolean {
-    return !!(contents.includes('[auth]') && contents.match(/token=./g));
-  },
-  tokenContent: function (authToken: string): string {
-    return `[auth]\ntoken=${authToken}`;
-  },
-  likelyAlreadyHasOrgAndProject: function (contents: string): boolean {
-    return !!(
-      contents.includes('[defaults]') &&
-      contents.match(/org=./g) &&
-      contents.match(/project=./g)
-    );
-  },
-  orgAndProjContent: function (org: string, project: string): string {
-    return `[defaults]\norg=${org}\nproject=${project}`;
-  },
-};
-
-export const propertiesCliSetupConfig: Required<CliSetupConfig> = {
-  filename: SENTRY_PROPERTIES_FILE,
-  gitignore: true,
-  name: 'debug files',
-  likelyAlreadyHasAuthToken(contents: string): boolean {
-    return !!contents.match(/auth\.token=./g);
-  },
-  tokenContent(authToken: string): string {
-    return `auth.token=${authToken}`;
-  },
-  likelyAlreadyHasOrgAndProject(contents: string): boolean {
-    return !!(
-      contents.match(/defaults\.org=./g) &&
-      contents.match(/defaults\.project=./g)
-    );
-  },
-  orgAndProjContent(org: string, project: string): string {
-    return `defaults.org=${org}\ndefaults.project=${project}`;
-  },
-  likelyAlreadyHasUrl(contents: string): boolean {
-    return !!contents.match(/defaults\.url=./g);
-  },
-  urlContent(url: string): string {
-    return `defaults.url=${url}`;
-  },
-};
 
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
@@ -245,15 +189,6 @@ export function getUncommittedOrUntrackedFiles(): string[] {
   }
 }
 
-export async function askToInstallSentryCLI(): Promise<boolean> {
-  return await abortIfCancelled(
-    clack.confirm({
-      message:
-        "You don't have Sentry CLI installed. Do you want to install it?",
-    }),
-  );
-}
-
 export async function askForItemSelection(
   items: string[],
   message: string,
@@ -341,11 +276,11 @@ export async function installPackage({
   packageManager,
   forceInstall = false,
 }: {
-  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@sentry/nextjs`, or `@sentry/nextjs@^8`) */
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `posthog-js`, or `posthog-js@^1.100.0`) */
   packageName: string;
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
-  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly (e.g. `@sentry/nextjs@^8`) */
+  /** Overrides what is shown in the installation logs in place of the `packageName` option. Useful if the `packageName` is ugly */
   packageNameDisplayLabel?: string;
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
@@ -425,244 +360,6 @@ export async function installPackage({
 
     return { packageManager: pkgManager };
   });
-}
-
-export async function addSentryCliConfig(
-  { authToken, org, project, url }: CliSetupConfigContent,
-  setupConfig: CliSetupConfig = rcCliSetupConfig,
-): Promise<void> {
-  return traceStep('add-sentry-cli-config', async () => {
-    const configPath = join(INSTALL_DIR, setupConfig.filename);
-    const configExists = fs.existsSync(configPath);
-
-    let configContents =
-      (configExists && fs.readFileSync(configPath, 'utf8')) || '';
-    configContents = addAuthTokenToSentryConfig(
-      configContents,
-      authToken,
-      setupConfig,
-    );
-    configContents = addOrgAndProjectToSentryConfig(
-      configContents,
-      org,
-      project,
-      setupConfig,
-    );
-    configContents = addUrlToSentryConfig(configContents, url, setupConfig);
-
-    try {
-      await fs.promises.writeFile(configPath, configContents, {
-        encoding: 'utf8',
-        flag: 'w',
-      });
-      clack.log.success(
-        `${configExists ? 'Saved' : 'Created'} ${chalk.cyan(
-          setupConfig.filename,
-        )}.`,
-      );
-    } catch {
-      clack.log.warning(
-        `Failed to add auth token to ${chalk.cyan(
-          setupConfig.filename,
-        )}. Uploading ${setupConfig.name
-        } during build will likely not work locally.`,
-      );
-    }
-
-    if (setupConfig.gitignore) {
-      await addCliConfigFileToGitIgnore(setupConfig.filename);
-    } else {
-      clack.log.warn(
-        chalk.yellow('DO NOT commit auth token to your repository!'),
-      );
-    }
-  });
-}
-
-function addAuthTokenToSentryConfig(
-  configContents: string,
-  authToken: string | undefined,
-  setupConfig: CliSetupConfig,
-): string {
-  if (!authToken) {
-    return configContents;
-  }
-
-  if (setupConfig.likelyAlreadyHasAuthToken(configContents)) {
-    clack.log.warn(
-      `${chalk.cyan(
-        setupConfig.filename,
-      )} already has auth token. Will not add one.`,
-    );
-    return configContents;
-  }
-
-  const newContents = `${configContents}\n${setupConfig.tokenContent(
-    authToken,
-  )}\n`;
-  clack.log.success(
-    `Added auth token to ${chalk.cyan(
-      setupConfig.filename,
-    )} for you to test uploading ${setupConfig.name} locally.`,
-  );
-  return newContents;
-}
-
-function addOrgAndProjectToSentryConfig(
-  configContents: string,
-  org: string | undefined,
-  project: string | undefined,
-  setupConfig: CliSetupConfig,
-): string {
-  if (!org || !project) {
-    return configContents;
-  }
-
-  if (setupConfig.likelyAlreadyHasOrgAndProject(configContents)) {
-    clack.log.warn(
-      `${chalk.cyan(
-        setupConfig.filename,
-      )} already has org and project. Will not add them.`,
-    );
-    return configContents;
-  }
-
-  const newContents = `${configContents}\n${setupConfig.orgAndProjContent(
-    org,
-    project,
-  )}\n`;
-  clack.log.success(
-    `Added default org and project to ${chalk.cyan(
-      setupConfig.filename,
-    )} for you to test uploading ${setupConfig.name} locally.`,
-  );
-  return newContents;
-}
-
-function addUrlToSentryConfig(
-  configContents: string,
-  url: string | undefined,
-  setupConfig: CliSetupConfig,
-): string {
-  if (!url || !setupConfig.urlContent || !setupConfig.likelyAlreadyHasUrl) {
-    return configContents;
-  }
-
-  if (setupConfig.likelyAlreadyHasUrl(configContents)) {
-    clack.log.warn(
-      `${chalk.cyan(setupConfig.filename)} already has url. Will not add one.`,
-    );
-    return configContents;
-  }
-
-  const newContents = `${configContents}\n${setupConfig.urlContent(url)}\n`;
-  clack.log.success(
-    `Added default url to ${chalk.cyan(
-      setupConfig.filename,
-    )} for you to test uploading ${setupConfig.name} locally.`,
-  );
-  return newContents;
-}
-
-export async function addDotEnvSentryBuildPluginFile(
-  projectApiKey: string,
-): Promise<void> {
-  const envVarContent = `# DO NOT commit this file to your repository!
-# The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
-# It's used for authentication when uploading source maps.
-# You can also set this env variable in your own \`.env\` files and remove this file.
-NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
-`;
-
-  const dotEnvFilePath = join(INSTALL_DIR, DOT_ENV_FILE);
-  const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
-
-  if (dotEnvFileExists) {
-    const dotEnvFileContent = fs.readFileSync(dotEnvFilePath, 'utf8');
-
-    const hasProjectApiKey = !!dotEnvFileContent.match(
-      /^\s*POSTHOG_API_KEY\s*=/g,
-    );
-
-    if (hasProjectApiKey) {
-      clack.log.warn(
-        `${chalk.bold.cyan(
-          DOT_ENV_FILE,
-        )} already has auth token. Will not add one.`,
-      );
-    } else {
-      try {
-        await fs.promises.writeFile(
-          dotEnvFilePath,
-          `${dotEnvFileContent}\n${envVarContent}`,
-          {
-            encoding: 'utf8',
-            flag: 'w',
-          },
-        );
-        clack.log.success(
-          `Added auth token to ${chalk.bold.cyan(DOT_ENV_FILE)}`,
-        );
-      } catch {
-        clack.log.warning(
-          `Failed to add auth token to ${chalk.bold.cyan(
-            DOT_ENV_FILE,
-          )}. Uploading source maps during build will likely not work locally.`,
-        );
-      }
-    }
-  } else {
-    try {
-      await fs.promises.writeFile(dotEnvFilePath, envVarContent, {
-        encoding: 'utf8',
-        flag: 'w',
-      });
-      clack.log.success(
-        `Created ${chalk.bold.cyan(
-          DOT_ENV_FILE,
-        )} with auth token for you to test source map uploading locally.`,
-      );
-    } catch {
-      clack.log.warning(
-        `Failed to create ${chalk.bold.cyan(
-          DOT_ENV_FILE,
-        )} with auth token. Uploading source maps during build will likely not work locally.`,
-      );
-    }
-  }
-
-  await addCliConfigFileToGitIgnore(DOT_ENV_FILE);
-}
-
-async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  const gitignorePath = join(INSTALL_DIR, '.gitignore');
-
-  try {
-    const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
-    if (gitignoreContent.split(/\r?\n/).includes(filename)) {
-      clack.log.info(
-        `${chalk.bold('.gitignore')} already has ${chalk.bold(
-          filename,
-        )}. Will not add it again.`,
-      );
-      return;
-    }
-
-    await fs.promises.appendFile(
-      gitignorePath,
-      `\n# Sentry Config File\n${filename}\n`,
-      { encoding: 'utf8' },
-    );
-    clack.log.success(
-      `Added ${chalk.cyan(filename)} to ${chalk.cyan('.gitignore')}.`,
-    );
-  } catch {
-    clack.log.error(
-      `Failed adding ${chalk.cyan(filename)} to ${chalk.cyan(
-        '.gitignore',
-      )}. Please add it manually!`,
-    );
-  }
 }
 
 export async function runPrettierIfInstalled(): Promise<void> {
@@ -1060,9 +757,6 @@ export async function askForToolConfigPath(
  * @param hint (optional) a hint to be printed after the main instruction to add
  * the code from @param codeSnippet to their @param filename.
  *
- * More guidelines on copy/paste instructions:
- * @see {@link https://develop.sentry.dev/sdk/setup-wizards/#copy--paste-snippets}
- *
  * TODO: refactor copy paste instructions across different wizards to use this function.
  *       this might require adding a custom message parameter to the function
  */
@@ -1179,45 +873,6 @@ export async function createNewConfigFile(
   }
 
   return false;
-}
-
-export async function askShouldCreateExamplePage(
-  customRoute?: string,
-): Promise<boolean> {
-  const route = chalk.cyan(customRoute ?? '/sentry-example-page');
-  return traceStep('ask-create-example-page', () =>
-    abortIfCancelled(
-      clack.select({
-        message: `Do you want to create an example page ("${route}") to test your Sentry setup?`,
-        options: [
-          {
-            value: true,
-            label: 'Yes',
-            hint: 'Recommended - Check your git status before committing!',
-          },
-          { value: false, label: 'No' },
-        ],
-      }),
-    ),
-  );
-}
-
-export async function askShouldCreateExampleComponent(): Promise<boolean> {
-  return traceStep('ask-create-example-component', () =>
-    abortIfCancelled(
-      clack.select({
-        message: `Do you want to create an example component to test your Sentry setup?`,
-        options: [
-          {
-            value: true,
-            label: 'Yes',
-            hint: 'Recommended - Check your git status before committing!',
-          },
-          { value: false, label: 'No' },
-        ],
-      }),
-    ),
-  );
 }
 
 export async function featureSelectionPrompt<F extends ReadonlyArray<Feature>>(

@@ -20,7 +20,6 @@ module.exports = {
     'assets/**',
     'scripts/**',
     'coverage/**',
-    'lib/Helper/test-fixtures/**',
     'e2e-tests/test-applications/**',
   ],
   extends: [

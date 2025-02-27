@@ -7,9 +7,7 @@ import {
 import * as fs from 'node:fs';
 import * as ChildProcess from 'node:child_process';
 import type { PackageManager } from '../../src/utils/package-manager';
-
-// @ts-ignore - clack is ESM and TS complains about that. It works though
-import * as clack from '@clack/prompts';
+import clack from '../../src/utils/clack';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,
@@ -21,10 +19,12 @@ jest.mock('@clack/prompts', () => ({
     info: jest.fn(),
     success: jest.fn(),
     warn: jest.fn(),
+    error: jest.fn(),
   },
   text: jest.fn(),
   confirm: jest.fn(),
   cancel: jest.fn(),
+  outro: jest.fn(),
   // passthrough for abortIfCancelled
   isCancel: jest.fn().mockReturnValue(false),
   spinner: jest
@@ -168,15 +168,15 @@ describe('installPackage', () => {
 
     await installPackage({
       alreadyInstalled: false,
-      packageName: '@sentry/sveltekit',
-      packageNameDisplayLabel: '@sentry/sveltekit',
+      packageName: 'posthog-js',
+      packageNameDisplayLabel: 'posthog-js',
       forceInstall: true,
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
     });
 
     expect(execSpy).toHaveBeenCalledWith(
-      'npm install @sentry/sveltekit  --force',
+      'npm install posthog-js  --force',
       expect.any(Function),
     );
   });
@@ -208,15 +208,15 @@ describe('installPackage', () => {
 
       await installPackage({
         alreadyInstalled: false,
-        packageName: '@sentry/sveltekit',
-        packageNameDisplayLabel: '@sentry/sveltekit',
+        packageName: 'posthog-js',
+        packageNameDisplayLabel: 'posthog-js',
         forceInstall: flag,
         askBeforeUpdating: false,
         packageManager: packageManagerMock,
       });
 
       expect(execSpy).toHaveBeenCalledWith(
-        'npm install @sentry/sveltekit  ',
+        'npm install posthog-js  ',
         expect.any(Function),
       );
     },
