@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
+import { INSTALL_DIR } from '../../lib/Constants';
 
 export interface PackageManager {
   name: string;
@@ -29,7 +30,7 @@ export const BUN: PackageManager = {
   forceInstallFlag: '--force',
   detect: () =>
     ['bun.lockb', 'bun.lock'].some((lockFile) =>
-      fs.existsSync(path.join(process.cwd(), lockFile)),
+      fs.existsSync(path.join(INSTALL_DIR, lockFile)),
     ),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
@@ -55,7 +56,7 @@ export const YARN_V1: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), 'yarn.lock'), 'utf-8')
+        .readFileSync(path.join(INSTALL_DIR, 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('yarn lockfile v1');
     } catch (e) {
@@ -87,7 +88,7 @@ export const YARN_V2: PackageManager = {
   detect: () => {
     try {
       return fs
-        .readFileSync(path.join(process.cwd(), 'yarn.lock'), 'utf-8')
+        .readFileSync(path.join(INSTALL_DIR, 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('__metadata');
     } catch (e) {
@@ -115,7 +116,7 @@ export const PNPM: PackageManager = {
   runScriptCommand: 'pnpm',
   flags: '--ignore-workspace-root-check',
   forceInstallFlag: '--force',
-  detect: () => fs.existsSync(path.join(process.cwd(), 'pnpm-lock.yaml')),
+  detect: () => fs.existsSync(path.join(INSTALL_DIR, 'pnpm-lock.yaml')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const pnpm = packageDotJson.pnpm || {};
@@ -141,7 +142,7 @@ export const NPM: PackageManager = {
   runScriptCommand: 'npm run',
   flags: '',
   forceInstallFlag: '--force',
-  detect: () => fs.existsSync(path.join(process.cwd(), 'package-lock.json')),
+  detect: () => fs.existsSync(path.join(INSTALL_DIR, 'package-lock.json')),
   addOverride: async (pkgName, pkgVersion): Promise<void> => {
     const packageDotJson = await getPackageDotJson();
     const overrides = packageDotJson.overrides || {};

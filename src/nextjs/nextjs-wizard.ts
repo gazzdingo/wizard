@@ -9,8 +9,7 @@ import {
   abort,
   abortIfCancelled,
   addDotEnvSentryBuildPluginFile,
-  askShouldCreateExamplePage,
-  confirmContinueIfNoOrDirtyGitRepo, ensurePackageIsInstalled,
+  confirmContinueIfNoOrDirtyGitRepo,
   getOrAskForProjectData,
   getPackageDotJson,
   getPackageManager,
@@ -24,7 +23,7 @@ import { traceStep, withTelemetry } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import { getNextJsRouter, getNextJsVersionBucket, NextJsRouter } from './utils';
 import * as Sentry from '@sentry/node';
-import { Integration, ISSUES_URL } from '../../lib/Constants';
+import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/Constants';
 import { getAllFilesInProject } from '../utils/file-utils';
 import { NEXTJS_APP_ROUTER_DOCS, NEXTJS_PAGES_ROUTER_DOCS } from './docs';
 import { filterFilesPromptTemplate, generateFileChangesPromptTemplate } from './prompts';
@@ -93,7 +92,7 @@ export async function runNextjsWizardWithTelemetry(
     askBeforeUpdating: false,
   });
 
-  const allFiles = await getAllFilesInProject(process.cwd());
+  const allFiles = await getAllFilesInProject(INSTALL_DIR);
 
   const router = await getNextJsRouter(allFiles);
 
@@ -115,32 +114,10 @@ export async function runNextjsWizardWithTelemetry(
     }
   }
 
+  clack.log.info(`Made ${changes.length} changes.`);
 
 
-
-
-
-
-  await addDotEnvSentryBuildPluginFile(projectApiKey);
-
-  const isLikelyUsingTurbopack = await checkIfLikelyIsUsingTurbopack();
-  if (isLikelyUsingTurbopack || isLikelyUsingTurbopack === null) {
-    await abortIfCancelled(
-      clack.select({
-        message: `Warning: The Sentry SDK doesn't yet fully support Turbopack in dev mode. The SDK will not be loaded in the browser, and serverside instrumentation will be inaccurate or incomplete. Production builds will still fully work. ${chalk.bold(
-          `To continue this setup, if you are using Turbopack, temporarily remove \`--turbo\` from your dev command until you have verified the SDK is working as expected.`,
-        )}`,
-        options: [
-          {
-            label: 'I understand.',
-            hint: 'press enter',
-            value: true,
-          },
-        ],
-        initialValue: true,
-      }),
-    );
-  }
+  // TODO: Add environment variables.
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager());
@@ -184,26 +161,9 @@ async function askForAIConsent() {
   });
 }
 
-/**
- * Returns true or false depending on whether we think the user is using Turbopack. May return null in case we aren't sure.
- */
-async function checkIfLikelyIsUsingTurbopack(): Promise<boolean | null> {
-  let packageJsonContent: string;
-  try {
-    packageJsonContent = await fs.promises.readFile(
-      path.join(process.cwd(), 'package.json'),
-      'utf8',
-    );
-  } catch {
-    return null;
-  }
-
-  return packageJsonContent.includes('--turbo');
-}
-
 
 async function getRelevantFilesForNextJs() {
-  const allFiles = await getAllFilesInProject(process.cwd());
+  const allFiles = await getAllFilesInProject(INSTALL_DIR);
 
   const filterPatterns = ["*.tsx", "*.ts", "*.jsx", "*.js"];
   const ignorePatterns = ["node_modules", "dist", "build", "public", "static", "next-env.d.ts", "next-env.d.tsx"];
@@ -212,7 +172,7 @@ async function getRelevantFilesForNextJs() {
     return filterPatterns.some((pattern) => file.match(pattern)) && !ignorePatterns.some((pattern) => file.match(pattern));
   })
 
-
+  clack.log.info(`Found ${filteredFiles.length} relevant files.`);
 
   return filteredFiles;
 }

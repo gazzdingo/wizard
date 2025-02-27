@@ -4,6 +4,7 @@ import { prompt } from 'inquirer';
 import {
   Args,
   DEFAULT_URL,
+  INSTALL_DIR,
   getIntegrationChoices,
   Integration,
 } from '../Constants';
@@ -23,7 +24,7 @@ try {
   ) as Record<string, unknown>;
 } catch {
   projectPackage = JSON.parse(
-    readFileSync(`${process.cwd()}/package.json`, 'utf-8'),
+    readFileSync(`${INSTALL_DIR}/package.json`, 'utf-8'),
   ) as Record<string, unknown>;
 }
 

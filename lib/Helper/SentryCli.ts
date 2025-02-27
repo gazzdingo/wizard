@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import type { Answers } from 'inquirer';
 import * as path from 'node:path';
 
-import type { Args } from '../Constants';
+import { INSTALL_DIR, type Args } from '../Constants';
 import { addToGitignore } from './Git';
 import { green, l, nl, red } from './Logging';
 
@@ -20,7 +20,7 @@ export class SentryCli {
   // eslint-disable-next-line @typescript-eslint/typedef
   private _resolve = require.resolve;
 
-  public constructor(protected _argv: Args) {}
+  public constructor(protected _argv: Args) { }
 
   public setResolveFunction(resolve: (path: string) => string): void {
     this._resolve = resolve as any;
@@ -34,10 +34,10 @@ export class SentryCli {
     props['auth/token'] = answers.config?.auth?.token ?? null;
     try {
       const cliPath = this._resolve('@sentry/cli/bin/sentry-cli', {
-        paths: [process.cwd()],
+        paths: [INSTALL_DIR],
       });
       props['cli/executable'] = path
-        .relative(process.cwd(), cliPath)
+        .relative(INSTALL_DIR, cliPath)
         .replace(/\\/g, '\\\\');
     } catch (e) {
       // we do nothing and leave everything as it is
@@ -100,7 +100,7 @@ export class SentryCli {
       } catch {
         red(
           `⚠ Could not add the auth token to ${SENTRYCLIRC_FILENAME}, ` +
-            `please add it to identify your user account:\n${authToken}`,
+          `please add it to identify your user account:\n${authToken}`,
         );
         nl();
       }
@@ -113,7 +113,7 @@ export class SentryCli {
       );
       l(
         'To learn how to configure Sentry CLI, visit ' +
-          'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-sentry-cli',
+        'https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#configure-sentry-cli',
       );
     }
 

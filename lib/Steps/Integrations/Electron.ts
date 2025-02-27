@@ -3,7 +3,7 @@ import type { Answers } from 'inquirer';
 import { prompt } from 'inquirer';
 import * as path from 'node:path';
 
-import type { Args } from '../../Constants';
+import { INSTALL_DIR, type Args } from '../../Constants';
 import { dim, green, l, nl, red } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
 import { BaseIntegration } from './BaseIntegration';
@@ -48,7 +48,7 @@ function printExample(example: string, title = ''): void {
 
 try {
   appPackage = JSON.parse(
-    fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'),
+    fs.readFileSync(path.join(INSTALL_DIR, 'package.json'), 'utf-8'),
   ) as PackageJSON;
 } catch {
   // We don't need to have this

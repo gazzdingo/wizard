@@ -20,7 +20,7 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, PostHogProjectData, WizardOptions } from './types';
-import { ISSUES_URL } from '../../lib/Constants';
+import { INSTALL_DIR, ISSUES_URL } from '../../lib/Constants';
 
 export const DOT_ENV_FILE = '.env';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
@@ -451,7 +451,7 @@ export async function addSentryCliConfig(
   setupConfig: CliSetupConfig = rcCliSetupConfig,
 ): Promise<void> {
   return traceStep('add-sentry-cli-config', async () => {
-    const configPath = join(process.cwd(), setupConfig.filename);
+    const configPath = join(INSTALL_DIR, setupConfig.filename);
     const configExists = fs.existsSync(configPath);
 
     let configContents =
@@ -593,7 +593,7 @@ export async function addDotEnvSentryBuildPluginFile(
 NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
 `;
 
-  const dotEnvFilePath = join(process.cwd(), DOT_ENV_FILE);
+  const dotEnvFilePath = join(INSTALL_DIR, DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
@@ -654,7 +654,7 @@ NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
-  const gitignorePath = join(process.cwd(), '.gitignore');
+  const gitignorePath = join(INSTALL_DIR, '.gitignore');
 
   try {
     const gitignoreContent = await fs.promises.readFile(gitignorePath, 'utf8');
@@ -790,7 +790,7 @@ export async function ensurePackageIsInstalled(
 
 export async function getPackageDotJson(): Promise<PackageDotJson> {
   const packageJsonFileContents = await fs.promises
-    .readFile(join(process.cwd(), 'package.json'), 'utf8')
+    .readFile(join(INSTALL_DIR, 'package.json'), 'utf8')
     .catch(() => {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
@@ -821,7 +821,7 @@ export async function updatePackageDotJson(
 ): Promise<void> {
   try {
     await fs.promises.writeFile(
-      join(process.cwd(), 'package.json'),
+      join(INSTALL_DIR, 'package.json'),
       // TODO: maybe figure out the original indentation
       JSON.stringify(packageDotJson, null, 2),
       {
@@ -861,7 +861,7 @@ export async function getPackageManager(): Promise<PackageManager> {
 
 export function isUsingTypeScript() {
   try {
-    return fs.existsSync(join(process.cwd(), 'tsconfig.json'));
+    return fs.existsSync(join(INSTALL_DIR, 'tsconfig.json'));
   } catch {
     return false;
   }
@@ -1168,7 +1168,7 @@ export async function createNewConfigFile(
     return false;
   }
 
-  const prettyFilename = chalk.cyan(relative(process.cwd(), filepath));
+  const prettyFilename = chalk.cyan(relative(INSTALL_DIR, filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);

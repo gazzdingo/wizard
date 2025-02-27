@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Answers } from 'inquirer';
 
-import type { Args } from '../../Constants';
+import { INSTALL_DIR, type Args } from '../../Constants';
 import { exists, matchesContent, patchMatchingFile } from '../../Helper/File';
 import { green } from '../../Helper/Logging';
 import { SentryCli } from '../../Helper/SentryCli';
@@ -174,7 +174,7 @@ export class Cordova extends BaseIntegration {
         return;
       }
     }
-    const cwd = path.join(process.cwd(), 'sentry.properties');
+    const cwd = path.join(INSTALL_DIR, 'sentry.properties');
     proj.addBuildPhase(
       [],
       'PBXShellScriptBuildPhase',

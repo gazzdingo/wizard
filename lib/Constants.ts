@@ -1,3 +1,6 @@
+import path from "path";
+import "dotenv/config";
+
 /** Key value should be the same here */
 export enum Integration {
   reactNative = 'reactNative',
@@ -116,3 +119,4 @@ export interface Args {
 
 export const DEFAULT_URL = 'https://sentry.io/';
 export const ISSUES_URL = 'ISSUES_URL';
+export const INSTALL_DIR = path.join(process.cwd(), process.env.POSTHOG_WIZARD_INSTALL_DIR ?? "");
