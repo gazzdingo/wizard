@@ -587,7 +587,7 @@ async function askForWizardLogin(options: {
 
   try {
     wizardHash = (
-      await axios.get<{ hash: string }>(`${options.url}api/wizard/`)
+      await axios.get<{ hash: string }>(`${options.url}api/wizard/data`)
     ).data.hash;
   } catch (e: unknown) {
     clack.log.error('Loading wizard failed.');
@@ -624,9 +624,10 @@ async function askForWizardLogin(options: {
           project_api_key: string;
           project: PostHogProjectData;
           temporary_access_token: string;
-        }>(`${options.url}api/wizard?hash=${wizardHash}`, {
+        }>(`${options.url}api/wizard/data`, {
           headers: {
             'Accept-Encoding': 'deflate',
+            'X-PostHog-Wizard-Hash': wizardHash,
           },
         })
         .then((result) => {
