@@ -2,7 +2,7 @@ import { major, minVersion } from 'semver';
 import fg from 'fast-glob';
 import { abortIfCancelled } from '../utils/clack-utils';
 import clack from '../utils/clack';
-import { INSTALL_DIR } from '../../lib/Constants';
+import { INSTALL_DIR } from '../../lib/constants';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {

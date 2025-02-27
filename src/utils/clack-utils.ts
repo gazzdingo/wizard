@@ -20,13 +20,17 @@ import {
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
 import type { Feature, PostHogProjectData, WizardOptions } from './types';
-import { CLOUD_URL, DUMMY_PROJECT_API_KEY, INSTALL_DIR, ISSUES_URL } from '../../lib/Constants';
-
+import {
+  CLOUD_URL,
+  DUMMY_PROJECT_API_KEY,
+  INSTALL_DIR,
+  ISSUES_URL,
+} from '../../lib/constants';
 
 interface WizardProjectData {
   projectApiKey: string;
   project: PostHogProjectData;
-  temporaryAccessToken: string;
+  wizardHash: string;
 }
 
 export interface CliSetupConfig {
@@ -390,18 +394,6 @@ export async function runPrettierIfInstalled(): Promise<void> {
       return;
     }
 
-    // prompt the user if they want to run prettier
-    const shouldRunPrettier = await abortIfCancelled(
-      clack.confirm({
-        message:
-          'Looks like you have Prettier in your project. Do you want to run it on your files?',
-      }),
-    );
-
-    if (!shouldRunPrettier) {
-      return;
-    }
-
     const prettierSpinner = clack.spinner();
     prettierSpinner.start('Running Prettier on your files.');
 
@@ -556,18 +548,14 @@ export function isUsingTypeScript() {
  * @param platform the platform of the wizard
  * @returns project data (org, project, token, url)
  */
-export async function getOrAskForProjectData(
-  _options: WizardOptions,
-  platform: string,
-): Promise<{
-  temporaryAccessToken: string;
-  project: PostHogProjectData
+export async function getOrAskForProjectData(_options: WizardOptions): Promise<{
+  wizardHash: string;
+  project: PostHogProjectData;
   projectApiKey: string;
 }> {
-  const { project, projectApiKey, temporaryAccessToken } = await traceStep('login', () =>
+  const { project, projectApiKey, wizardHash } = await traceStep('login', () =>
     askForWizardLogin({
       url: CLOUD_URL,
-      platform: 'javascript-nextjs',
     }),
   );
 
@@ -586,27 +574,15 @@ ${chalk.cyan(`${CLOUD_URL}settings/project#variables`)}`);
   }
 
   return {
-    temporaryAccessToken,
+    wizardHash,
     project,
     projectApiKey: projectApiKey || DUMMY_PROJECT_API_KEY,
   };
 }
 
-const skipWizardLogin = true;
-
 async function askForWizardLogin(options: {
   url: string;
-  platform?: string;
 }): Promise<WizardProjectData> {
-
-  if (skipWizardLogin) {
-    return {
-      temporaryAccessToken: 'dummy-token',
-      project: { id: 'dummy-project', name: 'Dummy Project' },
-      projectApiKey: 'dummy-project-api-key',
-    };
-  }
-
   let wizardHash: string;
 
   try {
@@ -624,10 +600,6 @@ async function askForWizardLogin(options: {
   }
 
   const loginUrl = new URL(`${options.url}wizard?hash=${wizardHash!}`);
-
-  if (options.platform) {
-    loginUrl.searchParams.set('platform', options.platform);
-  }
 
   const urlToOpen = loginUrl.toString();
 
@@ -648,25 +620,25 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<{ project_api_key: string; project: PostHogProjectData; temporary_access_token: string }>(
-          `${options.url}api/wizard?hash=${wizardHash}`,
-          {
-            headers: {
-              'Accept-Encoding': 'deflate',
-            },
+        .get<{
+          project_api_key: string;
+          project: PostHogProjectData;
+          temporary_access_token: string;
+        }>(`${options.url}api/wizard?hash=${wizardHash}`, {
+          headers: {
+            'Accept-Encoding': 'deflate',
           },
-        )
+        })
         .then((result) => {
           const data: WizardProjectData = {
+            wizardHash,
             projectApiKey: result.data.project_api_key,
             project: result.data.project,
-            temporaryAccessToken: result.data.temporary_access_token,
           };
 
           resolve(data);
           clearTimeout(timeout);
           clearInterval(pollingInterval);
-          void axios.delete(`${options.url}api/wizard?hash=${wizardHash}`);
         })
         .catch(() => {
           // noop - just try again

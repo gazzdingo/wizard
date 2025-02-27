@@ -1,5 +1,5 @@
-import path from "path";
-import "dotenv/config";
+import path from 'path';
+import 'dotenv/config';
 
 export enum Integration {
   nextjs = 'nextjs',
@@ -72,6 +72,10 @@ export interface Args {
 
 export const DEFAULT_URL = 'https://posthog.com/';
 export const ISSUES_URL = 'ISSUES_URL';
-export const INSTALL_DIR = path.join(process.cwd(), process.env.POSTHOG_WIZARD_INSTALL_DIR ?? "");
+export const INSTALL_DIR = path.join(
+  process.cwd(),
+  process.env.POSTHOG_WIZARD_INSTALL_DIR ?? '',
+);
 export const CLOUD_URL = 'http://localhost:8010/';
+export const HOST_URL = 'http://localhost:8010/';
 export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';

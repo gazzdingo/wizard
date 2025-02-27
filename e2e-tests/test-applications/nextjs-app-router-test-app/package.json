@@ -12,6 +12,7 @@
     "next": "14.2.21",
     "posthog-js": "^1.224.0",
     "posthog-node": "^4.8.1",
+    "prettier": "^3.5.2",
     "react": "^18",
     "react-dom": "^18"
   },

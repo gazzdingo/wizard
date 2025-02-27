@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
-import { INSTALL_DIR } from '../../lib/Constants';
+import { INSTALL_DIR } from '../../lib/constants';
 
 export interface PackageManager {
   name: string;

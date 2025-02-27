@@ -17,6 +17,9 @@ importers:
       posthog-node:
         specifier: ^4.8.1
         version: 4.8.1
+      prettier:
+        specifier: ^3.5.2
+        version: 3.5.2
       react:
         specifier: ^18
         version: 18.3.1
@@ -283,6 +286,11 @@ packages:
 
   preact@10.26.3:
     resolution: {integrity: sha512-OJCfNTdttkOTCbTN+gCnXn/woDqz1dIjvP+gdCoYGP2kKuX6w79FAP8qgY/r7jgAunvqHVVmEOKzKOFWzrXZdw==}
+
+  prettier@3.5.2:
+    resolution: {integrity: sha512-lc6npv5PH7hVqozBR7lkBNOGXV9vMwROAPlumdBkX0wTbbzPu/U1hk5yL8p2pt4Xoc+2mkT8t/sow2YrV/M5qg==}
+    engines: {node: '>=14'}
+    hasBin: true
 
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
@@ -563,6 +571,8 @@ snapshots:
       - debug
 
   preact@10.26.3: {}
+
+  prettier@3.5.2: {}
 
   proxy-from-env@1.1.0: {}
 
