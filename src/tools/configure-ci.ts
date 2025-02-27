@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { SENTRY_DOT_ENV_FILE } from "../utils/clack-utils";
+import { DOT_ENV_FILE } from "../utils/clack-utils";
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import { abortIfCancelled } from "../utils/clack-utils";
@@ -34,7 +34,7 @@ export async function configureCI(
 
 
 
-  const authTokenFile = SENTRY_DOT_ENV_FILE;
+  const authTokenFile = DOT_ENV_FILE;
 
   if (!isUsingCI) {
     clack.log.info(

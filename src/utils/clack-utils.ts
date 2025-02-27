@@ -22,7 +22,7 @@ import { fulfillsVersionRange } from './semver';
 import type { Feature, PostHogProjectData, WizardOptions } from './types';
 import { ISSUES_URL } from '../../lib/Constants';
 
-export const SENTRY_DOT_ENV_FILE = '.env.sentry-build-plugin';
+export const DOT_ENV_FILE = '.env';
 export const SENTRY_CLI_RC_FILE = '.sentryclirc';
 export const SENTRY_PROPERTIES_FILE = 'sentry.properties';
 
@@ -33,6 +33,7 @@ const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
 interface WizardProjectData {
   projectApiKey: string;
   project: PostHogProjectData;
+  temporaryAccessToken: string;
 }
 
 export interface CliSetupConfig {
@@ -182,7 +183,7 @@ export function printWelcome(options: {
 
 This wizard sends telemetry data and crash reports to PostHog. This helps us improve the Wizard.
 You can turn this off at any time by running ${chalk.cyanBright(
-      'posthog-wizard --disable-telemetry',
+      'npx @posthog/wizard --disable-telemetry',
     )}.`;
   }
 
@@ -406,7 +407,7 @@ export async function installPackage({
               fs.writeFileSync(
                 join(
                   process.cwd(),
-                  `sentry-wizard-installation-error-${Date.now()}.log`,
+                  `posthog-wizard-installation-error-${Date.now()}.log`,
                 ),
                 JSON.stringify({
                   stdout,
@@ -429,7 +430,7 @@ export async function installPackage({
           'Encountered the following error during installation:',
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         )}\n\n${e}\n\n${chalk.dim(
-          "The wizard has created a `sentry-wizard-installation-error-*.log` file. If you think this issue is caused by the PostHog Wizard, create an issue on GitHub and include the log file's content:\nhttps://github.com/getsentry/sentry-wizard/issues",
+          `The wizard has created a \`posthog-wizard-installation-error-*.log\` file. If you think this issue is caused by the PostHog Wizard, create an issue on GitHub and include the log file's content:\n${ISSUES_URL}`,
         )}`,
       );
       await abort();
@@ -583,29 +584,29 @@ function addUrlToSentryConfig(
 }
 
 export async function addDotEnvSentryBuildPluginFile(
-  authToken: string,
+  projectApiKey: string,
 ): Promise<void> {
   const envVarContent = `# DO NOT commit this file to your repository!
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
 # It's used for authentication when uploading source maps.
 # You can also set this env variable in your own \`.env\` files and remove this file.
-SENTRY_AUTH_TOKEN=${authToken}
+NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
 `;
 
-  const dotEnvFilePath = join(process.cwd(), SENTRY_DOT_ENV_FILE);
+  const dotEnvFilePath = join(process.cwd(), DOT_ENV_FILE);
   const dotEnvFileExists = fs.existsSync(dotEnvFilePath);
 
   if (dotEnvFileExists) {
     const dotEnvFileContent = fs.readFileSync(dotEnvFilePath, 'utf8');
 
-    const hasAuthToken = !!dotEnvFileContent.match(
-      /^\s*SENTRY_AUTH_TOKEN\s*=/g,
+    const hasProjectApiKey = !!dotEnvFileContent.match(
+      /^\s*POSTHOG_API_KEY\s*=/g,
     );
 
-    if (hasAuthToken) {
+    if (hasProjectApiKey) {
       clack.log.warn(
         `${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+          DOT_ENV_FILE,
         )} already has auth token. Will not add one.`,
       );
     } else {
@@ -619,12 +620,12 @@ SENTRY_AUTH_TOKEN=${authToken}
           },
         );
         clack.log.success(
-          `Added auth token to ${chalk.bold.cyan(SENTRY_DOT_ENV_FILE)}`,
+          `Added auth token to ${chalk.bold.cyan(DOT_ENV_FILE)}`,
         );
       } catch {
         clack.log.warning(
           `Failed to add auth token to ${chalk.bold.cyan(
-            SENTRY_DOT_ENV_FILE,
+            DOT_ENV_FILE,
           )}. Uploading source maps during build will likely not work locally.`,
         );
       }
@@ -637,19 +638,19 @@ SENTRY_AUTH_TOKEN=${authToken}
       });
       clack.log.success(
         `Created ${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+          DOT_ENV_FILE,
         )} with auth token for you to test source map uploading locally.`,
       );
     } catch {
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
-          SENTRY_DOT_ENV_FILE,
+          DOT_ENV_FILE,
         )} with auth token. Uploading source maps during build will likely not work locally.`,
       );
     }
   }
 
-  await addCliConfigFileToGitIgnore(SENTRY_DOT_ENV_FILE);
+  await addCliConfigFileToGitIgnore(DOT_ENV_FILE);
 }
 
 async function addCliConfigFileToGitIgnore(filename: string): Promise<void> {
@@ -878,25 +879,17 @@ export function isUsingTypeScript() {
  * @returns project data (org, project, token, url)
  */
 export async function getOrAskForProjectData(
-  options: WizardOptions,
-  platform?:
-    | 'javascript-nextjs'
-    | 'javascript-nuxt'
-    | 'javascript-remix'
-    | 'javascript-sveltekit'
-    | 'apple-ios'
-    | 'android'
-    | 'react-native'
-    | 'flutter',
+  _options: WizardOptions,
+  platform: string,
 ): Promise<{
-  posthogUrl: string;
-  selfHosted: boolean;
-  selectedProject: PostHogProjectData;
-  authToken: string;
+  temporaryAccessToken: string;
+  project: PostHogProjectData
+  projectApiKey: string;
 }> {
-  const { project, projectApiKey } = await traceStep('login', () =>
+  const { project, projectApiKey, temporaryAccessToken } = await traceStep('login', () =>
     askForWizardLogin({
       url: CLOUD_URL,
+      platform: 'javascript-nextjs',
     }),
   );
 
@@ -915,16 +908,15 @@ ${chalk.cyan(`${CLOUD_URL}settings/project#variables`)}`);
   }
 
   return {
-    posthogUrl: CLOUD_URL,
-    selfHosted: false,
-    authToken: projectApiKey || DUMMY_PROJECT_API_KEY,
-    selectedProject: project,
+    temporaryAccessToken,
+    project,
+    projectApiKey: projectApiKey || DUMMY_PROJECT_API_KEY,
   };
 }
 
 async function askForWizardLogin(options: {
   url: string;
-  platform?: 'javascript-nextjs';
+  platform?: string;
 }): Promise<WizardProjectData> {
 
   let wizardHash: string;
@@ -934,32 +926,23 @@ async function askForWizardLogin(options: {
       await axios.get<{ hash: string }>(`${options.url}api/wizard/`)
     ).data.hash;
   } catch (e: unknown) {
-    if (options.url !== CLOUD_URL) {
-      clack.log.error('Loading Wizard failed. Did you provide the right URL?');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          `Please check your configuration and try again.\n\n   Let us know if you think this is an issue with the wizard or PostHog: ${ISSUES_URL}`,
-        ),
-      );
-    } else {
-      clack.log.error('Loading Wizard failed.');
-      clack.log.info(JSON.stringify(e, null, 2));
-      await abort(
-        chalk.red(
-          `Please try again in a few minutes and let us know if this issue persists: ${ISSUES_URL}`,
-        ),
-      );
-    }
+    clack.log.error('Loading Wizard failed.');
+    clack.log.info(JSON.stringify(e, null, 2));
+    await abort(
+      chalk.red(
+        `Please try again in a few minutes and let us know if this issue persists: ${ISSUES_URL}`,
+      ),
+    );
   }
 
   const loginUrl = new URL(`${options.url}wizard?hash=${wizardHash!}`);
 
   if (options.platform) {
-    loginUrl.searchParams.set('project_platform', options.platform);
+    loginUrl.searchParams.set('platform', options.platform);
   }
 
   const urlToOpen = loginUrl.toString();
+
   clack.log.info(
     `${chalk.bold(
       `If the browser window didn't open automatically, please open the following link to login into PostHog:`,
@@ -977,7 +960,7 @@ async function askForWizardLogin(options: {
   const data = await new Promise<WizardProjectData>((resolve) => {
     const pollingInterval = setInterval(() => {
       axios
-        .get<{ project_api_key: string }>(
+        .get<{ project_api_key: string; project: PostHogProjectData; temporary_access_token: string }>(
           `${options.url}api/wizard?hash=${wizardHash}`,
           {
             headers: {
@@ -988,16 +971,8 @@ async function askForWizardLogin(options: {
         .then((result) => {
           const data: WizardProjectData = {
             projectApiKey: result.data.project_api_key,
-            project: {
-              id: '2',
-              slug: 'test',
-              keys: [{ dsn: { public: 'test' } }],
-              organization: {
-                id: '1',
-                name: 'test',
-                slug: 'test',
-              },
-            },
+            project: result.data.project,
+            temporaryAccessToken: result.data.temporary_access_token,
           };
 
           resolve(data);

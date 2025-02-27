@@ -1,7 +1,7 @@
 // @ts-ignore - clack is ESM and TS complains about that. It works though
 import clack from '@clack/prompts';
 import chalk from 'chalk';
-import { minVersion, satisfies } from 'semver';
+import { minVersion } from 'semver';
 import {
   abortIfCancelled,
   getPackageDotJson,
@@ -11,40 +11,18 @@ import {
 import * as Sentry from '@sentry/node';
 import { findInstalledPackageFromList } from './package-json';
 
-const MINIMUM_DEBUG_ID_SDK_VERSION = '7.47.0';
+const MINIMUM_SUPPORTED_PACKAGE_VERSIONS: Record<string, string> = {
+  'posthog-node': '1.0.0',
+  'posthog-js': '1.0.0',
+}
 
 // This array is orderd by the SDKs we want to check for first.
 // The reason is that some SDKs depend on others and some users might
 // have added the dependencies to their package.json. We want to make sure
 // that we actually detect the "top-level" SDK first.
-const SENTRY_SDK_PACKAGE_NAMES = [
-  // SDKs using other framework SDKs need to be checked first
-  '@sentry/astro',
-  '@sentry/gatsby',
-  '@sentry/nextjs',
-  '@sentry/nuxt',
-  '@sentry/remix',
-  '@sentry/solidstart',
-  '@sentry/sveltekit',
-
-  // Framework SDKs
-  '@sentry/angular',
-  '@sentry/angular-ivy',
-  '@sentry/aws-serverless',
-  '@sentry/bun',
-  '@sentry/ember',
-  '@sentry/google-cloud-serverless',
-  '@sentry/nestjs',
-  '@sentry/react',
-  '@sentry/solid',
-  '@sentry/svelte',
-  '@sentry/vue',
-  '@sentry/serverless',
-
-  // Base SDKs
-  '@sentry/browser',
-  '@sentry/node',
-  '@sentry/deno',
+const POSTHOG_PACKAGE_NAMES = [
+  'posthog-node',
+  'posthog-js',
 ];
 
 /**
@@ -62,7 +40,7 @@ const SENTRY_SDK_PACKAGE_NAMES = [
  */
 export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
   const installedSdkPackage = findInstalledPackageFromList(
-    SENTRY_SDK_PACKAGE_NAMES,
+    POSTHOG_PACKAGE_NAMES,
     await getPackageDotJson(),
   );
 
@@ -86,80 +64,10 @@ export async function ensureMinimumSdkVersionIsInstalled(): Promise<void> {
     return;
   }
 
-  const hasDebugIdCompatibleSdkVersion = satisfies(
-    minInstalledVersion,
-    `>=${MINIMUM_DEBUG_ID_SDK_VERSION}`,
-  );
-
-  // Case 2:
-  if (hasDebugIdCompatibleSdkVersion) {
-    Sentry.setTag('initial-sdk-version', '>=7.47.0');
-    return;
-  }
-
-  const hasV7SdkVersion = satisfies(minInstalledVersion, '>=7.0.0');
-
-  clack.log.warn(
-    `${chalk.yellowBright(
-      `It seems like you're using an outdated version (${installedSdkVersionOrRange}) of the ${chalk.bold(
-        installedSdkName,
-      )} SDK.`,
-    )}
-Uploading source maps is easiest with an SDK from version ${chalk.bold(
-      MINIMUM_DEBUG_ID_SDK_VERSION,
-    )} or newer.    
-`,
-  );
-
-  // Case 3:
-  if (hasV7SdkVersion) {
-    await handleAutoUpdateSdk(installedSdkName);
-    return;
-  }
-
-  // Case 4:
-  await handleManuallyUpdateSdk(minInstalledVersion);
-}
-
-async function handleManuallyUpdateSdk(minInstalledVersion: string) {
-  Sentry.setTag(
-    'initial-sdk-version',
-    `${satisfies(minInstalledVersion, '>=6.0.0') ? '6.x' : '<6.0.0'}`,
-  );
-
-  clack.log
-    .info(`When upgrading from a version older than 7.0.0, make sure to follow the migration guide:
-https://github.com/getsentry/sentry-javascript/blob/develop/MIGRATION.md#upgrading-from-6x-to-7x
-`);
-
-  const didUpdate = await abortIfCancelled(
-    clack.select({
-      message: 'Did you update your SDK to the latest version?',
-      options: [
-        {
-          label: 'Yes!',
-          value: true,
-        },
-        {
-          label: "No, I'll do it later...",
-          value: false,
-          hint: chalk.yellow(
-            `Remember to update your SDK to at least ${MINIMUM_DEBUG_ID_SDK_VERSION}.`,
-          ),
-        },
-      ],
-      initialValue: true,
-    }),
-  );
-
-  Sentry.setTag(
-    'resolved-sdk-status',
-    didUpdate ? 'updated-manually' : 'update-later',
-  );
+  await handleAutoUpdateSdk(installedSdkName);
 }
 
 async function handleAutoUpdateSdk(packageName: string) {
-  Sentry.setTag('initial-sdk-version', '>=7.0.0 <7.47.0');
 
   const shouldUpdate = await abortIfCancelled(
     clack.select({
@@ -175,7 +83,7 @@ async function handleAutoUpdateSdk(packageName: string) {
           label: "No, I'll do it later...",
           value: false,
           hint: chalk.yellow(
-            `Remember to update your SDK to at least ${MINIMUM_DEBUG_ID_SDK_VERSION}.`,
+            `Remember to update your SDK to at least ${MINIMUM_SUPPORTED_PACKAGE_VERSIONS[packageName]}.`,
           ),
         },
       ],
@@ -256,8 +164,8 @@ function getMinInstalledVersion(
       `Could not parse the version of your installed SDK ("${installedSdkName}": "${installedSdkVersionOrRange}")`,
     )}
 
-Please make sure that your Sentry SDK is updated to version ${chalk.bold(
-      MINIMUM_DEBUG_ID_SDK_VERSION,
+Please make sure that your PostHog SDK is updated to version ${chalk.bold(
+      MINIMUM_SUPPORTED_PACKAGE_VERSIONS[installedSdkName],
     )} or newer.
     `,
   );

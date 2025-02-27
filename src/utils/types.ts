@@ -1,18 +1,8 @@
-export interface PostHogProjectData {
-  id: string;
-  slug: string;
-  organization: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  keys: [{ dsn: { public: string } }];
-}
+export type PostHogProjectData = Record<string, unknown>;
 
 export type PreselectedProject = {
   project: PostHogProjectData;
   authToken: string;
-  selfHosted: boolean;
 };
 
 export type WizardOptions = {
@@ -30,6 +20,16 @@ export type WizardOptions = {
    * Does not apply to all wizard flows (currently NPM only)
    */
   forceInstall?: boolean;
+
+  /**
+   * Whether the wizard should be run for PostHog Cloud or not.
+   */
+  cloud?: boolean;
+
+  /**
+   * Url of the PostHog instance to use.
+   */
+  url?: string;
 };
 
 export interface Feature {

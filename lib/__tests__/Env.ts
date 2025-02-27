@@ -3,27 +3,14 @@ import { readEnvironment } from '../Helper/Env';
 describe('read-env', () => {
   test('transform', () => {
     // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_DEBUG = true;
+    process.env.POSTHOG_WIZARD_DEBUG = true;
+    process.env.POSTHOG_WIZARD_OPENAI_API_KEY = 'test-key';
     // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_UNINSTALL = false;
-    // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_SKIP_CONNECT = true;
-    // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_QUIET = true;
-    // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_INTEGRATION = ['reactNative', 'electron'];
-    // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_PLATFORM = ['ios', 'android'];
-    // @ts-ignore: true not assignable to string/undefined
-    process.env.SENTRY_WIZARD_URL = 'https://sentry.io';
+    process.env.POSTHOG_WIZARD_URL = 'https://posthog.com';
     expect(readEnvironment()).toEqual({
       debug: true,
-      integration: 'reactNative,electron',
-      platform: 'ios,android',
-      quiet: true,
-      skipConnect: true,
-      uninstall: false,
-      url: 'https://sentry.io',
+      openaiApiKey: 'test-key',
+      url: 'https://posthog.com',
     });
   });
 });
