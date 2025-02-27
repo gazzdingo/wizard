@@ -15,7 +15,7 @@ import * as path from 'path';
 describe('NextJS', () => {
   const projectDir = path.resolve(
     __dirname,
-    '../test-applications/nextjs-test-app',
+    '../test-applications/nextjs-app-router-test-app',
   );
 
   beforeAll(async () => {

@@ -224,8 +224,6 @@ async function getFilesToChange({ relevantFiles, installationDocumentation }: { 
     file_list: relevantFiles.join('\n'),
   });
 
-  console.log("query")
-
   const filterFilesResponse = await query({ message: filterFilesPrompt, schema: filterFilesResponseSchmea });
 
   const filesToChange = filterFilesResponse.files;
@@ -274,7 +272,7 @@ export async function addEnvironmentVariables({
   host: string;
 }): Promise<void> {
   const envVarContent = `# Posthog
-NEXT_PUBLIC_POSTHOG_API_KEY=${projectApiKey}
+NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}
 NEXT_PUBLIC_POSTHOG_HOST=${host}
 `;
 
@@ -289,7 +287,7 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
   if (dotEnvFileExists) {
     const dotEnvFileContent = fs.readFileSync(targetEnvFilePath, 'utf8');
 
-    const hasProjectApiKey = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_API_KEY\s*=/m);
+    const hasProjectApiKey = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_KEY\s*=/m);
     const hasHost = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_HOST\s*=/m);
 
     if (hasProjectApiKey && hasHost) {
@@ -304,7 +302,7 @@ ${envVarContent}`;
         });
         clack.log.success(`Added environment variables to ${chalk.bold.cyan(relativeEnvFilePath)}`);
       } catch {
-        clack.log.warning(`Failed to add environment variables to ${chalk.bold.cyan(relativeEnvFilePath)}. Uploading source maps during build will likely not work locally.`);
+        clack.log.warning(`Failed to add environment variables to ${chalk.bold.cyan(relativeEnvFilePath)}. Please add them manually.`);
       }
     }
   } else {
@@ -313,16 +311,15 @@ ${envVarContent}`;
         encoding: 'utf8',
         flag: 'w',
       });
-      clack.log.success(`Created ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables for you to test source map uploading locally.`);
+      clack.log.success(`Created ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables for PostHog.`);
     } catch {
-      clack.log.warning(`Failed to create ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables. Uploading source maps during build will likely not work locally.`);
+      clack.log.warning(`Failed to create ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables for PostHog. Please add them manually.`);
     }
   }
 
-  const gitignorePath = path.join(INSTALL_DIR, '.gitignore');
-  const gitignoreExists = fs.existsSync(gitignorePath);
+  const gitignorePath = getDotGitignore();
 
-  if (gitignoreExists) {
+  if (gitignorePath) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
     const envFiles = ['.env', '.env.local'];
     const missingEnvFiles = envFiles.filter(file => !gitignoreContent.includes(file));
@@ -343,7 +340,7 @@ ${missingEnvFiles.join('\n')}`;
   } else {
     try {
       const newGitignoreContent = `.env\n.env.local\n`;
-      await fs.promises.writeFile(gitignorePath, newGitignoreContent, {
+      await fs.promises.writeFile(path.join(INSTALL_DIR, '.gitignore'), newGitignoreContent, {
         encoding: 'utf8',
         flag: 'w',
       });
@@ -352,4 +349,15 @@ ${missingEnvFiles.join('\n')}`;
       clack.log.warning(`Failed to create ${chalk.bold.cyan('.gitignore')} with environment files.`);
     }
   }
+}
+
+export function getDotGitignore() {
+  const gitignorePath = path.join(INSTALL_DIR, '.gitignore');
+  const gitignoreExists = fs.existsSync(gitignorePath);
+
+  if (gitignoreExists) {
+    return gitignorePath;
+  }
+
+  return undefined;
 }

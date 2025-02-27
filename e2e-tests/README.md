@@ -4,9 +4,9 @@
 
 ```
 test-applications/
-|---- nextjs-test-app/
+|---- nextjs-app-router-test-app/
 tests/
-|---- nextjs.test.ts
+|---- nextjs-app-router.test.ts
 ```
 
 ### Utilities
