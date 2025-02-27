@@ -120,7 +120,9 @@ export async function runNextjsWizardWithTelemetry(
 
       fileChangeSpinner.start(`${oldContent ? 'Updating' : 'Creating'} file ${filePath}`);
 
-      const newContent = await generateFileChanges({ filePath, content: oldContent, changes, installationDocumentation });
+      const unchangedFiles = filesToChange.filter((filePath) => !changes.some((change) => change.filePath === filePath));
+
+      const newContent = await generateFileChanges({ filePath, content: oldContent, changedFiles: changes, unchangedFiles, installationDocumentation });
 
       if (newContent !== oldContent) {
         await updateFile({ filePath, oldContent, newContent });
@@ -184,7 +186,7 @@ async function askForAIConsent() {
 async function getRelevantFilesForNextJs() {
 
   const filterPatterns = ["**/*.{tsx,ts,jsx,js}"];
-  const ignorePatterns = ["node_modules", "dist", "build", "public", "static", "next-env.d.ts", "next-env.d.tsx"];
+  const ignorePatterns = ["node_modules", "dist", "build", "public", "static", "next-env.d.*"];
 
   const filteredFiles = await fg(filterPatterns, { cwd: INSTALL_DIR, ignore: ignorePatterns });
 
@@ -233,12 +235,13 @@ async function getFilesToChange({ relevantFiles, installationDocumentation }: { 
   return filesToChange;
 }
 
-async function generateFileChanges({ filePath, content, changes, installationDocumentation }: { filePath: string, content: string | undefined, changes: FileChange[], installationDocumentation: string }) {
+async function generateFileChanges({ filePath, content, changedFiles, unchangedFiles, installationDocumentation }: { filePath: string, content: string | undefined, changedFiles: FileChange[], unchangedFiles: string[], installationDocumentation: string }) {
 
   const generateFileChangesPrompt = await generateFileChangesPromptTemplate.format({
     file_path: filePath,
     file_content: content,
-    changes: changes.map((change) => `${change.filePath}\n${change.oldContent}`).join('\n'),
+    changed_files: changedFiles.map((change) => `${change.filePath}\n${change.oldContent}`).join('\n'),
+    unchanged_files: unchangedFiles,
     documentation: installationDocumentation,
   });
 
