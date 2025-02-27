@@ -97,7 +97,7 @@ importers:
         specifier: ^0.0.43
         version: 0.0.43
       '@types/jest':
-        specifier: ^29.5.0
+        specifier: ^29.5.14
         version: 29.5.14
       '@types/lodash':
         specifier: ^4.14.144

@@ -16,11 +16,7 @@ export const KEYS = {
 };
 
 export const TEST_ARGS = {
-  AUTH_TOKEN: process.env.SENTRY_TEST_AUTH_TOKEN || 'TEST_AUTH_TOKEN',
-  PROJECT_DSN:
-    process.env.SENTRY_TEST_DSN || 'https://public@dsn.ingest.sentry.io/1337',
-  ORG_SLUG: process.env.SENTRY_TEST_ORG || 'TEST_ORG_SLUG',
-  PROJECT_SLUG: process.env.SENTRY_TEST_PROJECT || 'TEST_PROJECT_SLUG',
+
 };
 
 export const log = {
@@ -172,7 +168,7 @@ export function initGit(projectDir: string): void {
     // Add all files to the git repo
     execSync('git add -A', { cwd: projectDir });
     // Add author info to avoid git commit error
-    execSync('git config user.email test@test.sentry.io', { cwd: projectDir });
+    execSync('git config user.email test@test.posthog.com', { cwd: projectDir });
     execSync('git config user.name Test', { cwd: projectDir });
     execSync('git commit -m init', { cwd: projectDir });
   } catch (e) {
@@ -226,7 +222,6 @@ export function revertLocalChanges(projectDir: string): void {
  * @returns WizardTestEnv
  */
 export function startWizardInstance(
-  integration: Integration,
   projectDir: string,
   debug = false,
 ): WizardTestEnv {
@@ -241,16 +236,6 @@ export function startWizardInstance(
     [
       binPath,
       '--debug',
-      '-i',
-      integration,
-      '--preSelectedProject.authToken',
-      TEST_ARGS.AUTH_TOKEN,
-      '--preSelectedProject.dsn',
-      TEST_ARGS.PROJECT_DSN,
-      '--preSelectedProject.orgSlug',
-      TEST_ARGS.ORG_SLUG,
-      '--preSelectedProject.projectSlug',
-      TEST_ARGS.PROJECT_SLUG,
     ],
     { cwd: projectDir, debug },
   );
@@ -318,44 +303,10 @@ export function checkFileExists(filePath: string) {
  * Check if the package.json contains the given integration
  *
  * @param projectDir
- * @param integration
+ * @param packageName
  */
-export function checkPackageJson(projectDir: string, integration: Integration) {
-  checkFileContents(`${projectDir}/package.json`, `@sentry/${integration}`);
-}
-
-/**
- * Check if the .sentryclirc contains the auth token
- *
- * @param projectDir
- */
-export function checkSentryCliRc(projectDir: string) {
-  checkFileContents(
-    `${projectDir}/.sentryclirc`,
-    `token=${TEST_ARGS.AUTH_TOKEN}`,
-  );
-}
-
-/**
- * Check if the .env.sentry-build-plugin contains the auth token
- * @param projectDir
- */
-export function checkEnvBuildPlugin(projectDir: string) {
-  checkFileContents(
-    `${projectDir}/.env.sentry-build-plugin`,
-    `SENTRY_AUTH_TOKEN=${TEST_ARGS.AUTH_TOKEN}`,
-  );
-}
-
-/**
- * Check if the sentry.properties contains the auth token
- * @param projectDir
- */
-export function checkSentryProperties(projectDir: string) {
-  checkFileContents(
-    `${projectDir}/sentry.properties`,
-    `auth_token=${TEST_ARGS.AUTH_TOKEN}`,
-  );
+export function checkPackageJson(projectDir: string, packageName: string) {
+  checkFileContents(`${projectDir}/package.json`, packageName);
 }
 
 /**
@@ -375,26 +326,6 @@ export async function checkIfBuilds(projectDir: string) {
   ).resolves.toBe(true);
 }
 
-/**
- * Check if the flutter project builds
- * @param projectDir
- */
-export async function checkIfFlutterBuilds(
-  projectDir: string,
-  expectedOutput: string,
-  debug = false,
-) {
-  const testEnv = new WizardTestEnv('flutter', ['build', 'web'], {
-    cwd: projectDir,
-    debug: debug,
-  });
-
-  await expect(
-    testEnv.waitForOutput(expectedOutput, {
-      timeout: 120_000,
-    }),
-  ).resolves.toBe(true);
-}
 
 /**
  * Check if the project runs on dev mode

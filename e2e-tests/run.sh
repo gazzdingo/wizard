@@ -7,9 +7,9 @@ cd "$(dirname "$0")"
 # Run the tests with volta if it is installed
 if [ -x "$VOLTA" ]; then
   echo "Running tests with volta"
-  volta run yarn test $@
+  volta run pnpm test $@
 # Otherwise, run the tests without volta
 else
   echo "Running tests without volta"
-  yarn test $@
+  pnpm test $@
 fi

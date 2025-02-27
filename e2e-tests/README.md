@@ -4,15 +4,9 @@
 
 ```
 test-applications/
-|---- flutter-test-app/
 |---- nextjs-test-app/
-|---- remix-test-app/
-|---- sveltekit-test-app/
 tests/
-|---- flutter.test.ts
 |---- nextjs.test.ts
-|---- remix.test.ts
-|---- sveltekit.test.ts
 ```
 
 ### Utilities
@@ -31,16 +25,11 @@ tests/
 - `modifyFile` - Modifies a file in the test project.
 
 - `checkFileExists` - Checks if a file exists in the test project.
-- `checkPackageJson` - Checks if the `@sentry/[integration]` package exists in the dependencies of the test project's `package.json`.
-- `checkSentryCliConfig` - Checks if the `.sentryclirc` file contains the Sentry auth token.
-- `checkEnvBuildPlugin` - Cheks if `.env.sentry-build-plugin` contains the Sentry auth token.
+- `checkPackageJson` - Checks if the package package exists in the dependencies of the test project's `package.json`.
 
 - `checkIfBuilds` - Checks if the test project builds successfully.
 - `checkIfRunsOnDevMode` - Checks if the test project runs on dev mode successfully.
 - `checkIfRunsOnProdMode` - Checks if the test project runs on prod mode successfully.
-
-- `checkIfFlutterBuilds` - Checks if the Flutter (Web) test project builds successfully.
-- `checkSentryProperties` - Checks if the Flutter `sentry.properties` file contains the auth token
 
 #### `WizardTestEnv`
 
@@ -52,11 +41,11 @@ First, you need to create a `.env` file set the environment variables from the `
 
 Tests can be run locally from the root of the project with:
 
-`yarn test:e2e`
+`pnpm test:e2e`
 
 To run a specific test application
 
-`yarn test:e2e [Flutter | Remix | NextJS | SvelteKit]`
+`pnpm test:e2e NextJS`
 
 ## Writing Tests
 

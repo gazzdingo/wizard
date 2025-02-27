@@ -29,6 +29,10 @@ const argv = yargs(hideBin(process.argv)).options({
     describe: "Don't send telemetry data to PostHog",
     type: 'boolean',
   },
+  'project-api-key': {
+    default: undefined,
+    describe: 'Project API key',
+  },
 }).argv;
 
 // @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
