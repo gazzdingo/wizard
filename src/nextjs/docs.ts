@@ -1,17 +1,18 @@
 export const NEXTJS_APP_ROUTER_DOCS = `
 ==============================
-FILE: app/providers.tsx
+FILE: app/components/providers.{tsx,jsx}
 ==============================
-Create a PostHogProvider component that will be imported into the layout file.
+Changes:
+- Create a PostHogProvider component that will be imported into the layout file.
 
 Example:
 --------------------------------------------------
 'use client'
 
 import posthog from 'posthog-js'
-import { PostHogProvider as PHProvider } from 'posthog-js/react'
-import { useEffect } from 'react'
-import PostHogPageView from './PostHogPageView'
+import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
+import { Suspense, useEffect } from 'react'
+import { usePathname, useSearchParams } from "next/navigation"
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -24,25 +25,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PHProvider client={posthog}>
-      <PostHogPageView />
+      <SuspendedPostHogPageView />
       {children}
     </PHProvider>
   )
 }
---------------------------------------------------
 
-==============================
-FILE: app/PostHogPageView.jsx
-==============================
-Add the following code:
-
-Example:
---------------------------------------------------
-'use client'
-
-import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, Suspense } from "react"
-import { usePostHog } from 'posthog-js/react'
 
 function PostHogPageView() {
   const pathname = usePathname()
@@ -59,11 +47,11 @@ function PostHogPageView() {
       posthog.capture('$pageview', { '$current_url': url })
     }
   }, [pathname, searchParams, posthog])
-  
+
   return null
 }
 
-export default function SuspendedPostHogPageView() {
+function SuspendedPostHogPageView() {
   return (
     <Suspense fallback={null}>
       <PostHogPageView />
@@ -75,12 +63,13 @@ export default function SuspendedPostHogPageView() {
 ==============================
 FILE: app/layout.tsx
 ==============================
-Replace or update the layout file to add the PostHogProvider.
+Changes:
+- Import the PostHogProvider from the providers file and wrap the app in it.
 
 Example:
 --------------------------------------------------
 import './globals.css'
-import { PostHogProvider } from './providers'
+import { PostHogProvider } from './components/providers'
 
 export default function RootLayout({ children }) {
   return (
@@ -96,9 +85,10 @@ export default function RootLayout({ children }) {
 --------------------------------------------------
 
 ==============================
-FILE: app/posthog.ts
+FILE: app/lib/server/posthog.ts
 ==============================
-Create or update this file to initialize the Node.js PostHog client.
+Changes:
+- Initialize the PostHog Node.js client
 
 Example:
 --------------------------------------------------

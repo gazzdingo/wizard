@@ -6,7 +6,7 @@ import 'dotenv/config'
 import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
 
-import { Integration, type Platform } from '../lib/Constants';
+import { getIntegrationDescription, Integration, type Platform } from '../lib/Constants';
 import type { PackageDotJson } from './utils/package-json';
 import { readFileSync } from 'node:fs';
 import { readEnvironment } from './utils/environment';
@@ -97,7 +97,7 @@ async function getIntegrationForSetup() {
   const detectedIntegration = await detectIntegration();
 
   if (detectedIntegration) {
-    clack.log.info(`Detected integration: ${detectedIntegration.toUpperCase()}`);
+    clack.log.success(`Detected integration: ${getIntegrationDescription(detectedIntegration)}`);
     return detectedIntegration;
   }
 

@@ -146,7 +146,7 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled();
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\nYou can validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+${chalk.green('Successfully installed PostHog!')} ${`\n\nNote: You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
     `${packageManagerForOutro.runScriptCommand} dev`
   )})`
     }
@@ -294,7 +294,7 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
     const hasHost = !!dotEnvFileContent.match(/^\s*NEXT_PUBLIC_POSTHOG_HOST\s*=/m);
 
     if (hasProjectApiKey && hasHost) {
-      clack.log.warn(`${chalk.bold.cyan(relativeEnvFilePath)} already has the necessary environment variables. Will not add them.`);
+      clack.log.success(`${chalk.bold.cyan(relativeEnvFilePath)} already has the necessary environment variables.`);
     } else {
       try {
         const newContent = `${dotEnvFileContent}
