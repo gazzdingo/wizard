@@ -105,7 +105,11 @@ export async function runNextjsWizardWithTelemetry(
 
   const relevantFiles = await getRelevantFilesForNextJs();
 
-  const installationDocumentation = getInstallationDocumentation({ router, host });
+  const installationDocumentation = getInstallationDocumentation({
+    router,
+    host,
+    language: typeScriptDetected ? 'typescript' : 'javascript',
+  });
 
   clack.log.info(
     `Reviewing PostHog documentation for ${getNextJsRouterName(router)}`,
@@ -177,12 +181,13 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled();
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+    aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-      `${packageManagerForOutro.runScriptCommand} dev`,
-    )})`}
+  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+    `${packageManagerForOutro.runScriptCommand} dev`,
+  )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 }
@@ -241,7 +246,15 @@ export async function detectNextJs(): Promise<Integration.nextjs | undefined> {
   return undefined;
 }
 
-function getInstallationDocumentation({ router, host, language }: { router: NextJsRouter, host: string, language: 'typescript' | 'javascript' }) {
+function getInstallationDocumentation({
+  router,
+  host,
+  language,
+}: {
+  router: NextJsRouter;
+  host: string;
+  language: 'typescript' | 'javascript';
+}) {
   if (router === NextJsRouter.PAGES_ROUTER) {
     return getNextjsPagesRouterDocs({ host, language });
   }
@@ -414,7 +427,8 @@ export async function addOrUpdateEnvironmentVariables({
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           relativeEnvFilePath,
-        )} with environment variables for PostHog. Please add them manually. Error: ${error.message
+        )} with environment variables for PostHog. Please add them manually. Error: ${
+          error.message
         }`,
       );
     }
