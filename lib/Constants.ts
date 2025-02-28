@@ -70,12 +70,12 @@ export interface Args {
   disableTelemetry?: boolean;
 }
 
-export const DEFAULT_URL = 'https://posthog.com/';
+export const DEFAULT_URL = 'https://app.posthog.com';
 export const ISSUES_URL = 'ISSUES_URL';
 export const INSTALL_DIR = path.join(
   process.cwd(),
   process.env.POSTHOG_WIZARD_INSTALL_DIR ?? '',
 );
-export const CLOUD_URL = 'http://localhost:8010/';
-export const HOST_URL = 'http://localhost:8010/';
+export const CLOUD_URL = 'http://localhost:8010';
+export const DEFAULT_HOST_URL = 'https://us.i.posthog.com';
 export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';

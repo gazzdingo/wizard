@@ -34,12 +34,7 @@ import { query } from '../utils/query';
 import clack from '../utils/clack';
 import fg from 'fast-glob';
 import path from 'path';
-import {
-  HOST_URL,
-  INSTALL_DIR,
-  Integration,
-  ISSUES_URL,
-} from '../../lib/constants';
+import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
 
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
@@ -81,7 +76,9 @@ export async function runNextjsWizardWithTelemetry(
 
   Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { projectApiKey, wizardHash } = await getOrAskForProjectData(options);
+  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData(
+    options,
+  );
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
 
@@ -172,7 +169,7 @@ export async function runNextjsWizardWithTelemetry(
 
   await addOrUpdateEnvironmentVariables({
     projectApiKey,
-    host: HOST_URL,
+    host,
   });
 
   const packageManagerForOutro =
@@ -181,9 +178,11 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled();
 
   clack.outro(`
-${chalk.green(
-    'Successfully installed PostHog!',
-  )} ${`\n\nNote: You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+    aiConsent
+      ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
+      : ``
+  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
     `${packageManagerForOutro.runScriptCommand} dev`,
   )})`}
 
@@ -216,7 +215,7 @@ async function askForAIConsent() {
 }
 
 async function getRelevantFilesForNextJs() {
-  const filterPatterns = ['**/*.{tsx,ts,jsx,js}'];
+  const filterPatterns = ['**/*.{tsx,ts,jsx,js,mjs,cjs}'];
   const ignorePatterns = [
     'node_modules',
     'dist',

@@ -11,7 +11,7 @@ const NODE_VERSION_RANGE = '>=18.20.0';
 // has the problematic imports.
 if (!satisfies(process.version, NODE_VERSION_RANGE)) {
   red(
-    `CodeHog requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
+    `PostHog Wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
   );
   process.exit(1);
 }

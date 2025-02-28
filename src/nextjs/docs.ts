@@ -17,7 +17,8 @@ import { usePathname, useSearchParams } from "next/navigation"
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      api_host: "/ingest",
+      ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true, // Enable pageleave capture
     })
@@ -102,7 +103,38 @@ export default function PostHogClient() {
   })
   return posthogClient
 }
---------------------------------------------------`
+--------------------------------------------------
+
+==============================
+FILE: next.config.{js,ts,mjs,cjs}
+==============================
+Changes:
+- Add rewrites to the Next.js config to support PostHog, if there are existing rewrites, add the PostHog rewrites to them.
+- Add skipTrailingSlashRedirect to the Next.js config to support PostHog trailing slash API requests.
+- This can be of type js, ts, mjs, cjs etc. You should adapt the file according
+Example:
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+      {
+        source: "/ingest/decide",
+        destination: "https://us.i.posthog.com/decide",
+      },
+    ];
+  },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
+}
+module.exports = nextConfig
+--------------------------------------------------`;
 
 export const NEXTJS_PAGES_ROUTER_DOCS = `PostHog makes it easy to get data about traffic and usage of your Next.js app.Integrating PostHog into your site enables analytics about user behavior, custom events capture, session recordings, feature flags, and more.
 
@@ -399,4 +431,4 @@ Why does the pageview component need a useEffect ?
   Using a useEffect hook is the simplest way to accurately capture pageviews.Other approaches include:
 
 Not using a useEffect hook, but this might lead to duplicate page views being tracked if the component re - renders for reasons other than navigation.It might work depending on your implementation.
-Using window.navigation to track pageviews, but this approach is more complex and is not supported in all browsers.`
+Using window.navigation to track pageviews, but this approach is more complex and is not supported in all browsers.`;

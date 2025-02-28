@@ -15,7 +15,7 @@ export const query = async <S>({
   const jsonSchema = zodToJsonSchema(schema, 'schema').definitions;
 
   const response = await axios.post<{ data: unknown }>(
-    `${CLOUD_URL}api/wizard/query`,
+    `${CLOUD_URL}/api/wizard/query`,
     {
       message,
       json_schema: { ...jsonSchema, name: 'schema', strict: true },
