@@ -25,7 +25,6 @@ import {
   NextJsRouter,
 } from './utils';
 import * as Sentry from '@sentry/node';
-import { NEXTJS_APP_ROUTER_DOCS, NEXTJS_PAGES_ROUTER_DOCS } from './docs';
 import {
   filterFilesPromptTemplate,
   generateFileChangesPromptTemplate,
@@ -35,7 +34,7 @@ import clack from '../utils/clack';
 import fg from 'fast-glob';
 import path from 'path';
 import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
-
+import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 export function runNextjsWizard(options: WizardOptions) {
   return withTelemetry(
     {
@@ -106,7 +105,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const relevantFiles = await getRelevantFilesForNextJs();
 
-  const installationDocumentation = getInstallationDocumentation({ router });
+  const installationDocumentation = getInstallationDocumentation({ router, host });
 
   clack.log.info(
     `Reviewing PostHog documentation for ${getNextJsRouterName(router)}`,
@@ -178,13 +177,12 @@ export async function runNextjsWizardWithTelemetry(
   await runPrettierIfInstalled();
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${
-    aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-    `${packageManagerForOutro.runScriptCommand} dev`,
-  )})`}
+    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+      `${packageManagerForOutro.runScriptCommand} dev`,
+    )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 }
@@ -243,12 +241,12 @@ export async function detectNextJs(): Promise<Integration.nextjs | undefined> {
   return undefined;
 }
 
-function getInstallationDocumentation({ router }: { router: NextJsRouter }) {
+function getInstallationDocumentation({ router, host, language }: { router: NextJsRouter, host: string, language: 'typescript' | 'javascript' }) {
   if (router === NextJsRouter.PAGES_ROUTER) {
-    return NEXTJS_PAGES_ROUTER_DOCS;
+    return getNextjsPagesRouterDocs({ host, language });
   }
 
-  return NEXTJS_APP_ROUTER_DOCS;
+  return getNextjsAppRouterDocs({ host, language });
 }
 
 async function getFilesToChange({
@@ -345,10 +343,7 @@ export async function addOrUpdateEnvironmentVariables({
   projectApiKey: string;
   host: string;
 }): Promise<void> {
-  const envVarContent = `# Posthog
-NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}
-NEXT_PUBLIC_POSTHOG_HOST=${host}
-`;
+  const envVarContent = `# Posthog\nNEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}\nNEXT_PUBLIC_POSTHOG_HOST=${host}\n`;
 
   const dotEnvLocalFilePath = path.join(INSTALL_DIR, '.env.local');
   const dotEnvFilePath = path.join(INSTALL_DIR, '.env');
@@ -363,11 +358,11 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
   if (dotEnvFileExists) {
     const dotEnvFileContent = fs.readFileSync(targetEnvFilePath, 'utf8');
 
-    const hasProjectApiKey = !!dotEnvFileContent.match(
-      new RegExp(`^NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}$`, 'm'),
+    const hasProjectApiKey = dotEnvFileContent.includes(
+      `NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`,
     );
-    const hasHost = !!dotEnvFileContent.match(
-      new RegExp(`^NEXT_PUBLIC_POSTHOG_HOST=${host}$`, 'm'),
+    const hasHost = dotEnvFileContent.includes(
+      `NEXT_PUBLIC_POSTHOG_HOST=${host}`,
     );
 
     if (hasProjectApiKey && hasHost) {
@@ -396,11 +391,11 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
             relativeEnvFilePath,
           )}`,
         );
-      } catch {
+      } catch (error) {
         clack.log.warning(
           `Failed to update environment variables in ${chalk.bold.cyan(
             relativeEnvFilePath,
-          )}. Please update them manually.`,
+          )}. Please update them manually. Error: ${error.message}`,
         );
       }
     }
@@ -415,11 +410,12 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
           relativeEnvFilePath,
         )} with environment variables for PostHog.`,
       );
-    } catch {
+    } catch (error) {
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           relativeEnvFilePath,
-        )} with environment variables for PostHog. Please add them manually.`,
+        )} with environment variables for PostHog. Please add them manually. Error: ${error.message
+        }`,
       );
     }
   }
@@ -435,8 +431,9 @@ NEXT_PUBLIC_POSTHOG_HOST=${host}
 
     if (missingEnvFiles.length > 0) {
       try {
-        const newGitignoreContent = `${gitignoreContent}
-${missingEnvFiles.join('\n')}`;
+        const newGitignoreContent = `${gitignoreContent}\n${missingEnvFiles.join(
+          '\n',
+        )}`;
         await fs.promises.writeFile(gitignorePath, newGitignoreContent, {
           encoding: 'utf8',
           flag: 'w',
@@ -446,11 +443,11 @@ ${missingEnvFiles.join('\n')}`;
             '.gitignore',
           )} to include environment files.`,
         );
-      } catch {
+      } catch (error) {
         clack.log.warning(
           `Failed to update ${chalk.bold.cyan(
             '.gitignore',
-          )} to include environment files.`,
+          )} to include environment files. Error: ${error.message}`,
         );
       }
     }
@@ -468,11 +465,11 @@ ${missingEnvFiles.join('\n')}`;
       clack.log.success(
         `Created ${chalk.bold.cyan('.gitignore')} with environment files.`,
       );
-    } catch {
+    } catch (error) {
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           '.gitignore',
-        )} with environment files.`,
+        )} with environment files. Error: ${error.message}`,
       );
     }
   }

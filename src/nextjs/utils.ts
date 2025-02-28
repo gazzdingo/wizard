@@ -71,4 +71,14 @@ export const getNextJsRouterName = (router: NextJsRouter) => {
   return router === NextJsRouter.APP_ROUTER ? 'app router' : 'pages router';
 }
 
+export const getAssetHostFromHost = (host: string) => {
+  if (host.includes('us.i.posthog.com')) {
+    return 'https://us-assets.i.posthog.com';
+  }
 
+  if (host.includes('eu.i.posthog.com')) {
+    return 'https://eu-assets.i.posthog.com';
+  }
+
+  return host;
+}
