@@ -1,9 +1,17 @@
-import { getAssetHostFromHost } from "./utils";
+import { getAssetHostFromHost } from './utils';
 
-export const getNextjsAppRouterDocs = ({ host, language }: { host: string, language: 'typescript' | 'javascript' }) => {
+export const getNextjsAppRouterDocs = ({
+  host,
+  language,
+}: {
+  host: string;
+  language: 'typescript' | 'javascript';
+}) => {
   return `
 ==============================
-FILE: app/components/PostHogProvider.${language === 'typescript' ? 'tsx' : 'jsx'}
+FILE: app/components/PostHogProvider.${
+    language === 'typescript' ? 'tsx' : 'jsx'
+  }
 ==============================
 Changes:
 - Create a PostHogProvider component that will be imported into the layout file.
@@ -141,10 +149,16 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
 }
 module.exports = nextConfig
---------------------------------------------------`};
+--------------------------------------------------`;
+};
 
-export const getNextjsPagesRouterDocs = ({ host, language }: { host: string, language: 'typescript' | 'javascript' }) => {
-
+export const getNextjsPagesRouterDocs = ({
+  host,
+  language,
+}: {
+  host: string;
+  language: 'typescript' | 'javascript';
+}) => {
   return `
 ==============================
 FILE: pages/_app.${language === 'typescript' ? 'tsx' : 'jsx'}
@@ -187,7 +201,7 @@ export default function App({ Component, pageProps }) {
 --------------------------------------------------
 
 ==============================
-FILE: lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
+FILE: src/lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
 ==============================
 Changes:
 - Initialize the PostHog Node.js client for server-side tracking.
@@ -217,7 +231,9 @@ Example:
 const nextConfig = {
   async rewrites() {
     return [
-      { source: "/ingest/static/:path*", destination: "${getAssetHostFromHost(host)}/static/:path*" },
+      { source: "/ingest/static/:path*", destination: "${getAssetHostFromHost(
+        host,
+      )}/static/:path*" },
       { source: "/ingest/:path*", destination: "${host}/:path*" },
       { source: "/ingest/decide", destination: "${host}/decide" },
     ]
@@ -227,4 +243,5 @@ const nextConfig = {
 
 module.exports = nextConfig
 --------------------------------------------------
-`};
+`;
+};
