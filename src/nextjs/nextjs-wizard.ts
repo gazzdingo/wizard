@@ -431,9 +431,7 @@ export async function addOrUpdateEnvironmentVariables({
   if (gitignorePath) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
     const envFiles = ['.env', '.env.local'];
-    const missingEnvFiles = envFiles.filter(
-      (file) => !gitignoreContent.includes(file),
-    );
+    const missingEnvFiles = envFiles
 
     if (missingEnvFiles.length > 0) {
       try {

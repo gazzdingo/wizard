@@ -109,7 +109,7 @@ export const YARN_V2: PackageManager = {
 };
 export const PNPM: PackageManager = {
   name: 'pnpm',
-  label: 'PNPM',
+  label: 'pnpm',
   installCommand: 'pnpm add',
   buildCommand: 'pnpm build',
   runScriptCommand: 'pnpm',
@@ -135,7 +135,7 @@ export const PNPM: PackageManager = {
 };
 export const NPM: PackageManager = {
   name: 'npm',
-  label: 'NPM',
+  label: 'npm',
   installCommand: 'npm add',
   buildCommand: 'npm run build',
   runScriptCommand: 'npm run',
