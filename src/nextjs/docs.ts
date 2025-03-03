@@ -187,7 +187,7 @@ export default function App({ Component, pageProps }) {
 --------------------------------------------------
 
 ==============================
-FILE: lib/posthog.${language === 'typescript' ? 'ts' : 'js'}
+FILE: lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
 ==============================
 Changes:
 - Initialize the PostHog Node.js client for server-side tracking.
