@@ -37,6 +37,6 @@ export const INSTALL_DIR = path.join(
   process.cwd(),
   process.env.POSTHOG_WIZARD_INSTALL_DIR ?? '',
 );
-export const CLOUD_URL = 'http://localhost:8010';
+export const CLOUD_URL = 'https://app.posthog.com';
 export const DEFAULT_HOST_URL = 'https://us.i.posthog.com';
 export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
