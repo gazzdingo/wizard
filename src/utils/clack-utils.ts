@@ -4,9 +4,6 @@ import * as os from 'node:os';
 import { basename, isAbsolute, join, relative } from 'node:path';
 import { setInterval } from 'node:timers';
 import { URL } from 'node:url';
-// @ts-ignore - clack is ESM and TS complains about that. It works though
-import * as clack from '@clack/prompts';
-import * as Sentry from '@sentry/node';
 import axios from 'axios';
 import chalk from 'chalk';
 import opn from 'opn';
@@ -27,6 +24,8 @@ import {
   INSTALL_DIR,
   ISSUES_URL,
 } from '../../lib/constants';
+import { Analytics } from './analytics';
+import clack from './clack';
 
 interface ProjectData {
   projectApiKey: string;
@@ -58,16 +57,7 @@ export interface CliSetupConfigContent {
 
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
-  const sentryHub = Sentry.getCurrentHub();
-  const sentryTransaction = sentryHub.getScope().getTransaction();
-  sentryTransaction?.setStatus('aborted');
-  sentryTransaction?.finish();
-  const sentrySession = sentryHub.getScope().getSession();
-  if (sentrySession) {
-    sentrySession.status = status === 0 ? 'abnormal' : 'crashed';
-    sentryHub.captureSession(true);
-  }
-  await Sentry.flush(3000);
+  console.log("cancel status: ", status, message)
   return process.exit(status ?? 1);
 }
 
@@ -76,12 +66,6 @@ export async function abortIfCancelled<T>(
 ): Promise<Exclude<T, symbol>> {
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
-    const sentryHub = Sentry.getCurrentHub();
-    const sentryTransaction = sentryHub.getScope().getTransaction();
-    sentryTransaction?.setStatus('cancelled');
-    sentryTransaction?.finish();
-    sentryHub.captureSession(true);
-    await Sentry.flush(3000);
     process.exit(0);
   } else {
     return input as Exclude<T, symbol>;
@@ -129,7 +113,7 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
         }),
       );
 
-      Sentry.setTag('continue-without-git', continueWithoutGit);
+      Analytics.setTag('continue-without-git', continueWithoutGit);
 
       if (!continueWithoutGit) {
         await abort(undefined, 0);
@@ -153,7 +137,7 @@ The wizard will create and update files.`,
         }),
       );
 
-      Sentry.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
+      Analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
       if (!continueWithDirtyRepo) {
         await abort(undefined, 0);
@@ -229,7 +213,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
   note?: string;
 }): Promise<void> {
   return traceStep(`check-package-version`, async () => {
-    Sentry.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
+    Analytics.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
     const isSupportedVersion = fulfillsVersionRange({
       acceptableVersions,
       version: packageVersion,
@@ -237,7 +221,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
     });
 
     if (isSupportedVersion) {
-      Sentry.setTag(`${packageName.toLowerCase()}-supported`, true);
+      Analytics.setTag(`${packageName.toLowerCase()}-supported`, true);
       return;
     }
 
@@ -256,7 +240,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
         message: 'Do you want to continue anyway?',
       }),
     );
-    Sentry.setTag(
+    Analytics.setTag(
       `${packageName.toLowerCase()}-continue-with-unsupported-version`,
       continueWithUnsupportedVersion,
     );
@@ -389,7 +373,7 @@ export async function runPrettierIfInstalled(): Promise<void> {
     const packageJson = await getPackageDotJson();
     const prettierInstalled = hasPackageInstalled('prettier', packageJson);
 
-    Sentry.setTag('prettier-installed', prettierInstalled);
+    Analytics.setTag('prettier-installed', prettierInstalled);
 
     if (!prettierInstalled) {
       return;
@@ -441,10 +425,10 @@ export async function ensurePackageIsInstalled(
   return traceStep('ensure-package-installed', async () => {
     const installed = hasPackageInstalled(packageId, packageJson);
 
-    Sentry.setTag(`${packageName.toLowerCase()}-installed`, installed);
+    Analytics.setTag(`${packageName.toLowerCase()}-installed`, installed);
 
     if (!installed) {
-      Sentry.setTag(`${packageName.toLowerCase()}-installed`, false);
+      Analytics.setTag(`${packageName.toLowerCase()}-installed`, false);
       const continueWithoutPackage = await abortIfCancelled(
         clack.confirm({
           message: `${packageName} does not seem to be installed. Do you still want to continue?`,
@@ -525,7 +509,7 @@ export async function getPackageManager(): Promise<PackageManager> {
       }),
     );
 
-  Sentry.setTag('package-manager', selectedPackageManager.name);
+  Analytics.setTag('package-manager', selectedPackageManager.name);
 
   return selectedPackageManager;
 }
@@ -546,8 +530,7 @@ export function isUsingTypeScript() {
  * Use this function to get project data for the wizard.
  *
  * @param options wizard options
- * @param platform the platform of the wizard
- * @returns project data (org, project, token, url)
+ * @returns project data (token, url)
  */
 export async function getOrAskForProjectData(_options: WizardOptions): Promise<{
   wizardHash: string;
@@ -652,13 +635,13 @@ async function askForWizardLogin(options: {
         'Login timed out. No worries - it happens to the best of us.',
       );
 
-      Sentry.setTag('opened-wizard-link', false);
+      Analytics.setTag('opened-wizard-link', false);
       void abort('Please restart the Wizard and log in to complete the setup.');
     }, 180_000);
   });
 
   loginSpinner.stop('Login complete.');
-  Sentry.setTag('opened-wizard-link', true);
+  Analytics.setTag('opened-wizard-link', true);
 
   return data;
 }

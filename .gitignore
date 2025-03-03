@@ -24,7 +24,6 @@ scratch/
 .idea
 *.sublime-*
 
-sentry.properties
 dist/
 coverage/
 plugins
@@ -33,7 +32,3 @@ plugins
 .vscode/launch.json
 
 .env
-
-.sentryclirc
-# Sentry Config File
-.env.sentry-build-plugin

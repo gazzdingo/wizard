@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/typedef */
 import * as fs from 'fs';
 import * as path from 'path';
-
-import * as Sentry from '@sentry/node';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
 import { INSTALL_DIR } from '../../lib/constants';
+import { Analytics } from './analytics';
 
 export interface PackageManager {
   name: string;
@@ -163,11 +162,11 @@ export function detectPackageManger(): PackageManager | null {
   return traceStep('detect-package-manager', () => {
     for (const packageManager of packageManagers) {
       if (packageManager.detect()) {
-        Sentry.setTag('package-manager', packageManager.name);
+        Analytics.setTag('package-manager', packageManager.name);
         return packageManager;
       }
     }
-    Sentry.setTag('package-manager', 'not-detected');
+    Analytics.setTag('package-manager', 'not-detected');
     return null;
   });
 }

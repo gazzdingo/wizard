@@ -1,33 +1,19 @@
-// @ts-ignore - clack is ESM and TS complains about that. It works though
-import * as clack from '@clack/prompts';
 import { abortIfCancelled } from './utils/clack-utils';
 import 'dotenv/config'
 
 import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
 
-import { getIntegrationDescription, Integration, type Platform } from '../lib/constants';
+import { getIntegrationDescription, Integration } from '../lib/constants';
 import type { PackageDotJson } from './utils/package-json';
 import { readFileSync } from 'node:fs';
 import { readEnvironment } from './utils/environment';
+import clack from './utils/clack';
 
-type WizardIntegration = 'nextjs';
 
 type Args = {
-  integration?: WizardIntegration;
-
-  uninstall: boolean;
-  signup: boolean;
-  skipConnect: boolean;
-  debug: boolean;
-  quiet: boolean;
-  disableTelemetry: boolean;
-
-  url?: string;
-  platform?: Platform[];
-  org?: string;
-  project?: string;
-  cloud?: boolean;
+  integration?: Integration;
+  debug?: boolean;
   forceInstall?: boolean;
 };
 export async function run(argv: Args) {
@@ -39,14 +25,13 @@ export async function run(argv: Args) {
 
   clack.intro(`PostHog Wizard ${tryGetWizardVersion()}`);
 
-  const integration = await getIntegrationForSetup();
+  const integration = finalArgs.integration ?? await getIntegrationForSetup();
 
 
   const wizardOptions: WizardOptions = {
-    telemetryEnabled: !finalArgs.disableTelemetry,
-    forceInstall: finalArgs.forceInstall,
-    cloud: finalArgs.cloud,
-    url: finalArgs.url,
+    debug: finalArgs.debug ?? false,
+    forceInstall: finalArgs.forceInstall ?? false,
+    telemetryEnabled: false,
   };
 
   switch (integration) {
@@ -59,9 +44,6 @@ export async function run(argv: Args) {
   }
 }
 
-/**
- * TODO: replace with rollup replace whenever we switch to rollup
- */
 function tryGetWizardVersion(): string {
   let version = process.env.npm_package_version;
   if (!version) {

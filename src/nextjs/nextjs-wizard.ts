@@ -17,7 +17,7 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import type { WizardOptions } from '../utils/types';
-import { traceStep, withTelemetry } from '../telemetry';
+import { traceStep, } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import {
   getNextJsRouter,
@@ -25,7 +25,6 @@ import {
   getNextJsVersionBucket,
   NextJsRouter,
 } from './utils';
-import * as Sentry from '@sentry/node';
 import {
   filterFilesPromptTemplate,
   generateFileChangesPromptTemplate,
@@ -36,18 +35,10 @@ import fg from 'fast-glob';
 import path from 'path';
 import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
-export function runNextjsWizard(options: WizardOptions) {
-  return withTelemetry(
-    {
-      enabled: options.telemetryEnabled,
-      integration: 'nextjs',
-      wizardOptions: options,
-    },
-    () => runNextjsWizardWithTelemetry(options),
-  );
-}
+import { Analytics } from '../utils/analytics';
 
-export async function runNextjsWizardWithTelemetry(
+
+export async function runNextjsWizard(
   options: WizardOptions,
 ): Promise<void> {
   const { telemetryEnabled, forceInstall } = options;
@@ -76,7 +67,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const nextVersion = getPackageVersion('next', packageJson);
 
-  Sentry.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
+  Analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
   const { projectApiKey, wizardHash, host } = await getOrAskForProjectData(
     options,
@@ -84,7 +75,7 @@ export async function runNextjsWizardWithTelemetry(
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
 
-  Sentry.setTag('sdk-already-installed', sdkAlreadyInstalled);
+  Analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({

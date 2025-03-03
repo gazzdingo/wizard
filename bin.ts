@@ -24,18 +24,6 @@ const argv = yargs(hideBin(process.argv)).options({
     describe: 'Enable verbose logging\nenv: POSTHOG_WIZARD_DEBUG',
     type: 'boolean',
   },
-  'disable-telemetry': {
-    default: false,
-    describe: "Don't send telemetry data to PostHog",
-    type: 'boolean',
-  },
-  'project-api-key': {
-    default: undefined,
-    describe: 'Project API key',
-  },
 }).argv;
 
-// @ts-expect-error - for some reason TS doesn't recognize the aliases as valid properties
-// meaning it only knows e.g. u but not url. Maybe a bug in this old version of yargs?
-// Can't upgrade yargs though without dropping support for Node 14.
 void run(argv);
