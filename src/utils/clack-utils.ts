@@ -24,13 +24,14 @@ import {
   INSTALL_DIR,
   ISSUES_URL,
 } from '../../lib/constants';
-import { Analytics } from './analytics';
+import { analytics } from './analytics';
 import clack from './clack';
 
 interface ProjectData {
   projectApiKey: string;
   host: string;
   wizardHash: string;
+  distinctId: string;
 }
 
 export interface CliSetupConfig {
@@ -56,14 +57,17 @@ export interface CliSetupConfigContent {
 }
 
 export async function abort(message?: string, status?: number): Promise<never> {
+  await analytics.captureAndFlush('wizard aborted');
+
   clack.outro(message ?? 'Wizard setup cancelled.');
-  console.log("cancel status: ", status, message)
   return process.exit(status ?? 1);
 }
 
 export async function abortIfCancelled<T>(
   input: T | Promise<T>,
 ): Promise<Exclude<T, symbol>> {
+  await analytics.captureAndFlush('wizard cancelled');
+
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
     process.exit(0);
@@ -113,7 +117,7 @@ export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
         }),
       );
 
-      Analytics.setTag('continue-without-git', continueWithoutGit);
+      analytics.setTag('continue-without-git', continueWithoutGit);
 
       if (!continueWithoutGit) {
         await abort(undefined, 0);
@@ -137,7 +141,7 @@ The wizard will create and update files.`,
         }),
       );
 
-      Analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
+      analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
       if (!continueWithDirtyRepo) {
         await abort(undefined, 0);
@@ -213,7 +217,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
   note?: string;
 }): Promise<void> {
   return traceStep(`check-package-version`, async () => {
-    Analytics.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
+    analytics.setTag(`${packageName.toLowerCase()}-version`, packageVersion);
     const isSupportedVersion = fulfillsVersionRange({
       acceptableVersions,
       version: packageVersion,
@@ -221,7 +225,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
     });
 
     if (isSupportedVersion) {
-      Analytics.setTag(`${packageName.toLowerCase()}-supported`, true);
+      analytics.setTag(`${packageName.toLowerCase()}-supported`, true);
       return;
     }
 
@@ -233,14 +237,14 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
         message: 'Do you want to continue anyway?',
       }),
     );
-    Analytics.setTag(
+    analytics.setTag(
       `${packageName.toLowerCase()}-continue-with-unsupported-version`,
       continueWithUnsupportedVersion,
     );
@@ -303,7 +307,8 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
           { cwd: INSTALL_DIR },
           (err, stdout, stderr) => {
@@ -373,7 +378,7 @@ export async function runPrettierIfInstalled(): Promise<void> {
     const packageJson = await getPackageDotJson();
     const prettierInstalled = hasPackageInstalled('prettier', packageJson);
 
-    Analytics.setTag('prettier-installed', prettierInstalled);
+    analytics.setTag('prettier-installed', prettierInstalled);
 
     if (!prettierInstalled) {
       return;
@@ -425,10 +430,10 @@ export async function ensurePackageIsInstalled(
   return traceStep('ensure-package-installed', async () => {
     const installed = hasPackageInstalled(packageId, packageJson);
 
-    Analytics.setTag(`${packageName.toLowerCase()}-installed`, installed);
+    analytics.setTag(`${packageName.toLowerCase()}-installed`, installed);
 
     if (!installed) {
-      Analytics.setTag(`${packageName.toLowerCase()}-installed`, false);
+      analytics.setTag(`${packageName.toLowerCase()}-installed`, false);
       const continueWithoutPackage = await abortIfCancelled(
         clack.confirm({
           message: `${packageName} does not seem to be installed. Do you still want to continue?`,
@@ -509,7 +514,7 @@ export async function getPackageManager(): Promise<PackageManager> {
       }),
     );
 
-  Analytics.setTag('package-manager', selectedPackageManager.name);
+  analytics.setTag('package-manager', selectedPackageManager.name);
 
   return selectedPackageManager;
 }
@@ -523,9 +528,6 @@ export function isUsingTypeScript() {
 }
 
 /**
- * Checks if we already got project data from a previous wizard invocation.
- * If yes, this data is returned.
- * Otherwise, we start the login flow and ask the user to select a project.
  *
  * Use this function to get project data for the wizard.
  *
@@ -551,8 +553,8 @@ ${chalk.cyan(ISSUES_URL)}`);
 
     clack.log
       .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
-        `"${DUMMY_PROJECT_API_KEY}"`,
-      )}) for you to replace later.
+      `"${DUMMY_PROJECT_API_KEY}"`,
+    )}) for you to replace later.
 You can find your Project API key here:
 ${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
   }
@@ -607,6 +609,7 @@ async function askForWizardLogin(options: {
         .get<{
           project_api_key: string;
           host: string;
+          user_distinct_id: string;
         }>(`${options.url}/api/wizard/data`, {
           headers: {
             'Accept-Encoding': 'deflate',
@@ -618,6 +621,7 @@ async function askForWizardLogin(options: {
             wizardHash,
             projectApiKey: result.data.project_api_key,
             host: result.data.host,
+            distinctId: result.data.user_distinct_id,
           };
 
           resolve(data);
@@ -635,13 +639,14 @@ async function askForWizardLogin(options: {
         'Login timed out. No worries - it happens to the best of us.',
       );
 
-      Analytics.setTag('opened-wizard-link', false);
+      analytics.setTag('opened-wizard-link', false);
       void abort('Please restart the Wizard and log in to complete the setup.');
     }, 180_000);
   });
 
   loginSpinner.stop('Login complete.');
-  Analytics.setTag('opened-wizard-link', true);
+  analytics.setTag('opened-wizard-link', true);
+  analytics.setDistinctId(data.distinctId);
 
   return data;
 }
@@ -722,7 +727,8 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 

@@ -17,7 +17,7 @@ import {
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import type { WizardOptions } from '../utils/types';
-import { traceStep, } from '../telemetry';
+import { traceStep } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import {
   getNextJsRouter,
@@ -35,12 +35,9 @@ import fg from 'fast-glob';
 import path from 'path';
 import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
-import { Analytics } from '../utils/analytics';
+import { analytics } from '../utils/analytics';
 
-
-export async function runNextjsWizard(
-  options: WizardOptions,
-): Promise<void> {
+export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const { telemetryEnabled, forceInstall } = options;
 
   printWelcome({
@@ -67,7 +64,7 @@ export async function runNextjsWizard(
 
   const nextVersion = getPackageVersion('next', packageJson);
 
-  Analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
+  analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
   const { projectApiKey, wizardHash, host } = await getOrAskForProjectData(
     options,
@@ -75,7 +72,7 @@ export async function runNextjsWizard(
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
 
-  Analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
+  analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
@@ -183,6 +180,8 @@ ${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
     )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
+
+  await analytics.captureAndFlush('wizard completed');
 }
 
 async function askForAIConsent() {
@@ -431,7 +430,7 @@ export async function addOrUpdateEnvironmentVariables({
   if (gitignorePath) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
     const envFiles = ['.env', '.env.local'];
-    const missingEnvFiles = envFiles
+    const missingEnvFiles = envFiles;
 
     if (missingEnvFiles.length > 0) {
       try {

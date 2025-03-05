@@ -4,7 +4,7 @@ import * as path from 'path';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
 import { INSTALL_DIR } from '../../lib/constants';
-import { Analytics } from './analytics';
+import { analytics } from './analytics';
 
 export interface PackageManager {
   name: string;
@@ -162,11 +162,11 @@ export function detectPackageManger(): PackageManager | null {
   return traceStep('detect-package-manager', () => {
     for (const packageManager of packageManagers) {
       if (packageManager.detect()) {
-        Analytics.setTag('package-manager', packageManager.name);
+        analytics.setTag('package-manager', packageManager.name);
         return packageManager;
       }
     }
-    Analytics.setTag('package-manager', 'not-detected');
+    analytics.setTag('package-manager', 'not-detected');
     return null;
   });
 }

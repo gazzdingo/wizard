@@ -31,12 +31,14 @@ export interface Args {
   integration: Integration;
 }
 
-export const DEFAULT_URL = 'http://localhost:8010';
+export const DEFAULT_URL = 'https://us.posthog.com';
 export const ISSUES_URL = 'https://github.com/posthog/wizard/issues';
 export const INSTALL_DIR = path.join(
   process.cwd(),
   process.env.POSTHOG_WIZARD_INSTALL_DIR ?? '',
 );
-export const CLOUD_URL = 'http://localhost:8010';
+export const CLOUD_URL = 'https://us.posthog.com';
+export const ANALYTICS_POSTHOG_KEY = '';
+export const ANALYTICS_HOST_URL = 'http://localhost:8010';
 export const DEFAULT_HOST_URL = 'https://us.i.posthog.com';
 export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';

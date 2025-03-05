@@ -1,5 +1,5 @@
 import { abortIfCancelled } from './utils/clack-utils';
-import 'dotenv/config'
+import 'dotenv/config';
 
 import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
@@ -10,23 +10,25 @@ import { readFileSync } from 'node:fs';
 import { readEnvironment } from './utils/environment';
 import clack from './utils/clack';
 
-
 type Args = {
   integration?: Integration;
   debug?: boolean;
   forceInstall?: boolean;
 };
+
 export async function run(argv: Args) {
+  await runWizard(argv);
+}
+
+async function runWizard(argv: Args) {
   const finalArgs = {
     ...argv,
     ...readEnvironment(),
   };
 
-
   clack.intro(`PostHog Wizard ${tryGetWizardVersion()}`);
 
-  const integration = finalArgs.integration ?? await getIntegrationForSetup();
-
+  const integration = finalArgs.integration ?? (await getIntegrationForSetup());
 
   const wizardOptions: WizardOptions = {
     debug: finalArgs.debug ?? false,
@@ -59,12 +61,8 @@ function tryGetWizardVersion(): string {
   return version ?? '';
 }
 
-
 async function detectIntegration(): Promise<Integration | undefined> {
-
-  const detectors = [
-    detectNextJs
-  ]
+  const detectors = [detectNextJs];
 
   for (const detector of detectors) {
     const integration = await detector();
@@ -75,11 +73,12 @@ async function detectIntegration(): Promise<Integration | undefined> {
 }
 
 async function getIntegrationForSetup() {
-
   const detectedIntegration = await detectIntegration();
 
   if (detectedIntegration) {
-    clack.log.success(`Detected integration: ${getIntegrationDescription(detectedIntegration)}`);
+    clack.log.success(
+      `Detected integration: ${getIntegrationDescription(detectedIntegration)}`,
+    );
     return detectedIntegration;
   }
 
