@@ -1,5 +1,4 @@
 import path from 'path';
-import 'dotenv/config';
 
 export enum Integration {
   nextjs = 'nextjs',

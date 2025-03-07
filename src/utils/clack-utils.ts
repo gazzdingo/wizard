@@ -57,7 +57,6 @@ export interface CliSetupConfigContent {
 
 export async function abort(message?: string, status?: number): Promise<never> {
   clack.outro(message ?? 'Wizard setup cancelled.');
-  console.log("cancel status: ", status, message)
   return process.exit(status ?? 1);
 }
 

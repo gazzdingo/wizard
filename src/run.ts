@@ -1,5 +1,4 @@
 import { abortIfCancelled } from './utils/clack-utils';
-import 'dotenv/config'
 
 import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
