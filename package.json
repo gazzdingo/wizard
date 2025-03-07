@@ -15,7 +15,7 @@
     "configure"
   ],
   "bin": {
-    "@posthog/wizard": "dist/bin.js"
+    "wizard": "dist/bin.js"
   },
   "publishConfig": {
     "access": "public"
