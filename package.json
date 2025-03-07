@@ -17,6 +17,9 @@
   "bin": {
     "posthog-wizard": "dist/bin.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {

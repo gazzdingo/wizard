@@ -9,9 +9,8 @@ export const getNextjsAppRouterDocs = ({
 }) => {
   return `
 ==============================
-FILE: app/components/PostHogProvider.${
-    language === 'typescript' ? 'tsx' : 'jsx'
-  }
+FILE: app/components/PostHogProvider.${language === 'typescript' ? 'tsx' : 'jsx'
+    }
 ==============================
 Changes:
 - Create a PostHogProvider component that will be imported into the layout file.
@@ -201,7 +200,7 @@ export default function App({ Component, pageProps }) {
 --------------------------------------------------
 
 ==============================
-FILE: src/lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
+FILE: lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
 ==============================
 Changes:
 - Initialize the PostHog Node.js client for server-side tracking.
@@ -232,8 +231,8 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: "/ingest/static/:path*", destination: "${getAssetHostFromHost(
-        host,
-      )}/static/:path*" },
+    host,
+  )}/static/:path*" },
       { source: "/ingest/:path*", destination: "${host}/:path*" },
       { source: "/ingest/decide", destination: "${host}/decide" },
     ]
