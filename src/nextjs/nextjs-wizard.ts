@@ -33,7 +33,7 @@ import { query } from '../utils/query';
 import clack from '../utils/clack';
 import fg from 'fast-glob';
 import path from 'path';
-import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
+import { INSTALL_DIR, Integration, ISSUES_URL } from '../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { Analytics } from '../utils/analytics';
 

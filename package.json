@@ -20,6 +20,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "dist/bin.*",
+    "dist/src",
+    "package.json",
+    "README.md"
+  ],
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {

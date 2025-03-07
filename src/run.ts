@@ -3,7 +3,7 @@ import { abortIfCancelled } from './utils/clack-utils';
 import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
 
-import { getIntegrationDescription, Integration } from '../lib/constants';
+import { getIntegrationDescription, Integration } from './lib/constants';
 import type { PackageDotJson } from './utils/package-json';
 import { readFileSync } from 'node:fs';
 import { readEnvironment } from './utils/environment';

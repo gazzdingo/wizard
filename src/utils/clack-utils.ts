@@ -23,7 +23,7 @@ import {
   DUMMY_PROJECT_API_KEY,
   INSTALL_DIR,
   ISSUES_URL,
-} from '../../lib/constants';
+} from '../lib/constants';
 import { Analytics } from './analytics';
 import clack from './clack';
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ZodSchema } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { CLOUD_URL } from '../../lib/constants';
+import { CLOUD_URL } from '../lib/constants';
 
 export const query = async <S>({
   message,

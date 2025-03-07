@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
-import { INSTALL_DIR } from '../../lib/constants';
+import { INSTALL_DIR } from '../lib/constants';
 import { Analytics } from './analytics';
 
 export interface PackageManager {
