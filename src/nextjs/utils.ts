@@ -40,7 +40,7 @@ export async function getNextJsRouter(): Promise<NextJsRouter> {
 
   const hasPagesDir = pagesMatches.length > 0;
 
-  const appMatches = await fg('**/app/layout.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
+  const appMatches = await fg('**/app/**/layout.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
 
   const hasAppDir = appMatches.length > 0;
 
