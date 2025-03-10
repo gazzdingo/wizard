@@ -382,10 +382,20 @@ export async function addOrUpdateEnvironmentVariables({
       );
     } else {
       try {
-        const newContent = dotEnvFileContent.replace(
-          /^NEXT_PUBLIC_POSTHOG_KEY=.*$/m,
-          `NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`,
-        );
+        let newContent = dotEnvFileContent;
+
+        if (dotEnvFileContent.match(/^NEXT_PUBLIC_POSTHOG_KEY=.*$/m)) {
+          newContent = dotEnvFileContent.replace(
+            /^NEXT_PUBLIC_POSTHOG_KEY=.*$/m,
+            `NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`,
+          );
+        } else {
+          if (!dotEnvFileContent.endsWith('\n')) {
+            newContent += '\n';
+          }
+          newContent += envVarContent;
+        }
+
         await fs.promises.writeFile(targetEnvFilePath, newContent, {
           encoding: 'utf8',
           flag: 'w',
