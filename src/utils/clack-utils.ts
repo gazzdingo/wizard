@@ -21,7 +21,6 @@ import {
   CLOUD_URL,
   DEFAULT_HOST_URL,
   DUMMY_PROJECT_API_KEY,
-  INSTALL_DIR,
   ISSUES_URL,
 } from '../lib/constants';
 import { Analytics } from './analytics';
@@ -258,6 +257,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
+  installDir,
 }: {
   /** The string that is passed to the package manager CLI as identifier to install (e.g. `posthog-js`, or `posthog-js@^1.100.0`) */
   packageName: string;
@@ -268,6 +268,7 @@ export async function installPackage({
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
   forceInstall?: boolean;
+  installDir?: string;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -286,7 +287,7 @@ export async function installPackage({
 
     const sdkInstallSpinner = clack.spinner();
 
-    const pkgManager = packageManager || (await getPackageManager());
+    const pkgManager = packageManager || (await getPackageManager({ installDir }));
 
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
@@ -299,7 +300,7 @@ export async function installPackage({
         childProcess.exec(
           `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
-          { cwd: INSTALL_DIR },
+          { cwd: installDir ?? process.cwd() },
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
@@ -345,7 +346,7 @@ export async function installPackage({
   });
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+export async function runPrettierIfInstalled({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> {
   return traceStep('run-prettier', async () => {
     if (!isInGitRepo()) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
@@ -364,7 +365,7 @@ export async function runPrettierIfInstalled(): Promise<void> {
       return;
     }
 
-    const packageJson = await getPackageDotJson();
+    const packageJson = await getPackageDotJson({ installDir });
     const prettierInstalled = hasPackageInstalled('prettier', packageJson);
 
     Analytics.setTag('prettier-installed', prettierInstalled);
@@ -437,9 +438,9 @@ export async function ensurePackageIsInstalled(
   });
 }
 
-export async function getPackageDotJson(): Promise<PackageDotJson> {
+export async function getPackageDotJson({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<PackageDotJson> {
   const packageJsonFileContents = await fs.promises
-    .readFile(join(INSTALL_DIR, 'package.json'), 'utf8')
+    .readFile(join(installDir ?? process.cwd(), 'package.json'), 'utf8')
     .catch(() => {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
@@ -467,10 +468,11 @@ export async function getPackageDotJson(): Promise<PackageDotJson> {
 
 export async function updatePackageDotJson(
   packageDotJson: PackageDotJson,
+  { installDir }: Pick<WizardOptions, 'installDir'>
 ): Promise<void> {
   try {
     await fs.promises.writeFile(
-      join(INSTALL_DIR, 'package.json'),
+      join(installDir ?? process.cwd(), 'package.json'),
       // TODO: maybe figure out the original indentation
       JSON.stringify(packageDotJson, null, 2),
       {
@@ -485,8 +487,8 @@ export async function updatePackageDotJson(
   }
 }
 
-export async function getPackageManager(): Promise<PackageManager> {
-  const detectedPackageManager = detectPackageManger();
+export async function getPackageManager({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<PackageManager> {
+  const detectedPackageManager = detectPackageManger({ installDir });
 
   if (detectedPackageManager) {
     return detectedPackageManager;
@@ -508,9 +510,9 @@ export async function getPackageManager(): Promise<PackageManager> {
   return selectedPackageManager;
 }
 
-export function isUsingTypeScript() {
+export function isUsingTypeScript({ installDir }: Pick<WizardOptions, 'installDir'>) {
   try {
-    return fs.existsSync(join(INSTALL_DIR, 'tsconfig.json'));
+    return fs.existsSync(join(installDir ?? process.cwd(), 'tsconfig.json'));
   } catch {
     return false;
   }
@@ -796,6 +798,7 @@ export function makeCodeSnippet(
 export async function createNewConfigFile(
   filepath: string,
   codeSnippet: string,
+  { installDir }: Pick<WizardOptions, 'installDir'>,
   moreInformation?: string,
 ): Promise<boolean> {
   if (!isAbsolute(filepath)) {
@@ -803,7 +806,7 @@ export async function createNewConfigFile(
     return false;
   }
 
-  const prettyFilename = chalk.cyan(relative(INSTALL_DIR, filepath));
+  const prettyFilename = chalk.cyan(relative(installDir ?? process.cwd(), filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);

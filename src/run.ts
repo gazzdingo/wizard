@@ -11,6 +11,7 @@ type Args = {
   integration?: Integration;
   debug?: boolean;
   forceInstall?: boolean;
+  installDir?: string;
 };
 export async function run(argv: Args) {
   const finalArgs = {
@@ -21,13 +22,14 @@ export async function run(argv: Args) {
 
   clack.intro(`Welcome to the PostHog setup wizard ✨`);
 
-  const integration = finalArgs.integration ?? await getIntegrationForSetup();
+  const integration = finalArgs.integration ?? await getIntegrationForSetup({ installDir: finalArgs.installDir });
 
 
   const wizardOptions: WizardOptions = {
     debug: finalArgs.debug ?? false,
     forceInstall: finalArgs.forceInstall ?? false,
     telemetryEnabled: false,
+    installDir: finalArgs.installDir,
   };
 
   switch (integration) {
@@ -41,23 +43,23 @@ export async function run(argv: Args) {
 }
 
 
-async function detectIntegration(): Promise<Integration | undefined> {
+async function detectIntegration(options: Pick<WizardOptions, 'installDir'>): Promise<Integration | undefined> {
 
   const detectors = [
     detectNextJs
   ]
 
   for (const detector of detectors) {
-    const integration = await detector();
+    const integration = await detector(options);
     if (integration) {
       return integration;
     }
   }
 }
 
-async function getIntegrationForSetup() {
+async function getIntegrationForSetup(options: Pick<WizardOptions, 'installDir'>) {
 
-  const detectedIntegration = await detectIntegration();
+  const detectedIntegration = await detectIntegration(options);
 
   if (detectedIntegration) {
     clack.log.success(`Detected integration: ${getIntegrationDescription(detectedIntegration)}`);

@@ -92,7 +92,7 @@ describe('createNewConfigFile', () => {
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
 
-    const result = await createNewConfigFile(filename, code);
+    const result = await createNewConfigFile(filename, code, {});
 
     expect(result).toBe(true);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
@@ -105,7 +105,7 @@ describe('createNewConfigFile', () => {
     const code = 'module.exports = {/*config...*/}';
     const moreInfo = 'More information...';
 
-    await createNewConfigFile(filename, code, moreInfo);
+    await createNewConfigFile(filename, code, {}, moreInfo);
 
     expect(clack.log.info).toHaveBeenCalledTimes(1);
     expect(clack.log.info).toHaveBeenCalledWith(
@@ -121,7 +121,7 @@ describe('createNewConfigFile', () => {
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
 
-    const result = await createNewConfigFile(filename, code);
+    const result = await createNewConfigFile(filename, code, {});
 
     expect(result).toBe(false);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
@@ -132,6 +132,7 @@ describe('createNewConfigFile', () => {
     const result = await createNewConfigFile(
       './relative/webpack.config.js',
       '',
+      {},
     );
 
     expect(result).toBe(false);
