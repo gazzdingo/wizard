@@ -16,7 +16,11 @@ export interface PackageManager {
   flags: string;
   forceInstallFlag: string;
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) => boolean;
-  addOverride: (pkgName: string, pkgVersion: string, { installDir }: Pick<WizardOptions, 'installDir'>) => Promise<void>;
+  addOverride: (
+    pkgName: string,
+    pkgVersion: string,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ) => Promise<void>;
 }
 
 export const BUN: PackageManager = {
@@ -29,19 +33,26 @@ export const BUN: PackageManager = {
   forceInstallFlag: '--force',
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) =>
     ['bun.lockb', 'bun.lock'].some((lockFile) =>
-      fs.existsSync(path.join(installDir ?? process.cwd(), lockFile)),
+      fs.existsSync(path.join(installDir, lockFile)),
     ),
-  addOverride: async (pkgName, pkgVersion, { installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> => {
-    const packageDotJson = await getPackageDotJson({ installDir: installDir ?? process.cwd() });
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
     const overrides = packageDotJson.overrides || {};
 
-    await updatePackageDotJson({
-      ...packageDotJson,
-      overrides: {
-        ...overrides,
-        [pkgName]: pkgVersion,
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        overrides: {
+          ...overrides,
+          [pkgName]: pkgVersion,
+        },
       },
-    }, { installDir: installDir ?? process.cwd() });
+      { installDir: installDir },
+    );
   },
 };
 export const YARN_V1: PackageManager = {
@@ -55,24 +66,31 @@ export const YARN_V1: PackageManager = {
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) => {
     try {
       return fs
-        .readFileSync(path.join(installDir ?? process.cwd(), 'yarn.lock'), 'utf-8')
+        .readFileSync(path.join(installDir, 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('yarn lockfile v1');
     } catch (e) {
       return false;
     }
   },
-  addOverride: async (pkgName, pkgVersion, { installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> => {
-    const packageDotJson = await getPackageDotJson({ installDir: installDir ?? process.cwd() });
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
     const resolutions = packageDotJson.resolutions || {};
 
-    await updatePackageDotJson({
-      ...packageDotJson,
-      resolutions: {
-        ...resolutions,
-        [pkgName]: pkgVersion,
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        resolutions: {
+          ...resolutions,
+          [pkgName]: pkgVersion,
+        },
       },
-    }, { installDir: installDir ?? process.cwd() });
+      { installDir },
+    );
   },
 };
 /** YARN V2/3/4 */
@@ -87,24 +105,31 @@ export const YARN_V2: PackageManager = {
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) => {
     try {
       return fs
-        .readFileSync(path.join(installDir ?? process.cwd(), 'yarn.lock'), 'utf-8')
+        .readFileSync(path.join(installDir, 'yarn.lock'), 'utf-8')
         .slice(0, 500)
         .includes('__metadata');
     } catch (e) {
       return false;
     }
   },
-  addOverride: async (pkgName, pkgVersion, { installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> => {
-    const packageDotJson = await getPackageDotJson({ installDir: installDir ?? process.cwd() });
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
     const resolutions = packageDotJson.resolutions || {};
 
-    await updatePackageDotJson({
-      ...packageDotJson,
-      resolutions: {
-        ...resolutions,
-        [pkgName]: pkgVersion,
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        resolutions: {
+          ...resolutions,
+          [pkgName]: pkgVersion,
+        },
       },
-    }, { installDir: installDir ?? process.cwd() });
+      { installDir },
+    );
   },
 };
 export const PNPM: PackageManager = {
@@ -116,22 +141,29 @@ export const PNPM: PackageManager = {
   flags: '--ignore-workspace-root-check',
   forceInstallFlag: '--force',
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) =>
-    fs.existsSync(path.join(installDir ?? process.cwd(), 'pnpm-lock.yaml')),
-  addOverride: async (pkgName, pkgVersion, { installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> => {
-    const packageDotJson = await getPackageDotJson({ installDir: installDir ?? process.cwd() });
+    fs.existsSync(path.join(installDir, 'pnpm-lock.yaml')),
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
     const pnpm = packageDotJson.pnpm || {};
     const overrides = pnpm.overrides || {};
 
-    await updatePackageDotJson({
-      ...packageDotJson,
-      pnpm: {
-        ...pnpm,
-        overrides: {
-          ...overrides,
-          [pkgName]: pkgVersion,
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        pnpm: {
+          ...pnpm,
+          overrides: {
+            ...overrides,
+            [pkgName]: pkgVersion,
+          },
         },
       },
-    }, { installDir: installDir ?? process.cwd() });
+      { installDir },
+    );
   },
 };
 export const NPM: PackageManager = {
@@ -143,27 +175,36 @@ export const NPM: PackageManager = {
   flags: '',
   forceInstallFlag: '--force',
   detect: ({ installDir }: Pick<WizardOptions, 'installDir'>) =>
-    fs.existsSync(path.join(installDir ?? process.cwd(), 'package-lock.json')),
-  addOverride: async (pkgName, pkgVersion, { installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> => {
-    const packageDotJson = await getPackageDotJson({ installDir: installDir ?? process.cwd() });
+    fs.existsSync(path.join(installDir, 'package-lock.json')),
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
     const overrides = packageDotJson.overrides || {};
 
-    await updatePackageDotJson({
-      ...packageDotJson,
-      overrides: {
-        ...overrides,
-        [pkgName]: pkgVersion,
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        overrides: {
+          ...overrides,
+          [pkgName]: pkgVersion,
+        },
       },
-    }, { installDir: installDir ?? process.cwd() });
+      { installDir },
+    );
   },
 };
 
 export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
 
-export function detectPackageManger({ installDir }: Pick<WizardOptions, 'installDir'>): PackageManager | null {
+export function detectPackageManger({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): PackageManager | null {
   return traceStep('detect-package-manager', () => {
     for (const packageManager of packageManagers) {
-      if (packageManager.detect({ installDir: installDir ?? process.cwd() })) {
+      if (packageManager.detect({ installDir })) {
         Analytics.setTag('package-manager', packageManager.name);
         return packageManager;
       }

@@ -75,7 +75,6 @@ export function printWelcome(options: {
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-
   // eslint-disable-next-line no-console
   console.log('');
   clack.intro(chalk.inverse(` ${options.wizardName} `));
@@ -226,7 +225,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -268,7 +267,7 @@ export async function installPackage({
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
   forceInstall?: boolean;
-  installDir?: string;
+  installDir: string;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -287,7 +286,8 @@ export async function installPackage({
 
     const sdkInstallSpinner = clack.spinner();
 
-    const pkgManager = packageManager || (await getPackageManager({ installDir }));
+    const pkgManager =
+      packageManager || (await getPackageManager({ installDir }));
 
     sdkInstallSpinner.start(
       `${alreadyInstalled ? 'Updating' : 'Installing'} ${chalk.bold.cyan(
@@ -298,9 +298,10 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
-          { cwd: installDir ?? process.cwd() },
+          { cwd: installDir },
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
@@ -346,7 +347,9 @@ export async function installPackage({
   });
 }
 
-export async function runPrettierIfInstalled({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<void> {
+export async function runPrettierIfInstalled({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): Promise<void> {
   return traceStep('run-prettier', async () => {
     if (!isInGitRepo()) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
@@ -438,9 +441,11 @@ export async function ensurePackageIsInstalled(
   });
 }
 
-export async function getPackageDotJson({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<PackageDotJson> {
+export async function getPackageDotJson({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): Promise<PackageDotJson> {
   const packageJsonFileContents = await fs.promises
-    .readFile(join(installDir ?? process.cwd(), 'package.json'), 'utf8')
+    .readFile(join(installDir, 'package.json'), 'utf8')
     .catch(() => {
       clack.log.error(
         'Could not find package.json. Make sure to run the wizard in the root of your app!',
@@ -468,11 +473,11 @@ export async function getPackageDotJson({ installDir }: Pick<WizardOptions, 'ins
 
 export async function updatePackageDotJson(
   packageDotJson: PackageDotJson,
-  { installDir }: Pick<WizardOptions, 'installDir'>
+  { installDir }: Pick<WizardOptions, 'installDir'>,
 ): Promise<void> {
   try {
     await fs.promises.writeFile(
-      join(installDir ?? process.cwd(), 'package.json'),
+      join(installDir, 'package.json'),
       // TODO: maybe figure out the original indentation
       JSON.stringify(packageDotJson, null, 2),
       {
@@ -487,7 +492,9 @@ export async function updatePackageDotJson(
   }
 }
 
-export async function getPackageManager({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<PackageManager> {
+export async function getPackageManager({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): Promise<PackageManager> {
   const detectedPackageManager = detectPackageManger({ installDir });
 
   if (detectedPackageManager) {
@@ -510,9 +517,11 @@ export async function getPackageManager({ installDir }: Pick<WizardOptions, 'ins
   return selectedPackageManager;
 }
 
-export function isUsingTypeScript({ installDir }: Pick<WizardOptions, 'installDir'>) {
+export function isUsingTypeScript({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>) {
   try {
-    return fs.existsSync(join(installDir ?? process.cwd(), 'tsconfig.json'));
+    return fs.existsSync(join(installDir, 'tsconfig.json'));
   } catch {
     return false;
   }
@@ -547,8 +556,8 @@ ${chalk.cyan(ISSUES_URL)}`);
 
     clack.log
       .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
-        `"${DUMMY_PROJECT_API_KEY}"`,
-      )}) for you to replace later.
+      `"${DUMMY_PROJECT_API_KEY}"`,
+    )}) for you to replace later.
 You can find your Project API key here:
 ${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
   }
@@ -718,7 +727,8 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 
@@ -806,7 +816,7 @@ export async function createNewConfigFile(
     return false;
   }
 
-  const prettyFilename = chalk.cyan(relative(installDir ?? process.cwd(), filepath));
+  const prettyFilename = chalk.cyan(relative(installDir, filepath));
 
   try {
     await fs.promises.writeFile(filepath, codeSnippet);

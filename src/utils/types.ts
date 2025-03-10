@@ -29,7 +29,7 @@ export type WizardOptions = {
   /**
    * The directory to run the wizard in.
    */
-  installDir?: string;
+  installDir: string;
 };
 
 export interface Feature {

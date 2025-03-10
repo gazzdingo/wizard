@@ -34,23 +34,37 @@ export const IGNORE_PATTERNS = [
   '**/dist/**',
   '**/build/**',
   '**/public/**',
-]
-export async function getNextJsRouter({ installDir }: Pick<WizardOptions, 'installDir'>): Promise<NextJsRouter> {
-  const pagesMatches = await fg('**/pages/_app.@(ts|tsx|js|jsx)', { dot: true, cwd: installDir ?? process.cwd(), ignore: IGNORE_PATTERNS });
+];
+export async function getNextJsRouter({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): Promise<NextJsRouter> {
+  const pagesMatches = await fg('**/pages/_app.@(ts|tsx|js|jsx)', {
+    dot: true,
+    cwd: installDir,
+    ignore: IGNORE_PATTERNS,
+  });
 
   const hasPagesDir = pagesMatches.length > 0;
 
-  const appMatches = await fg('**/app/**/layout.@(ts|tsx|js|jsx)', { dot: true, cwd: installDir ?? process.cwd(), ignore: IGNORE_PATTERNS });
+  const appMatches = await fg('**/app/**/layout.@(ts|tsx|js|jsx)', {
+    dot: true,
+    cwd: installDir,
+    ignore: IGNORE_PATTERNS,
+  });
 
   const hasAppDir = appMatches.length > 0;
 
   if (hasPagesDir && !hasAppDir) {
-    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.PAGES_ROUTER)} 📃`);
+    clack.log.info(
+      `Detected ${getNextJsRouterName(NextJsRouter.PAGES_ROUTER)} 📃`,
+    );
     return NextJsRouter.PAGES_ROUTER;
   }
 
   if (hasAppDir && !hasPagesDir) {
-    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.APP_ROUTER)} 📱`);
+    clack.log.info(
+      `Detected ${getNextJsRouterName(NextJsRouter.APP_ROUTER)} 📱`,
+    );
     return NextJsRouter.APP_ROUTER;
   }
 
@@ -58,10 +72,16 @@ export async function getNextJsRouter({ installDir }: Pick<WizardOptions, 'insta
     clack.select({
       message: 'What router are you using?',
       options: [
-        { label: getNextJsRouterName(NextJsRouter.APP_ROUTER), value: NextJsRouter.APP_ROUTER },
-        { label: getNextJsRouterName(NextJsRouter.PAGES_ROUTER), value: NextJsRouter.PAGES_ROUTER },
+        {
+          label: getNextJsRouterName(NextJsRouter.APP_ROUTER),
+          value: NextJsRouter.APP_ROUTER,
+        },
+        {
+          label: getNextJsRouterName(NextJsRouter.PAGES_ROUTER),
+          value: NextJsRouter.PAGES_ROUTER,
+        },
       ],
-    })
+    }),
   );
 
   return result;
@@ -69,7 +89,7 @@ export async function getNextJsRouter({ installDir }: Pick<WizardOptions, 'insta
 
 export const getNextJsRouterName = (router: NextJsRouter) => {
   return router === NextJsRouter.APP_ROUTER ? 'app router' : 'pages router';
-}
+};
 
 export const getAssetHostFromHost = (host: string) => {
   if (host.includes('us.i.posthog.com')) {
@@ -81,7 +101,7 @@ export const getAssetHostFromHost = (host: string) => {
   }
 
   return host;
-}
+};
 
 export const getUiHostFromHost = (host: string) => {
   if (host.includes('us.i.posthog.com')) {
@@ -93,4 +113,4 @@ export const getUiHostFromHost = (host: string) => {
   }
 
   return host;
-}
+};
