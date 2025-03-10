@@ -76,7 +76,6 @@ export function printWelcome(options: {
   message?: string;
   telemetryEnabled?: boolean;
 }): void {
-  const wizardVersion = process.env.npm_package_version;
 
   // eslint-disable-next-line no-console
   console.log('');
@@ -85,10 +84,6 @@ export function printWelcome(options: {
   let welcomeText =
     options.message ||
     `The ${options.wizardName} will help you set up PostHog for your application.\nThank you for using PostHog :)`;
-
-  if (wizardVersion) {
-    welcomeText = `${welcomeText}\n\nVersion: ${wizardVersion}`;
-  }
 
   if (options.telemetryEnabled) {
     welcomeText = `${welcomeText}
