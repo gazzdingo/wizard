@@ -4,11 +4,8 @@ import type { WizardOptions } from './utils/types';
 import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
 
 import { getIntegrationDescription, Integration } from './lib/constants';
-import type { PackageDotJson } from './utils/package-json';
-import { readFileSync } from 'node:fs';
 import { readEnvironment } from './utils/environment';
 import clack from './utils/clack';
-
 
 type Args = {
   integration?: Integration;
@@ -22,7 +19,7 @@ export async function run(argv: Args) {
   };
 
 
-  clack.intro(`PostHog Wizard ${tryGetWizardVersion()}`);
+  clack.intro(`Welcome to the PostHog setup wizard ✨`);
 
   const integration = finalArgs.integration ?? await getIntegrationForSetup();
 
@@ -41,21 +38,6 @@ export async function run(argv: Args) {
     default:
       clack.log.error('No setup wizard selected!');
   }
-}
-
-function tryGetWizardVersion(): string {
-  let version = process.env.npm_package_version;
-  if (!version) {
-    try {
-      const wizardPkgJson = JSON.parse(
-        readFileSync('../package.json', 'utf-8'),
-      ) as PackageDotJson;
-      version = wizardPkgJson.version;
-    } catch {
-      // ignore
-    }
-  }
-  return version ?? '';
 }
 
 
