@@ -92,7 +92,9 @@ describe('createNewConfigFile', () => {
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
 
-    const result = await createNewConfigFile(filename, code);
+    const result = await createNewConfigFile(filename, code, {
+      installDir: process.cwd(),
+    });
 
     expect(result).toBe(true);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
@@ -105,7 +107,14 @@ describe('createNewConfigFile', () => {
     const code = 'module.exports = {/*config...*/}';
     const moreInfo = 'More information...';
 
-    await createNewConfigFile(filename, code, moreInfo);
+    await createNewConfigFile(
+      filename,
+      code,
+      {
+        installDir: process.cwd(),
+      },
+      moreInfo,
+    );
 
     expect(clack.log.info).toHaveBeenCalledTimes(1);
     expect(clack.log.info).toHaveBeenCalledWith(
@@ -121,7 +130,9 @@ describe('createNewConfigFile', () => {
     const filename = '/webpack.config.js';
     const code = 'module.exports = {/*config...*/}';
 
-    const result = await createNewConfigFile(filename, code);
+    const result = await createNewConfigFile(filename, code, {
+      installDir: process.cwd(),
+    });
 
     expect(result).toBe(false);
     expect(writeFileSpy).toHaveBeenCalledWith(filename, code);
@@ -132,6 +143,7 @@ describe('createNewConfigFile', () => {
     const result = await createNewConfigFile(
       './relative/webpack.config.js',
       '',
+      { installDir: process.cwd() },
     );
 
     expect(result).toBe(false);
@@ -173,6 +185,7 @@ describe('installPackage', () => {
       forceInstall: true,
       askBeforeUpdating: false,
       packageManager: packageManagerMock,
+      installDir: process.cwd(),
     });
 
     expect(execSpy).toHaveBeenCalledWith(
@@ -213,6 +226,7 @@ describe('installPackage', () => {
         forceInstall: flag,
         askBeforeUpdating: false,
         packageManager: packageManagerMock,
+        installDir: process.cwd(),
       });
 
       expect(execSpy).toHaveBeenCalledWith(

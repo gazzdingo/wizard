@@ -1,4 +1,4 @@
-import { getAssetHostFromHost } from './utils';
+import { getAssetHostFromHost, getUiHostFromHost } from './utils';
 
 export const getNextjsAppRouterDocs = ({
   host,
@@ -9,26 +9,28 @@ export const getNextjsAppRouterDocs = ({
 }) => {
   return `
 ==============================
-FILE: app/components/PostHogProvider.${language === 'typescript' ? 'tsx' : 'jsx'
-    }
+FILE: PostHogProvider.${
+    language === 'typescript' ? 'tsx' : 'jsx'
+  } (put it somewhere where client files are, like the components folder)
+LOCATION: Wherever other providers are, or the components folder
 ==============================
 Changes:
 - Create a PostHogProvider component that will be imported into the layout file.
 
 Example:
 --------------------------------------------------
-'use client'
+"use client"
 
-import posthog from 'posthog-js'
-import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
-import { Suspense, useEffect } from 'react'
+import posthog from "posthog-js"
+import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
+import { Suspense, useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: "/ingest",
-      ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      ui_host: "${getUiHostFromHost(host)}",
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true, // Enable pageleave capture
     })
@@ -55,7 +57,7 @@ function PostHogPageView() {
       if (search) {
         url += "?" + search
       }
-      posthog.capture('$pageview', { '$current_url': url })
+      posthog.capture("$pageview", { "$current_url": url })
     }
   }, [pathname, searchParams, posthog])
 
@@ -72,7 +74,8 @@ function SuspendedPostHogPageView() {
 --------------------------------------------------
 
 ==============================
-FILE: app/layout.${language === 'typescript' ? 'tsx' : 'jsx'}
+FILE: layout.${language === 'typescript' ? 'tsx' : 'jsx'}
+LOCATION: Wherever the root layout is
 ==============================
 Changes:
 - Import the PostHogProvider from the providers file and wrap the app in it.
@@ -80,7 +83,7 @@ Changes:
 Example:
 --------------------------------------------------
 // other imports
-import { PostHogProvider } from './components/providers'
+import { PostHogProvider } from "LOCATION_OF_POSTHOG_PROVIDER"
 
 export default function RootLayout({ children }) {
   return (
@@ -98,18 +101,19 @@ export default function RootLayout({ children }) {
 --------------------------------------------------
 
 ==============================
-FILE: app/lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
+FILE: posthog.${language === 'typescript' ? 'ts' : 'js'}
+LOCATION: Wherever works best given the project structure
 ==============================
 Changes:
 - Initialize the PostHog Node.js client
 
 Example:
 --------------------------------------------------
-import { PostHog } from 'posthog-node'
+import { PostHog } from "posthog-node"
 
 export default function PostHogClient() {
   const posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    host: "${host}",
     flushAt: 1,
     flushInterval: 0,
   })
@@ -119,6 +123,7 @@ export default function PostHogClient() {
 
 ==============================
 FILE: next.config.{js,ts,mjs,cjs}
+LOCATION: Wherever the root next config is
 ==============================
 Changes:
 - Add rewrites to the Next.js config to support PostHog, if there are existing rewrites, add the PostHog rewrites to them.
@@ -160,7 +165,10 @@ export const getNextjsPagesRouterDocs = ({
 }) => {
   return `
 ==============================
-FILE: pages/_app.${language === 'typescript' ? 'tsx' : 'jsx'}
+FILE: _app.${language === 'typescript' ? 'tsx' : 'jsx'}
+LOCATION: Wherever the root _app.${
+    language === 'typescript' ? 'tsx' : 'jsx'
+  } file is
 ==============================
 Changes:
 - Initialize PostHog in _app.js.
@@ -169,25 +177,26 @@ Changes:
 
 Example:
 --------------------------------------------------
-import { useEffect } from 'react'
-import { Router } from 'next/router'
-import posthog from 'posthog-js'
-import { PostHogProvider } from 'posthog-js/react'
+import { useEffect } from "react"
+import { Router } from "next/router"
+import posthog from "posthog-js"
+import { PostHogProvider } from "posthog-js/react"
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+      api_host: "/ingest",
+      ui_host: "${getUiHostFromHost(host)}",
       loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug()
+        if (process.env.NODE_ENV === "development") posthog.debug()
       },
     })
 
-    const handleRouteChange = () => posthog?.capture('$pageview')
-    Router.events.on('routeChangeComplete', handleRouteChange)
+    const handleRouteChange = () => posthog?.capture("$pageview")
+    Router.events.on("routeChangeComplete", handleRouteChange)
 
     return () => {
-      Router.events.off('routeChangeComplete', handleRouteChange)
+      Router.events.off("routeChangeComplete", handleRouteChange)
     }
   }, [])
 
@@ -200,18 +209,19 @@ export default function App({ Component, pageProps }) {
 --------------------------------------------------
 
 ==============================
-FILE: lib/server/posthog.${language === 'typescript' ? 'ts' : 'js'}
+FILE: posthog.${language === 'typescript' ? 'ts' : 'js'}
+LOCATION: Wherever works best given the project structure
 ==============================
 Changes:
 - Initialize the PostHog Node.js client for server-side tracking.
 
 Example:
 --------------------------------------------------
-import { PostHog } from 'posthog-node'
+import { PostHog } from "posthog-node"
 
 export default function PostHogClient() {
   return new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    host: "${host}",
     flushAt: 1,
     flushInterval: 0,
   })
@@ -220,6 +230,7 @@ export default function PostHogClient() {
 
 ==============================
 FILE: next.config.{js,ts,mjs,cjs}
+LOCATION: Wherever the root next config is
 ==============================
 Changes:
 - Add rewrites to support PostHog tracking.
@@ -231,8 +242,8 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: "/ingest/static/:path*", destination: "${getAssetHostFromHost(
-    host,
-  )}/static/:path*" },
+        host,
+      )}/static/:path*" },
       { source: "/ingest/:path*", destination: "${host}/:path*" },
       { source: "/ingest/decide", destination: "${host}/decide" },
     ]
