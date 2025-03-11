@@ -26,6 +26,7 @@ export const query = async <S>({
       },
     },
   );
+
   const validation = schema.safeParse(response.data.data);
 
   if (!validation.success) {

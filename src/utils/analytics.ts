@@ -1,46 +1,65 @@
 import { PostHog } from 'posthog-node';
-import { ANALYTICS_HOST_URL, ANALYTICS_POSTHOG_KEY } from '../../lib/constants';
+import { ANALYTICS_HOST_URL, ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY } from '../../lib/constants';
+import { v4 as uuidv4 } from 'uuid';
 export class Analytics {
   private client: PostHog;
   private tags: Record<string, string | boolean | number | null | undefined> =
     {};
   private distinctId?: string;
+  private anonymousId: string;
 
   constructor() {
     this.client = new PostHog(
-      ANALYTICS_POSTHOG_KEY,
+      ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY,
       {
         host: ANALYTICS_HOST_URL,
+        flushAt: 1,
+        flushInterval: 0,
       },
     );
 
     this.tags = {};
+
+    this.anonymousId = uuidv4();
 
     this.distinctId = undefined;
   }
 
   setDistinctId(distinctId: string) {
     this.distinctId = distinctId;
+    this.client.alias({
+      distinctId,
+      alias: this.anonymousId,
+    });
   }
 
   setTag(key: string, value: string | boolean | number | null | undefined) {
     this.tags[key] = value;
   }
 
-  async captureAndFlush(eventName: string) {
+  async capture(eventName: string, properties?: Record<string, unknown>) {
+
+    this.client.capture({
+      distinctId: this.distinctId ?? this.anonymousId,
+      event: eventName,
+      properties: {
+        ...this.tags,
+        ...properties,
+      },
+    });
+
+  }
+
+  async flush(status: "success" | "error" | "canceled") {
     if (Object.keys(this.tags).length === 0) {
       return;
     }
 
-    if (!this.distinctId) {
-      // If not identified, don't send any tag data.
-      return;
-    }
-
     this.client.capture({
-      distinctId: this.distinctId,
-      event: eventName,
+      distinctId: this.distinctId ?? this.anonymousId,
+      event: "setup wizard finished",
       properties: {
+        status,
         tags: this.tags,
       },
     });

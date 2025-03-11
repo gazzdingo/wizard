@@ -23,6 +23,7 @@ import {
   DUMMY_PROJECT_API_KEY,
   INSTALL_DIR,
   ISSUES_URL,
+  type Integration,
 } from '../../lib/constants';
 import { analytics } from './analytics';
 import clack from './clack';
@@ -57,7 +58,7 @@ export interface CliSetupConfigContent {
 }
 
 export async function abort(message?: string, status?: number): Promise<never> {
-  await analytics.captureAndFlush('wizard aborted');
+  await analytics.flush('canceled');
 
   clack.outro(message ?? 'Wizard setup cancelled.');
   return process.exit(status ?? 1);
@@ -66,7 +67,7 @@ export async function abort(message?: string, status?: number): Promise<never> {
 export async function abortIfCancelled<T>(
   input: T | Promise<T>,
 ): Promise<Exclude<T, symbol>> {
-  await analytics.captureAndFlush('wizard cancelled');
+  await analytics.flush("canceled");
 
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
@@ -237,7 +238,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -268,6 +269,7 @@ export async function installPackage({
   packageNameDisplayLabel,
   packageManager,
   forceInstall = false,
+  integration,
 }: {
   /** The string that is passed to the package manager CLI as identifier to install (e.g. `posthog-js`, or `posthog-js@^1.100.0`) */
   packageName: string;
@@ -278,6 +280,8 @@ export async function installPackage({
   packageManager?: PackageManager;
   /** Add force install flag to command to skip install precondition fails */
   forceInstall?: boolean;
+  /** The integration that is being used */
+  integration?: string;
 }): Promise<{ packageManager?: PackageManager }> {
   return traceStep('install-package', async () => {
     if (alreadyInstalled && askBeforeUpdating) {
@@ -307,8 +311,7 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
-            forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
           { cwd: INSTALL_DIR },
           (err, stdout, stderr) => {
@@ -352,11 +355,22 @@ export async function installPackage({
       )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
+    analytics.capture("wizard interaction", {
+      action: "package installed",
+      package_name: packageName,
+      package_manager: pkgManager.name,
+      integration,
+    });
+
     return { packageManager: pkgManager };
   });
 }
 
-export async function runPrettierIfInstalled(): Promise<void> {
+export async function runPrettierIfInstalled({
+  integration,
+}: {
+  integration: Integration;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
     if (!isInGitRepo()) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
@@ -409,6 +423,11 @@ export async function runPrettierIfInstalled(): Promise<void> {
     }
 
     prettierSpinner.stop('Prettier has formatted your files.');
+
+    analytics.capture("wizard interaction", {
+      action: "ran prettier",
+      integration,
+    });
   });
 }
 
@@ -553,8 +572,8 @@ ${chalk.cyan(ISSUES_URL)}`);
 
     clack.log
       .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
-      `"${DUMMY_PROJECT_API_KEY}"`,
-    )}) for you to replace later.
+        `"${DUMMY_PROJECT_API_KEY}"`,
+      )}) for you to replace later.
 You can find your Project API key here:
 ${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
   }
@@ -727,8 +746,7 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
-      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 
