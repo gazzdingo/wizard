@@ -24,7 +24,7 @@ import {
   ISSUES_URL,
   type Integration,
 } from '../lib/constants';
-import { analytics, Analytics } from './analytics';
+import { analytics } from './analytics';
 import clack from './clack';
 
 interface ProjectData {

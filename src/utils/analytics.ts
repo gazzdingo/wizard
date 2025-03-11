@@ -37,7 +37,7 @@ export class Analytics {
     this.tags[key] = value;
   }
 
-  async capture(eventName: string, properties?: Record<string, unknown>) {
+  capture(eventName: string, properties?: Record<string, unknown>) {
     this.client.capture({
       distinctId: this.distinctId ?? this.anonymousId,
       event: eventName,

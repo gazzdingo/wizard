@@ -1,4 +1,4 @@
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate } from '@langchain/core/prompts';
 
 export const filterFilesPromptTemplate = new PromptTemplate({
   inputVariables: ['documentation', 'file_list'],
@@ -25,11 +25,17 @@ Installation documentation:
 
 All current files in the repository:
 
-{file_list}`
-})
+{file_list}`,
+});
 
 export const generateFileChangesPromptTemplate = new PromptTemplate({
-  inputVariables: ['file_content', 'documentation', 'file_path', 'changed_files', 'unchanged_files'],
+  inputVariables: [
+    'file_content',
+    'documentation',
+    'file_path',
+    'changed_files',
+    'unchanged_files',
+  ],
   template: `You are a PostHog installation wizard, a master AI programming assistant that implements PostHog for Next.js projects.
 
 Your task is to update the file to integrate PostHog according to the documentation.
@@ -58,5 +64,5 @@ Here are the files that have not been changed yet:
 {unchanged_files}
 
 Below is the current file contents:
-{file_content}`
-})
+{file_content}`,
+});

@@ -1,15 +1,14 @@
-import path from "path";
-import fs from "fs";
+import path from 'path';
+import fs from 'fs';
 
 export const GLOBAL_IGNORE_PATTERN = [
-  "node_modules",
-  "dist",
-  "build",
-  "public",
-  "static",
-  ".git",
-  ".next",
-
+  'node_modules',
+  'dist',
+  'build',
+  'public',
+  'static',
+  '.git',
+  '.next',
 ];
 export async function getAllFilesInProject(dir: string): Promise<string[]> {
   let results: string[] = [];

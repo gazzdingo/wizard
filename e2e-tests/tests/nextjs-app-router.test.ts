@@ -18,7 +18,7 @@ describe('NextJS', () => {
     '../test-applications/nextjs-app-router-test-app',
   );
 
-  beforeAll(async () => {
+  beforeAll(() => {
     const wizardInstance = startWizardInstance(projectDir);
 
     // TODO: Step through the wizard - mocking queries
