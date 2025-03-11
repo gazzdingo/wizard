@@ -1,5 +1,8 @@
 import { PostHog } from 'posthog-node';
-import { ANALYTICS_HOST_URL, ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY } from '../../lib/constants';
+import {
+  ANALYTICS_HOST_URL,
+  ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY,
+} from '../lib/constants';
 import { v4 as uuidv4 } from 'uuid';
 export class Analytics {
   private client: PostHog;
@@ -9,14 +12,11 @@ export class Analytics {
   private anonymousId: string;
 
   constructor() {
-    this.client = new PostHog(
-      ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY,
-      {
-        host: ANALYTICS_HOST_URL,
-        flushAt: 1,
-        flushInterval: 0,
-      },
-    );
+    this.client = new PostHog(ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY, {
+      host: ANALYTICS_HOST_URL,
+      flushAt: 1,
+      flushInterval: 0,
+    });
 
     this.tags = {};
 
@@ -38,7 +38,6 @@ export class Analytics {
   }
 
   async capture(eventName: string, properties?: Record<string, unknown>) {
-
     this.client.capture({
       distinctId: this.distinctId ?? this.anonymousId,
       event: eventName,
@@ -47,24 +46,23 @@ export class Analytics {
         ...properties,
       },
     });
-
   }
 
-  async flush(status: "success" | "error" | "canceled") {
+  async shutdown(status: 'success' | 'error' | 'canceled') {
     if (Object.keys(this.tags).length === 0) {
       return;
     }
 
     this.client.capture({
       distinctId: this.distinctId ?? this.anonymousId,
-      event: "setup wizard finished",
+      event: 'setup wizard finished',
       properties: {
         status,
         tags: this.tags,
       },
     });
 
-    await this.client.flush();
+    await this.client.shutdown();
   }
 }
 

@@ -82,6 +82,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
+      integration: Integration.nextjs,
     });
 
   await installPackage({
@@ -92,18 +93,18 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
+    integration: Integration.nextjs,
   });
 
   const router = await getNextJsRouter(options);
 
   const relevantFiles = await getRelevantFilesForNextJs(options);
 
-  analytics.capture("wizard interaction", {
-    action: "detected relevant files",
+  analytics.capture('wizard interaction', {
+    action: 'detected relevant files',
     integration: Integration.nextjs,
     number_of_files: relevantFiles.length,
   });
-
 
   const installationDocumentation = getInstallationDocumentation({
     router,
@@ -121,8 +122,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     wizardHash,
   });
 
-  analytics.capture("wizard interaction", {
-    action: "detected files to change",
+  analytics.capture('wizard interaction', {
+    action: 'detected files to change',
     integration: Integration.nextjs,
     files: filesToChange,
   });
@@ -132,8 +133,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   for (const filePath of filesToChange) {
     const fileChangeSpinner = clack.spinner();
 
-    analytics.capture("wizard interaction", {
-      action: "processing file",
+    analytics.capture('wizard interaction', {
+      action: 'processing file',
       integration: Integration.nextjs,
       file: filePath,
     });
@@ -178,8 +179,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
         `${oldContent ? 'Updated' : 'Created'} file ${filePath}`,
       );
 
-      analytics.capture("wizard interaction", {
-        action: "processed file",
+      analytics.capture('wizard interaction', {
+        action: 'processed file',
         integration: Integration.nextjs,
         file: filePath,
       });
@@ -193,15 +194,18 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     installDir: options.installDir,
   });
 
-  analytics.capture("wizard interaction", {
-    action: "added environment variables",
+  analytics.capture('wizard interaction', {
+    action: 'added environment variables',
     integration: Integration.nextjs,
   });
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager(options));
 
-  await runPrettierIfInstalled(options);
+  await runPrettierIfInstalled({
+    installDir: options.installDir,
+    integration: Integration.nextjs,
+  });
 
   clack.outro(`
 ${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
@@ -213,7 +217,7 @@ ${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
-  await analytics.flush("success");
+  await analytics.shutdown('success');
 }
 
 async function askForAIConsent() {
