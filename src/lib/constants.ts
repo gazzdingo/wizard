@@ -28,10 +28,20 @@ export interface Args {
   integration: Integration;
 }
 
-export const DEFAULT_URL = 'http://us.posthog.com';
+export const IS_DEV = false;
+
+export const DEFAULT_URL = IS_DEV
+  ? 'http://localhost:8010'
+  : 'https://us.posthog.com';
 export const ISSUES_URL = 'https://github.com/posthog/wizard/issues';
-export const CLOUD_URL = 'https://us.posthog.com';
-export const DEFAULT_HOST_URL = 'https://us.i.posthog.com';
+export const CLOUD_URL = IS_DEV
+  ? 'http://localhost:8010'
+  : 'https://us.posthog.com';
+export const DEFAULT_HOST_URL = IS_DEV
+  ? 'http://localhost:8010'
+  : 'https://us.i.posthog.com';
 export const ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY = 'sTMFPsFhdP1Ssg';
-export const ANALYTICS_HOST_URL = 'https://internal-t.posthog.com';
+export const ANALYTICS_HOST_URL = IS_DEV
+  ? 'http://localhost:8010'
+  : 'https://internal-t.posthog.com';
 export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
