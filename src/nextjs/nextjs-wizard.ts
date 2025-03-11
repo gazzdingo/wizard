@@ -38,11 +38,10 @@ import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
-  const { telemetryEnabled, forceInstall } = options;
+  const { forceInstall } = options;
 
   printWelcome({
     wizardName: 'PostHog Next.js Wizard',
-    telemetryEnabled,
   });
 
   const aiConsent = await askForAIConsent();
@@ -208,12 +207,13 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+    aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-      `${packageManagerForOutro.runScriptCommand} dev`,
-    )})`}
+  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+    `${packageManagerForOutro.runScriptCommand} dev`,
+  )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
@@ -463,7 +463,8 @@ export async function addOrUpdateEnvironmentVariables({
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           relativeEnvFilePath,
-        )} with environment variables for PostHog. Please add them manually. Error: ${error.message
+        )} with environment variables for PostHog. Please add them manually. Error: ${
+          error.message
         }`,
       );
     }

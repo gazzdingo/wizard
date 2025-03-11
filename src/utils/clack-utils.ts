@@ -66,7 +66,7 @@ export async function abort(message?: string, status?: number): Promise<never> {
 export async function abortIfCancelled<T>(
   input: T | Promise<T>,
 ): Promise<Exclude<T, symbol>> {
-  await analytics.shutdown("cancelled");
+  await analytics.shutdown('cancelled');
 
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
@@ -79,24 +79,14 @@ export async function abortIfCancelled<T>(
 export function printWelcome(options: {
   wizardName: string;
   message?: string;
-  telemetryEnabled?: boolean;
 }): void {
   // eslint-disable-next-line no-console
   console.log('');
   clack.intro(chalk.inverse(` ${options.wizardName} `));
 
-  let welcomeText =
+  const welcomeText =
     options.message ||
     `The ${options.wizardName} will help you set up PostHog for your application.\nThank you for using PostHog :)`;
-
-  if (options.telemetryEnabled) {
-    welcomeText = `${welcomeText}
-
-This wizard sends telemetry data and crash reports to PostHog. This helps us improve the Wizard.
-You can turn this off at any time by running ${chalk.cyanBright(
-      'npx @posthog/wizard --disable-telemetry',
-    )}.`;
-  }
 
   clack.note(welcomeText);
 }
@@ -231,7 +221,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -308,7 +298,8 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
           { cwd: installDir },
           (err, stdout, stderr) => {
@@ -352,8 +343,8 @@ export async function installPackage({
       )} with ${chalk.bold(pkgManager.label)}.`,
     );
 
-    analytics.capture("wizard interaction", {
-      action: "package installed",
+    analytics.capture('wizard interaction', {
+      action: 'package installed',
       package_name: packageName,
       package_manager: pkgManager.name,
       integration,
@@ -366,7 +357,9 @@ export async function installPackage({
 export async function runPrettierIfInstalled({
   installDir,
   integration,
-}: Pick<WizardOptions, 'installDir'> & { integration: Integration }): Promise<void> {
+}: Pick<WizardOptions, 'installDir'> & {
+  integration: Integration;
+}): Promise<void> {
   return traceStep('run-prettier', async () => {
     if (!isInGitRepo()) {
       // We only run formatting on changed files. If we're not in a git repo, we can't find
@@ -420,8 +413,8 @@ export async function runPrettierIfInstalled({
 
     prettierSpinner.stop('Prettier has formatted your files.');
 
-    analytics.capture("wizard interaction", {
-      action: "ran prettier",
+    analytics.capture('wizard interaction', {
+      action: 'ran prettier',
       integration,
     });
   });
@@ -575,8 +568,8 @@ ${chalk.cyan(ISSUES_URL)}`);
 
     clack.log
       .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
-        `"${DUMMY_PROJECT_API_KEY}"`,
-      )}) for you to replace later.
+      `"${DUMMY_PROJECT_API_KEY}"`,
+    )}) for you to replace later.
 You can find your Project API key here:
 ${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
   }
@@ -749,7 +742,8 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 

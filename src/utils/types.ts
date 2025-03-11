@@ -7,11 +7,6 @@ export type PreselectedProject = {
 
 export type WizardOptions = {
   /**
-   * Controls whether the wizard should send telemetry data to PostHog.
-   */
-  telemetryEnabled: boolean;
-
-  /**
    * Whether to enable debug mode.
    */
   debug: boolean;
