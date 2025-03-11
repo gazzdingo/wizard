@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { traceStep } from '../telemetry';
 import { getPackageDotJson, updatePackageDotJson } from './clack-utils';
-import { Analytics } from './analytics';
+import { analytics } from './analytics';
 import type { WizardOptions } from './types';
 
 export interface PackageManager {
@@ -205,11 +205,11 @@ export function detectPackageManger({
   return traceStep('detect-package-manager', () => {
     for (const packageManager of packageManagers) {
       if (packageManager.detect({ installDir })) {
-        Analytics.setTag('package-manager', packageManager.name);
+        analytics.setTag('package-manager', packageManager.name);
         return packageManager;
       }
     }
-    Analytics.setTag('package-manager', 'not-detected');
+    analytics.setTag('package-manager', 'not-detected');
     return null;
   });
 }

@@ -14,7 +14,12 @@ type Args = {
   forceInstall?: boolean;
   installDir?: string;
 };
+
 export async function run(argv: Args) {
+  await runWizard(argv);
+}
+
+async function runWizard(argv: Args) {
   const finalArgs = {
     ...argv,
     ...readEnvironment(),
@@ -23,7 +28,6 @@ export async function run(argv: Args) {
   const wizardOptions: WizardOptions = {
     debug: finalArgs.debug ?? false,
     forceInstall: finalArgs.forceInstall ?? false,
-    telemetryEnabled: false,
     installDir: finalArgs.installDir
       ? path.join(process.cwd(), finalArgs.installDir)
       : process.cwd(),
