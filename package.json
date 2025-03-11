@@ -1,6 +1,6 @@
 {
   "name": "@posthog/wizard",
-  "version": "0.1.0",
+  "version": "0.2.4",
   "homepage": "https://github.com/posthog/wizard",
   "repository": "https://github.com/posthog/wizard",
   "description": "The PostHog wizard helps you to configure your project",
@@ -15,8 +15,17 @@
     "configure"
   ],
   "bin": {
-    "posthog-wizard": "dist/bin.js"
+    "wizard": "dist/bin.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/bin.*",
+    "dist/src",
+    "package.json",
+    "README.md"
+  ],
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "typescript": {

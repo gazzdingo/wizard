@@ -2,7 +2,7 @@ import { major, minVersion } from 'semver';
 import fg from 'fast-glob';
 import { abortIfCancelled } from '../utils/clack-utils';
 import clack from '../utils/clack';
-import { INSTALL_DIR } from '../../lib/constants';
+import type { WizardOptions } from '../utils/types';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -34,23 +34,37 @@ export const IGNORE_PATTERNS = [
   '**/dist/**',
   '**/build/**',
   '**/public/**',
-]
-export async function getNextJsRouter(): Promise<NextJsRouter> {
-  const pagesMatches = await fg('**/pages/_app.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
+];
+export async function getNextJsRouter({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>): Promise<NextJsRouter> {
+  const pagesMatches = await fg('**/pages/_app.@(ts|tsx|js|jsx)', {
+    dot: true,
+    cwd: installDir,
+    ignore: IGNORE_PATTERNS,
+  });
 
   const hasPagesDir = pagesMatches.length > 0;
 
-  const appMatches = await fg('**/app/layout.@(ts|tsx|js|jsx)', { dot: true, cwd: INSTALL_DIR, ignore: IGNORE_PATTERNS });
+  const appMatches = await fg('**/app/**/layout.@(ts|tsx|js|jsx)', {
+    dot: true,
+    cwd: installDir,
+    ignore: IGNORE_PATTERNS,
+  });
 
   const hasAppDir = appMatches.length > 0;
 
   if (hasPagesDir && !hasAppDir) {
-    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.PAGES_ROUTER)} 📃`);
+    clack.log.info(
+      `Detected ${getNextJsRouterName(NextJsRouter.PAGES_ROUTER)} 📃`,
+    );
     return NextJsRouter.PAGES_ROUTER;
   }
 
   if (hasAppDir && !hasPagesDir) {
-    clack.log.info(`Detected ${getNextJsRouterName(NextJsRouter.APP_ROUTER)} 📱`);
+    clack.log.info(
+      `Detected ${getNextJsRouterName(NextJsRouter.APP_ROUTER)} 📱`,
+    );
     return NextJsRouter.APP_ROUTER;
   }
 
@@ -58,10 +72,16 @@ export async function getNextJsRouter(): Promise<NextJsRouter> {
     clack.select({
       message: 'What router are you using?',
       options: [
-        { label: getNextJsRouterName(NextJsRouter.APP_ROUTER), value: NextJsRouter.APP_ROUTER },
-        { label: getNextJsRouterName(NextJsRouter.PAGES_ROUTER), value: NextJsRouter.PAGES_ROUTER },
+        {
+          label: getNextJsRouterName(NextJsRouter.APP_ROUTER),
+          value: NextJsRouter.APP_ROUTER,
+        },
+        {
+          label: getNextJsRouterName(NextJsRouter.PAGES_ROUTER),
+          value: NextJsRouter.PAGES_ROUTER,
+        },
       ],
-    })
+    }),
   );
 
   return result;
@@ -69,7 +89,7 @@ export async function getNextJsRouter(): Promise<NextJsRouter> {
 
 export const getNextJsRouterName = (router: NextJsRouter) => {
   return router === NextJsRouter.APP_ROUTER ? 'app router' : 'pages router';
-}
+};
 
 export const getAssetHostFromHost = (host: string) => {
   if (host.includes('us.i.posthog.com')) {
@@ -81,4 +101,16 @@ export const getAssetHostFromHost = (host: string) => {
   }
 
   return host;
-}
+};
+
+export const getUiHostFromHost = (host: string) => {
+  if (host.includes('us.i.posthog.com')) {
+    return 'https://us.posthog.com';
+  }
+
+  if (host.includes('eu.i.posthog.com')) {
+    return 'https://eu.posthog.com';
+  }
+
+  return host;
+};

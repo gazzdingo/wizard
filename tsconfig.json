@@ -13,7 +13,7 @@
     "__tests__",
     "index.ts",
     "bin.ts",
-    "lib/**/*",
+    "src/lib/**/*",
     "spec/**/*",
     "src/**/*",
     "test/**/*",

@@ -33,7 +33,7 @@ import { query } from '../utils/query';
 import clack from '../utils/clack';
 import fg from 'fast-glob';
 import path from 'path';
-import { INSTALL_DIR, Integration, ISSUES_URL } from '../../lib/constants';
+import { Integration, ISSUES_URL } from '../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 
@@ -54,11 +54,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const typeScriptDetected = isUsingTypeScript();
+  const typeScriptDetected = isUsingTypeScript(options);
 
   await confirmContinueIfNoOrDirtyGitRepo();
 
-  const packageJson = await getPackageDotJson();
+  const packageJson = await getPackageDotJson(options);
 
   await ensurePackageIsInstalled(packageJson, 'next', 'Next.js');
 
@@ -81,7 +81,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
       forceInstall,
       askBeforeUpdating: false,
-      integration: Integration.nextjs,
+      installDir: options.installDir,
     });
 
   await installPackage({
@@ -91,14 +91,12 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
     forceInstall,
     askBeforeUpdating: false,
-    integration: Integration.nextjs,
+    installDir: options.installDir,
   });
 
-  const router = await getNextJsRouter();
+  const router = await getNextJsRouter(options);
 
-  analytics.setTag("nextjs-router", router);
-
-  const relevantFiles = await getRelevantFilesForNextJs();
+  const relevantFiles = await getRelevantFilesForNextJs(options);
 
   analytics.capture("wizard interaction", {
     action: "detected relevant files",
@@ -144,7 +142,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       let oldContent = undefined;
       try {
         oldContent = await fs.promises.readFile(
-          path.join(INSTALL_DIR, filePath),
+          path.join(options.installDir, filePath),
           'utf8',
         );
       } catch (readError) {
@@ -172,7 +170,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       });
 
       if (newContent !== oldContent) {
-        await updateFile({ filePath, oldContent, newContent });
+        await updateFile({ filePath, oldContent, newContent }, options);
         changes.push({ filePath, oldContent, newContent });
       }
 
@@ -192,7 +190,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   await addOrUpdateEnvironmentVariables({
     projectApiKey,
-    host,
+    installDir: options.installDir,
   });
 
   analytics.capture("wizard interaction", {
@@ -201,11 +199,9 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   const packageManagerForOutro =
-    packageManagerFromInstallStep ?? (await getPackageManager());
+    packageManagerFromInstallStep ?? (await getPackageManager(options));
 
-  await runPrettierIfInstalled({
-    integration: Integration.nextjs,
-  });
+  await runPrettierIfInstalled(options);
 
   clack.outro(`
 ${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
@@ -245,7 +241,9 @@ async function askForAIConsent() {
   });
 }
 
-async function getRelevantFilesForNextJs() {
+async function getRelevantFilesForNextJs({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>) {
   const filterPatterns = ['**/*.{tsx,ts,jsx,js,mjs,cjs}'];
   const ignorePatterns = [
     'node_modules',
@@ -257,15 +255,17 @@ async function getRelevantFilesForNextJs() {
   ];
 
   const filteredFiles = await fg(filterPatterns, {
-    cwd: INSTALL_DIR,
+    cwd: installDir,
     ignore: ignorePatterns,
   });
 
   return filteredFiles;
 }
 
-export async function detectNextJs(): Promise<Integration.nextjs | undefined> {
-  const packageJson = await getPackageDotJson();
+export async function detectNextJs(
+  options: Pick<WizardOptions, 'installDir'>,
+): Promise<Integration.nextjs | undefined> {
+  const packageJson = await getPackageDotJson(options);
 
   const hasNextInstalled = hasPackageInstalled('next', packageJson);
 
@@ -362,11 +362,14 @@ async function generateFileChanges({
   return response.newContent;
 }
 
-async function updateFile(change: FileChange) {
-  const dir = path.dirname(path.join(INSTALL_DIR, change.filePath));
+async function updateFile(
+  change: FileChange,
+  { installDir }: Pick<WizardOptions, 'installDir'>,
+) {
+  const dir = path.dirname(path.join(installDir, change.filePath));
   await fs.promises.mkdir(dir, { recursive: true });
   await fs.promises.writeFile(
-    path.join(INSTALL_DIR, change.filePath),
+    path.join(installDir, change.filePath),
     change.newContent,
   );
 }
@@ -379,22 +382,22 @@ type FileChange = {
 
 export async function addOrUpdateEnvironmentVariables({
   projectApiKey,
-  host,
+  installDir,
 }: {
   projectApiKey: string;
-  host: string;
+  installDir: string;
 }): Promise<void> {
-  const envVarContent = `# Posthog\nNEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}\nNEXT_PUBLIC_POSTHOG_HOST=${host}\n`;
+  const envVarContent = `# Posthog\nNEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`;
 
-  const dotEnvLocalFilePath = path.join(INSTALL_DIR, '.env.local');
-  const dotEnvFilePath = path.join(INSTALL_DIR, '.env');
+  const dotEnvLocalFilePath = path.join(installDir, '.env.local');
+  const dotEnvFilePath = path.join(installDir, '.env');
   const targetEnvFilePath = fs.existsSync(dotEnvLocalFilePath)
     ? dotEnvLocalFilePath
     : dotEnvFilePath;
 
   const dotEnvFileExists = fs.existsSync(targetEnvFilePath);
 
-  const relativeEnvFilePath = path.relative(INSTALL_DIR, targetEnvFilePath);
+  const relativeEnvFilePath = path.relative(installDir, targetEnvFilePath);
 
   if (dotEnvFileExists) {
     const dotEnvFileContent = fs.readFileSync(targetEnvFilePath, 'utf8');
@@ -402,11 +405,7 @@ export async function addOrUpdateEnvironmentVariables({
     const hasProjectApiKey = dotEnvFileContent.includes(
       `NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`,
     );
-    const hasHost = dotEnvFileContent.includes(
-      `NEXT_PUBLIC_POSTHOG_HOST=${host}`,
-    );
-
-    if (hasProjectApiKey && hasHost) {
+    if (hasProjectApiKey) {
       clack.log.success(
         `${chalk.bold.cyan(
           relativeEnvFilePath,
@@ -414,15 +413,20 @@ export async function addOrUpdateEnvironmentVariables({
       );
     } else {
       try {
-        const newContent = dotEnvFileContent
-          .replace(
+        let newContent = dotEnvFileContent;
+
+        if (dotEnvFileContent.match(/^NEXT_PUBLIC_POSTHOG_KEY=.*$/m)) {
+          newContent = dotEnvFileContent.replace(
             /^NEXT_PUBLIC_POSTHOG_KEY=.*$/m,
             `NEXT_PUBLIC_POSTHOG_KEY=${projectApiKey}`,
-          )
-          .replace(
-            /^NEXT_PUBLIC_POSTHOG_HOST=.*$/m,
-            `NEXT_PUBLIC_POSTHOG_HOST=${host}`,
           );
+        } else {
+          if (!dotEnvFileContent.endsWith('\n')) {
+            newContent += '\n';
+          }
+          newContent += envVarContent;
+        }
+
         await fs.promises.writeFile(targetEnvFilePath, newContent, {
           encoding: 'utf8',
           flag: 'w',
@@ -461,7 +465,7 @@ export async function addOrUpdateEnvironmentVariables({
     }
   }
 
-  const gitignorePath = getDotGitignore();
+  const gitignorePath = getDotGitignore({ installDir });
 
   if (gitignorePath) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
@@ -494,7 +498,7 @@ export async function addOrUpdateEnvironmentVariables({
     try {
       const newGitignoreContent = `.env\n.env.local\n`;
       await fs.promises.writeFile(
-        path.join(INSTALL_DIR, '.gitignore'),
+        path.join(installDir, '.gitignore'),
         newGitignoreContent,
         {
           encoding: 'utf8',
@@ -514,8 +518,10 @@ export async function addOrUpdateEnvironmentVariables({
   }
 }
 
-export function getDotGitignore() {
-  const gitignorePath = path.join(INSTALL_DIR, '.gitignore');
+export function getDotGitignore({
+  installDir,
+}: Pick<WizardOptions, 'installDir'>) {
+  const gitignorePath = path.join(installDir, '.gitignore');
   const gitignoreExists = fs.existsSync(gitignorePath);
 
   if (gitignoreExists) {

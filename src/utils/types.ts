@@ -25,6 +25,11 @@ export type WizardOptions = {
    * Does not apply to all wizard flows (currently NPM only)
    */
   forceInstall: boolean;
+
+  /**
+   * The directory to run the wizard in.
+   */
+  installDir: string;
 };
 
 export interface Feature {
