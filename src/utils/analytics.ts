@@ -48,7 +48,7 @@ export class Analytics {
     });
   }
 
-  async shutdown(status: 'success' | 'error' | 'canceled') {
+  async shutdown(status: 'success' | 'error' | 'cancelled') {
     if (Object.keys(this.tags).length === 0) {
       return;
     }
