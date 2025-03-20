@@ -33,3 +33,9 @@ export interface Feature {
   enabledHint?: string;
   disabledHint?: string;
 }
+
+export type FileChange = {
+  filePath: string;
+  oldContent?: string;
+  newContent: string;
+};

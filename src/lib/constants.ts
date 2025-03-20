@@ -1,5 +1,6 @@
 export enum Integration {
   nextjs = 'nextjs',
+  react = 'react'
 }
 
 export function getIntegrationDescription(type: string): string {
@@ -28,7 +29,7 @@ export interface Args {
   integration: Integration;
 }
 
-export const IS_DEV = false;
+export const IS_DEV = true;
 
 export const DEFAULT_URL = IS_DEV
   ? 'http://localhost:8010'

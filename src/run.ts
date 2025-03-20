@@ -1,12 +1,13 @@
 import { abortIfCancelled } from './utils/clack-utils';
 
 import type { WizardOptions } from './utils/types';
-import { detectNextJs, runNextjsWizard } from './nextjs/nextjs-wizard';
+import { runNextjsWizard } from './nextjs/nextjs-wizard';
 
 import { getIntegrationDescription, Integration } from './lib/constants';
 import { readEnvironment } from './utils/environment';
 import clack from './utils/clack';
 import path from 'path';
+import { INTEGRATION_CONFIG } from './lib/config';
 
 type Args = {
   integration?: Integration;
@@ -51,12 +52,12 @@ async function runWizard(argv: Args) {
 async function detectIntegration(
   options: Pick<WizardOptions, 'installDir'>,
 ): Promise<Integration | undefined> {
-  const detectors = [detectNextJs];
+  const integrationConfigs = Object.entries(INTEGRATION_CONFIG);
 
-  for (const detector of detectors) {
-    const integration = await detector(options);
-    if (integration) {
-      return integration;
+  for (const [integration, config] of integrationConfigs) {
+    const detected = await config.detect(options);
+    if (detected) {
+      return integration as Integration;
     }
   }
 }
