@@ -91,15 +91,19 @@ export function printWelcome(options: {
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(options: Pick<WizardOptions, 'default'>): Promise<void> {
+export async function confirmContinueIfNoOrDirtyGitRepo(
+  options: Pick<WizardOptions, 'default'>,
+): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (!isInGitRepo()) {
-      const continueWithoutGit = options.default ? true : await abortIfCancelled(
-        clack.confirm({
-          message:
-            'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
-        }),
-      );
+      const continueWithoutGit = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message:
+                'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-without-git', continueWithoutGit);
 
@@ -119,12 +123,13 @@ ${uncommittedOrUntrackedFiles.join('\n')}
 
 The wizard will create and update files.`,
       );
-      const continueWithDirtyRepo = options.default ? true : await abortIfCancelled(
-        clack.confirm({
-          message: 'Do you want to continue anyway?',
-
-        }),
-      );
+      const continueWithDirtyRepo = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message: 'Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
@@ -222,7 +227,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-      `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -299,7 +304,8 @@ export async function installPackage({
     try {
       await new Promise<void>((resolve, reject) => {
         childProcess.exec(
-          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${forceInstall ? pkgManager.forceInstallFlag : ''
+          `${pkgManager.installCommand} ${packageName} ${pkgManager.flags} ${
+            forceInstall ? pkgManager.forceInstallFlag : ''
           }`,
           { cwd: installDir },
           (err, stdout, stderr) => {
@@ -573,8 +579,8 @@ ${chalk.cyan(ISSUES_URL)}`);
 
     clack.log
       .info(`In the meantime, we'll add a dummy project API key (${chalk.cyan(
-        `"${DUMMY_PROJECT_API_KEY}"`,
-      )}) for you to replace later.
+      `"${DUMMY_PROJECT_API_KEY}"`,
+    )}) for you to replace later.
 You can find your Project API key here:
 ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
@@ -747,7 +753,8 @@ export async function showCopyPasteInstructions(
   hint?: string,
 ): Promise<void> {
   clack.log.step(
-    `Add the following code to your ${chalk.cyan(basename(filename))} file:${hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
+    `Add the following code to your ${chalk.cyan(basename(filename))} file:${
+      hint ? chalk.dim(` (${chalk.dim(hint)})`) : ''
     }`,
   );
 

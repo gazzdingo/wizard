@@ -38,7 +38,6 @@ import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
-
   printWelcome({
     wizardName: 'PostHog Next.js Wizard',
   });
@@ -211,12 +210,13 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+    aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-      `${packageManagerForOutro.runScriptCommand} dev`,
-    )})`}
+  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+    `${packageManagerForOutro.runScriptCommand} dev`,
+  )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
@@ -225,46 +225,52 @@ ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
 async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
   return await traceStep('ask-for-ai-consent', async () => {
-    const aiConsent = options.default ? true : await abortIfCancelled(
-      clack.select({
-        message: 'Use AI to setup PostHog automatically? ✨',
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'We will use AI to help you setup PostHog quickly',
-          },
-          {
-            label: 'No',
-            value: false,
-            hint: 'Continue without AI assistance',
-          },
-        ],
-        initialValue: true,
-      }),
-    );
+    const aiConsent = options.default
+      ? true
+      : await abortIfCancelled(
+          clack.select({
+            message: 'Use AI to setup PostHog automatically? ✨',
+            options: [
+              {
+                label: 'Yes',
+                value: true,
+                hint: 'We will use AI to help you setup PostHog quickly',
+              },
+              {
+                label: 'No',
+                value: false,
+                hint: 'Continue without AI assistance',
+              },
+            ],
+            initialValue: true,
+          }),
+        );
 
     return aiConsent;
   });
 }
 
-async function askForCloudRegion(options: Pick<WizardOptions, 'default'>): Promise<CloudRegion> {
+async function askForCloudRegion(
+  options: Pick<WizardOptions, 'default'>,
+): Promise<CloudRegion> {
   return await traceStep('ask-for-cloud-region', async () => {
-    const cloudRegion: CloudRegion = options.default ? 'us' : await abortIfCancelled(
-      clack.select({
-        message: 'Select your cloud region',
-        options: [
-          {
-            label: 'US 🇺🇸',
-            value: 'us',
-          },
-          {
-            label: 'EU 🇪🇺',
-            value: 'eu',
-          },
-        ],
-      }),
-    );
+    const cloudRegion: CloudRegion = options.default
+      ? 'us'
+      : await abortIfCancelled(
+          clack.select({
+            message: 'Select your cloud region',
+            options: [
+              {
+                label: 'US 🇺🇸',
+                value: 'us',
+              },
+              {
+                label: 'EU 🇪🇺',
+                value: 'eu',
+              },
+            ],
+          }),
+        );
 
     return cloudRegion;
   });
@@ -494,7 +500,8 @@ export async function addOrUpdateEnvironmentVariables({
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           relativeEnvFilePath,
-        )} with environment variables for PostHog. Please add them manually. Error: ${error.message
+        )} with environment variables for PostHog. Please add them manually. Error: ${
+          error.message
         }`,
       );
     }
