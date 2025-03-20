@@ -25,10 +25,8 @@ import clack from '../utils/clack';
 import { Integration, ISSUES_URL } from '../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
-import { getFilterFilesPromptTemplate } from './prompts';
-import { getRelevantFilesForIntegration } from '../react/utils';
 import { addOrUpdateEnvironmentVariables } from '../utils/environment';
-import { getFilesToChange } from '../utils/file-utils';
+import { generateFileChangesForIntegration, getFilesToChange, getRelevantFilesForIntegration } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
 
@@ -95,12 +93,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const relevantFiles = await getRelevantFilesForIntegration({ ...options, integration: Integration.nextjs });
 
-  analytics.capture('wizard interaction', {
-    action: 'detected relevant files',
-    integration: Integration.nextjs,
-    number_of_files: relevantFiles.length,
-  });
-
   const installationDocumentation = getInstallationDocumentation({
     router,
     host,
@@ -112,18 +104,20 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   );
 
   const filesToChange = await getFilesToChange({
-    prompt: await (await getFilterFilesPromptTemplate()).format({
-      documentation: installationDocumentation,
-      file_list: relevantFiles.join('\n'),
-    }),
+    integration: Integration.nextjs,
+    relevantFiles,
+    documentation: installationDocumentation,
     wizardHash,
     cloudRegion,
   });
 
-  analytics.capture('wizard interaction', {
-    action: 'detected files to change',
+  await generateFileChangesForIntegration({
     integration: Integration.nextjs,
-    files: filesToChange,
+    filesToChange,
+    wizardHash,
+    installDir: options.installDir,
+    documentation: installationDocumentation,
+    cloudRegion,
   });
 
 
@@ -132,10 +126,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       NEXT_PUBLIC_POSTHOG_KEY: projectApiKey,
     },
     installDir: options.installDir,
-  });
-
-  analytics.capture('wizard interaction', {
-    action: 'added environment variables',
     integration: Integration.nextjs,
   });
 

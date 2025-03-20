@@ -4,7 +4,8 @@ import fs from 'fs';
 import clack from './clack';
 import chalk from 'chalk';
 import { getDotGitignore } from './file-utils';
-
+import { Integration } from '../lib/constants';
+import { analytics } from './analytics';
 export function readEnvironment(): Record<string, unknown> {
   const result = readEnv('POSTHOG_WIZARD');
 
@@ -14,9 +15,11 @@ export function readEnvironment(): Record<string, unknown> {
 export async function addOrUpdateEnvironmentVariables({
   installDir,
   variables,
+  integration,
 }: {
   installDir: string;
   variables: Record<string, string>;
+  integration: Integration;
 }): Promise<void> {
   const envVarContent = Object.entries(variables)
     .map(([key, value]) => `${key}=${value}`)
@@ -123,4 +126,9 @@ export async function addOrUpdateEnvironmentVariables({
       );
     }
   }
+
+  analytics.capture('wizard interaction', {
+    action: 'added environment variables',
+    integration,
+  });
 }

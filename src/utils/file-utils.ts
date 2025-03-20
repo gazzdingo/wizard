@@ -4,12 +4,12 @@ import type { CloudRegion, FileChange, WizardOptions } from './types';
 import clack from './clack';
 import z from 'zod';
 import { query } from './query';
-import type { PromptTemplate } from '@langchain/core/prompts';
-import type { InputValues } from '@langchain/core/utils/types';
+import fg from 'fast-glob';
 import { analytics } from './analytics';
-import type { Integration } from '../lib/constants';
+import { Integration } from '../lib/constants';
 import { abort } from './clack-utils';
 import { INTEGRATION_CONFIG } from '../lib/config';
+import { baseFilterFilesPromptTemplate, baseGenerateFileChangesPromptTemplate, getFilterFilesPromptTemplate } from '../lib/prompts';
 
 export const GLOBAL_IGNORE_PATTERN = [
   'node_modules',
@@ -70,11 +70,15 @@ export async function updateFile(
 }
 
 export async function getFilesToChange({
-  prompt,
+  integration,
+  relevantFiles,
+  documentation,
   wizardHash,
   cloudRegion,
 }: {
-  prompt: string;
+  integration: Integration;
+  relevantFiles: string[];
+  documentation: string;
   wizardHash: string;
   cloudRegion: CloudRegion;
 }) {
@@ -87,7 +91,12 @@ export async function getFilesToChange({
   });
 
   const filterFilesResponse = await query({
-    message: prompt,
+    message: await baseFilterFilesPromptTemplate.format({
+      documentation,
+      file_list: relevantFiles.join('\n'),
+      integration_name: integration,
+      integration_rules: INTEGRATION_CONFIG[integration].filterFilesRules,
+    }),
     schema: filterFilesResponseSchmea,
     wizardHash,
     region: cloudRegion,
@@ -96,6 +105,12 @@ export async function getFilesToChange({
   const filesToChange = filterFilesResponse.files;
 
   filterFilesSpinner.stop(`Found ${filesToChange.length} files to change`);
+
+  analytics.capture('wizard interaction', {
+    action: 'detected files to change',
+    integration,
+    files: filesToChange,
+  });
 
   return filesToChange;
 }
@@ -126,12 +141,16 @@ export async function generateFileChangesForIntegration({
   integration,
   filesToChange,
   wizardHash,
-  options,
+  documentation,
+  installDir,
+  cloudRegion,
 }: {
   integration: Integration;
   filesToChange: string[];
   wizardHash: string;
-  options: Pick<WizardOptions, 'installDir'>;
+  documentation: string;
+  installDir: string;
+  cloudRegion: CloudRegion;
 }) {
   const changes: FileChange[] = [];
 
@@ -148,7 +167,7 @@ export async function generateFileChangesForIntegration({
       let oldContent = undefined;
       try {
         oldContent = await fs.promises.readFile(
-          path.join(options.installDir, filePath),
+          path.join(installDir, filePath),
           'utf8',
         );
       } catch (readError) {
@@ -166,15 +185,28 @@ export async function generateFileChangesForIntegration({
         (filePath) => !changes.some((change) => change.filePath === filePath),
       );
 
-      const generateFileContent = INTEGRATION_CONFIG[integration].generateFileContent;
+
+
+      const prompt = await baseGenerateFileChangesPromptTemplate.format({
+        file_content: oldContent,
+        file_path: filePath,
+        documentation,
+        integration_name: integration,
+        integration_rules: INTEGRATION_CONFIG[integration].generateFilesRules,
+        changed_files: changes
+          .map((change) => `${change.filePath}\n${change.oldContent}`)
+          .join('\n'),
+        unchanged_files: unchangedFiles,
+      });
 
       const newContent = await generateFileContent({
-        prompt: generateFileChangesPrompt,
+        prompt,
         wizardHash,
+        cloudRegion,
       });
 
       if (newContent !== oldContent) {
-        await updateFile({ filePath, oldContent, newContent }, options);
+        await updateFile({ filePath, oldContent, newContent }, { installDir });
         changes.push({ filePath, oldContent, newContent });
       }
 
@@ -192,5 +224,37 @@ export async function generateFileChangesForIntegration({
     }
   }
 
+
+  analytics.capture('wizard interaction', {
+    action: 'completed file changes',
+    integration,
+    files: filesToChange,
+  });
+
   return changes;
+}
+
+export async function getRelevantFilesForIntegration({
+  installDir,
+  integration,
+}: Pick<WizardOptions, 'installDir'> & {
+  integration: Integration;
+}) {
+
+  const filterPatterns = INTEGRATION_CONFIG[integration].filterPatterns;
+  const ignorePatterns = INTEGRATION_CONFIG[integration].ignorePatterns;
+
+  const filteredFiles = await fg(filterPatterns, {
+    cwd: installDir,
+    ignore: ignorePatterns,
+  });
+
+  analytics.capture('wizard interaction', {
+    action: 'detected relevant files',
+    integration,
+    number_of_files: filteredFiles.length,
+  });
+
+
+  return filteredFiles;
 }
