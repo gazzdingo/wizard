@@ -38,13 +38,11 @@ import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
-  const { forceInstall } = options;
-
   printWelcome({
     wizardName: 'PostHog Next.js Wizard',
   });
 
-  const aiConsent = await askForAIConsent();
+  const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
     await abort(
@@ -53,11 +51,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion(options));
 
   const typeScriptDetected = isUsingTypeScript(options);
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo(options);
 
   const packageJson = await getPackageDotJson(options);
 
@@ -81,7 +79,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       packageName: 'posthog-js',
       packageNameDisplayLabel: 'posthog-js',
       alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
-      forceInstall,
+      forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
       integration: Integration.nextjs,
@@ -92,7 +90,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     packageNameDisplayLabel: 'posthog-node',
     packageManager: packageManagerFromInstallStep,
     alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
-    forceInstall,
+    forceInstall: options.forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
     integration: Integration.nextjs,
@@ -225,48 +223,54 @@ ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
   await analytics.shutdown('success');
 }
 
-async function askForAIConsent() {
+async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
   return await traceStep('ask-for-ai-consent', async () => {
-    const aiConsent = await abortIfCancelled(
-      clack.select({
-        message: 'Use AI to setup PostHog automatically? ✨',
-        options: [
-          {
-            label: 'Yes',
-            value: true,
-            hint: 'We will use AI to help you setup PostHog quickly',
-          },
-          {
-            label: 'No',
-            value: false,
-            hint: 'Continue without AI assistance',
-          },
-        ],
-        initialValue: true,
-      }),
-    );
+    const aiConsent = options.default
+      ? true
+      : await abortIfCancelled(
+          clack.select({
+            message: 'Use AI to setup PostHog automatically? ✨',
+            options: [
+              {
+                label: 'Yes',
+                value: true,
+                hint: 'We will use AI to help you setup PostHog quickly',
+              },
+              {
+                label: 'No',
+                value: false,
+                hint: 'Continue without AI assistance',
+              },
+            ],
+            initialValue: true,
+          }),
+        );
 
     return aiConsent;
   });
 }
 
-async function askForCloudRegion(): Promise<CloudRegion> {
+async function askForCloudRegion(
+  options: Pick<WizardOptions, 'default'>,
+): Promise<CloudRegion> {
   return await traceStep('ask-for-cloud-region', async () => {
-    const cloudRegion: CloudRegion = await abortIfCancelled(
-      clack.select({
-        message: 'Select your cloud region',
-        options: [
-          {
-            label: 'US 🇺🇸',
-            value: 'us',
-          },
-          {
-            label: 'EU 🇪🇺',
-            value: 'eu',
-          },
-        ],
-      }),
-    );
+    const cloudRegion: CloudRegion = options.default
+      ? 'us'
+      : await abortIfCancelled(
+          clack.select({
+            message: 'Select your cloud region',
+            options: [
+              {
+                label: 'US 🇺🇸',
+                value: 'us',
+              },
+              {
+                label: 'EU 🇪🇺',
+                value: 'eu',
+              },
+            ],
+          }),
+        );
 
     return cloudRegion;
   });

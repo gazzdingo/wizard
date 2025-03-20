@@ -91,15 +91,19 @@ export function printWelcome(options: {
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+export async function confirmContinueIfNoOrDirtyGitRepo(
+  options: Pick<WizardOptions, 'default'>,
+): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (!isInGitRepo()) {
-      const continueWithoutGit = await abortIfCancelled(
-        clack.confirm({
-          message:
-            'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
-        }),
-      );
+      const continueWithoutGit = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message:
+                'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-without-git', continueWithoutGit);
 
@@ -119,11 +123,13 @@ ${uncommittedOrUntrackedFiles.join('\n')}
 
 The wizard will create and update files.`,
       );
-      const continueWithDirtyRepo = await abortIfCancelled(
-        clack.confirm({
-          message: 'Do you want to continue anyway?',
-        }),
-      );
+      const continueWithDirtyRepo = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message: 'Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
