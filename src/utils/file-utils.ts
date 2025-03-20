@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import type { FileChange, WizardOptions } from './types';
+import type { CloudRegion, FileChange, WizardOptions } from './types';
 import clack from './clack';
 import z from 'zod';
 import { query } from './query';
@@ -72,9 +72,11 @@ export async function updateFile(
 export async function getFilesToChange({
   prompt,
   wizardHash,
+  cloudRegion,
 }: {
   prompt: string;
   wizardHash: string;
+  cloudRegion: CloudRegion;
 }) {
   const filterFilesSpinner = clack.spinner();
 
@@ -88,6 +90,7 @@ export async function getFilesToChange({
     message: prompt,
     schema: filterFilesResponseSchmea,
     wizardHash,
+    region: cloudRegion,
   });
 
   const filesToChange = filterFilesResponse.files;
@@ -100,9 +103,11 @@ export async function getFilesToChange({
 export async function generateFileContent({
   prompt,
   wizardHash,
+  cloudRegion,
 }: {
   prompt: string,
   wizardHash: string;
+  cloudRegion: CloudRegion;
 }) {
 
   const response = await query({
@@ -111,6 +116,7 @@ export async function generateFileContent({
       newContent: z.string(),
     }),
     wizardHash: wizardHash,
+    region: cloudRegion,
   });
 
   return response.newContent;

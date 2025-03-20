@@ -99,11 +99,11 @@ export async function confirmContinueIfNoOrDirtyGitRepo(
       const continueWithoutGit = options.default
         ? true
         : await abortIfCancelled(
-            clack.confirm({
-              message:
-                'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
-            }),
-          );
+          clack.confirm({
+            message:
+              'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
+          }),
+        );
 
       analytics.setTag('continue-without-git', continueWithoutGit);
 
@@ -126,10 +126,10 @@ The wizard will create and update files.`,
       const continueWithDirtyRepo = options.default
         ? true
         : await abortIfCancelled(
-            clack.confirm({
-              message: 'Do you want to continue anyway?',
-            }),
-          );
+          clack.confirm({
+            message: 'Do you want to continue anyway?',
+          }),
+        );
 
       analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
@@ -922,9 +922,9 @@ export async function askShouldAddPackageOverride(
   );
 }
 
-export async function askForAIConsent() {
+export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
   return await traceStep('ask-for-ai-consent', async () => {
-    const aiConsent = await abortIfCancelled(
+    const aiConsent = options.default ? true : await abortIfCancelled(
       clack.select({
         message: 'Use AI to setup PostHog automatically? ✨',
         options: [
@@ -944,5 +944,27 @@ export async function askForAIConsent() {
     );
 
     return aiConsent;
+  });
+}
+
+export async function askForCloudRegion(): Promise<CloudRegion> {
+  return await traceStep('ask-for-cloud-region', async () => {
+    const cloudRegion: CloudRegion = await abortIfCancelled(
+      clack.select({
+        message: 'Select your cloud region',
+        options: [
+          {
+            label: 'US 🇺🇸',
+            value: 'us',
+          },
+          {
+            label: 'EU 🇪🇺',
+            value: 'eu',
+          },
+        ],
+      }),
+    );
+
+    return cloudRegion;
   });
 }

@@ -18,8 +18,8 @@ Rules:
 - If you create a new file, it should not conflict with any existing files.
 - If the user is using TypeScript, you should return .ts and .tsx files.
 - The file structure of the project may be different than the documentation, you should follow the file structure of the project.
+- Use relative imports if you are unsure what the project import paths are.
 {integration_rules}
-- You should implement both posthog-js and posthog-node.
 
 Installation documentation:
 {documentation}
