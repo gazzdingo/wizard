@@ -25,6 +25,11 @@ export type WizardOptions = {
    * The directory to run the wizard in.
    */
   installDir: string;
+
+  /**
+   * The cloud region to use.
+   */
+  cloudRegion?: CloudRegion;
 };
 
 export interface Feature {
