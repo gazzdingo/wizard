@@ -16,9 +16,8 @@ import {
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
-import type { Feature, WizardOptions } from './types';
+import type { CloudRegion, Feature, WizardOptions } from './types';
 import {
-  CLOUD_URL,
   DEFAULT_HOST_URL,
   DUMMY_PROJECT_API_KEY,
   ISSUES_URL,
@@ -26,6 +25,7 @@ import {
 } from '../lib/constants';
 import { analytics } from './analytics';
 import clack from './clack';
+import { getCloudUrlFromRegion } from '../nextjs/utils';
 
 interface ProjectData {
   projectApiKey: string;
@@ -549,14 +549,19 @@ export function isUsingTypeScript({
  * @param options wizard options
  * @returns project data (token, url)
  */
-export async function getOrAskForProjectData(_options: WizardOptions): Promise<{
+export async function getOrAskForProjectData(
+  _options: WizardOptions & {
+    cloudRegion: CloudRegion;
+  },
+): Promise<{
   wizardHash: string;
   host: string;
   projectApiKey: string;
 }> {
+  const cloudUrl = getCloudUrlFromRegion(_options.cloudRegion);
   const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
     askForWizardLogin({
-      url: CLOUD_URL,
+      url: cloudUrl,
     }),
   );
 
@@ -571,7 +576,7 @@ ${chalk.cyan(ISSUES_URL)}`);
       `"${DUMMY_PROJECT_API_KEY}"`,
     )}) for you to replace later.
 You can find your Project API key here:
-${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
+${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
   return {

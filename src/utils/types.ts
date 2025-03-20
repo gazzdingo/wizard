@@ -33,3 +33,5 @@ export interface Feature {
   enabledHint?: string;
   disabledHint?: string;
 }
+
+export type CloudRegion = 'us' | 'eu';
