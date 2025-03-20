@@ -16,7 +16,7 @@ import {
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
-import type { WizardOptions } from '../utils/types';
+import type { CloudRegion, WizardOptions } from '../utils/types';
 import { traceStep } from '../telemetry';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import {
@@ -46,6 +46,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const aiConsent = await askForAIConsent();
 
+  const cloudRegion = await askForCloudRegion();
+
   if (!aiConsent) {
     await abort(
       'The Next.js wizard requires AI to get setup right now. Please view the docs to setup Next.js manually instead: https://posthog.com/docs/libraries/next-js',
@@ -65,9 +67,10 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData(
-    options,
-  );
+  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
+    ...options,
+    cloudRegion,
+  });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
 
@@ -119,6 +122,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     relevantFiles,
     installationDocumentation,
     wizardHash,
+    cloudRegion,
   });
 
   analytics.capture('wizard interaction', {
@@ -167,6 +171,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
         unchangedFiles,
         installationDocumentation,
         wizardHash,
+        cloudRegion,
       });
 
       if (newContent !== oldContent) {
@@ -245,6 +250,28 @@ async function askForAIConsent() {
   });
 }
 
+async function askForCloudRegion(): Promise<CloudRegion> {
+  return await traceStep('ask-for-cloud-region', async () => {
+    const cloudRegion: CloudRegion = await abortIfCancelled(
+      clack.select({
+        message: 'Select your cloud region',
+        options: [
+          {
+            label: 'US 🇺🇸',
+            value: 'us',
+          },
+          {
+            label: 'EU 🇪🇺',
+            value: 'eu',
+          },
+        ],
+      }),
+    );
+
+    return cloudRegion;
+  });
+}
+
 async function getRelevantFilesForNextJs({
   installDir,
 }: Pick<WizardOptions, 'installDir'>) {
@@ -298,10 +325,12 @@ async function getFilesToChange({
   relevantFiles,
   installationDocumentation,
   wizardHash,
+  cloudRegion,
 }: {
   relevantFiles: string[];
   installationDocumentation: string;
   wizardHash: string;
+  cloudRegion: CloudRegion;
 }) {
   const filterFilesSpinner = clack.spinner();
 
@@ -320,6 +349,7 @@ async function getFilesToChange({
     message: filterFilesPrompt,
     schema: filterFilesResponseSchmea,
     wizardHash,
+    region: cloudRegion,
   });
 
   const filesToChange = filterFilesResponse.files;
@@ -336,6 +366,7 @@ async function generateFileChanges({
   unchangedFiles,
   installationDocumentation,
   wizardHash,
+  cloudRegion,
 }: {
   filePath: string;
   content: string | undefined;
@@ -343,6 +374,7 @@ async function generateFileChanges({
   unchangedFiles: string[];
   installationDocumentation: string;
   wizardHash: string;
+  cloudRegion: CloudRegion;
 }) {
   const generateFileChangesPrompt =
     await generateFileChangesPromptTemplate.format({
@@ -361,6 +393,7 @@ async function generateFileChanges({
       newContent: z.string(),
     }),
     wizardHash: wizardHash,
+    region: cloudRegion,
   });
 
   return response.newContent;

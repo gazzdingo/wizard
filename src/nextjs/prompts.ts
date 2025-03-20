@@ -47,6 +47,7 @@ Rules:
 - If no changes are needed, return the file as-is.
 - If the current file is empty, and you think it should be created, you can add the contents of the new file.
 - The file structure of the project may be different than the documentation, you should follow the file structure of the project.
+- Use relative imports if you are unsure what the project import paths are.
 
 CONTEXT
 ---
