@@ -35,9 +35,6 @@ export const DEFAULT_URL = IS_DEV
   ? 'http://localhost:8010'
   : 'https://us.posthog.com';
 export const ISSUES_URL = 'https://github.com/posthog/wizard/issues';
-export const CLOUD_URL = IS_DEV
-  ? 'http://localhost:8010'
-  : 'https://us.posthog.com';
 export const DEFAULT_HOST_URL = IS_DEV
   ? 'http://localhost:8010'
   : 'https://us.i.posthog.com';

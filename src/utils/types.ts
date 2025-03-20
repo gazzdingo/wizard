@@ -25,6 +25,16 @@ export type WizardOptions = {
    * The directory to run the wizard in.
    */
   installDir: string;
+
+  /**
+   * The cloud region to use.
+   */
+  cloudRegion?: CloudRegion;
+
+  /**
+   * Whether to select the default option for all questions automatically.
+   */
+  default: boolean;
 };
 
 export interface Feature {
@@ -39,3 +49,5 @@ export type FileChange = {
   oldContent?: string;
   newContent: string;
 };
+
+export type CloudRegion = 'us' | 'eu';

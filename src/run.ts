@@ -1,7 +1,8 @@
 import { abortIfCancelled } from './utils/clack-utils';
 
-import type { WizardOptions } from './utils/types';
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
+import type { CloudRegion, WizardOptions } from './utils/types';
+
 
 import { getIntegrationDescription, Integration } from './lib/constants';
 import { readEnvironment } from './utils/environment';
@@ -14,6 +15,8 @@ type Args = {
   debug?: boolean;
   forceInstall?: boolean;
   installDir?: string;
+  region?: CloudRegion;
+  default?: boolean;
 };
 
 export async function run(argv: Args) {
@@ -32,6 +35,8 @@ async function runWizard(argv: Args) {
     installDir: finalArgs.installDir
       ? path.join(process.cwd(), finalArgs.installDir)
       : process.cwd(),
+    cloudRegion: finalArgs.region ?? undefined,
+    default: finalArgs.default ?? false,
   };
 
   clack.intro(`Welcome to the PostHog setup wizard ✨`);

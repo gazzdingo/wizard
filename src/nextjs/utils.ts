@@ -2,7 +2,8 @@ import { major, minVersion } from 'semver';
 import fg from 'fast-glob';
 import { abortIfCancelled } from '../utils/clack-utils';
 import clack from '../utils/clack';
-import type { WizardOptions } from '../utils/types';
+import type { CloudRegion, WizardOptions } from '../utils/types';
+import { IS_DEV } from '../lib/constants';
 
 export function getNextJsVersionBucket(version: string | undefined) {
   if (!version) {
@@ -113,4 +114,15 @@ export const getUiHostFromHost = (host: string) => {
   }
 
   return host;
+};
+
+export const getCloudUrlFromRegion = (region: CloudRegion) => {
+  if (IS_DEV) {
+    return 'http://localhost:8010';
+  }
+
+  if (region === 'us') {
+    return 'https://us.posthog.com';
+  }
+  return 'https://eu.posthog.com';
 };

@@ -1,8 +1,6 @@
 /* eslint-disable max-lines */
 
 import chalk from 'chalk';
-import * as fs from 'fs';
-import { z } from 'zod';
 import {
   abort,
   askForAIConsent,
@@ -16,7 +14,6 @@ import {
   printWelcome,
   runPrettierIfInstalled,
 } from '../utils/clack-utils';
-import type { FileChange, WizardOptions } from '../utils/types';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import {
   getNextJsRouter,
@@ -24,26 +21,23 @@ import {
   getNextJsVersionBucket,
   NextJsRouter,
 } from './utils';
-import { query } from '../utils/query';
 import clack from '../utils/clack';
-import path from 'path';
 import { Integration, ISSUES_URL } from '../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
-import { getFilterFilesPromptTemplate, getGenerateFileChangesPromptTemplate } from './prompts';
+import { getFilterFilesPromptTemplate } from './prompts';
 import { getRelevantFilesForIntegration } from '../react/utils';
 import { addOrUpdateEnvironmentVariables } from '../utils/environment';
-import { generateFileChanges, getFilesToChange, updateFile } from '../utils/file-utils';
-
+import { getFilesToChange } from '../utils/file-utils';
+import type { WizardOptions } from '../utils/types';
+import { askForCloudRegion } from '../utils/clack-utils';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
-  const { forceInstall } = options;
-
   printWelcome({
     wizardName: 'PostHog Next.js Wizard',
   });
 
-  const aiConsent = await askForAIConsent();
+  const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
     await abort(
@@ -52,9 +46,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
+  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+
   const typeScriptDetected = isUsingTypeScript(options);
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo(options);
 
   const packageJson = await getPackageDotJson(options);
 
@@ -64,9 +60,10 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData(
-    options,
-  );
+  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
+    ...options,
+    cloudRegion,
+  });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
 
@@ -77,7 +74,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       packageName: 'posthog-js',
       packageNameDisplayLabel: 'posthog-js',
       alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
-      forceInstall,
+      forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
       integration: Integration.nextjs,
@@ -88,7 +85,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     packageNameDisplayLabel: 'posthog-node',
     packageManager: packageManagerFromInstallStep,
     alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
-    forceInstall,
+    forceInstall: options.forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
     integration: Integration.nextjs,
@@ -120,6 +117,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       file_list: relevantFiles.join('\n'),
     }),
     wizardHash,
+    cloudRegion,
   });
 
   analytics.capture('wizard interaction', {
@@ -161,7 +159,6 @@ ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
   await analytics.shutdown('success');
 }
-
 
 
 function getInstallationDocumentation({

@@ -16,9 +16,8 @@ import {
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
-import type { Feature, WizardOptions } from './types';
+import type { CloudRegion, Feature, WizardOptions } from './types';
 import {
-  CLOUD_URL,
   DEFAULT_HOST_URL,
   DUMMY_PROJECT_API_KEY,
   ISSUES_URL,
@@ -26,6 +25,7 @@ import {
 } from '../lib/constants';
 import { analytics } from './analytics';
 import clack from './clack';
+import { getCloudUrlFromRegion } from '../nextjs/utils';
 
 interface ProjectData {
   projectApiKey: string;
@@ -91,15 +91,19 @@ export function printWelcome(options: {
   clack.note(welcomeText);
 }
 
-export async function confirmContinueIfNoOrDirtyGitRepo(): Promise<void> {
+export async function confirmContinueIfNoOrDirtyGitRepo(
+  options: Pick<WizardOptions, 'default'>,
+): Promise<void> {
   return traceStep('check-git-status', async () => {
     if (!isInGitRepo()) {
-      const continueWithoutGit = await abortIfCancelled(
-        clack.confirm({
-          message:
-            'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
-        }),
-      );
+      const continueWithoutGit = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message:
+                'You are not inside a git repository. The wizard will create and update files. Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-without-git', continueWithoutGit);
 
@@ -119,11 +123,13 @@ ${uncommittedOrUntrackedFiles.join('\n')}
 
 The wizard will create and update files.`,
       );
-      const continueWithDirtyRepo = await abortIfCancelled(
-        clack.confirm({
-          message: 'Do you want to continue anyway?',
-        }),
-      );
+      const continueWithDirtyRepo = options.default
+        ? true
+        : await abortIfCancelled(
+            clack.confirm({
+              message: 'Do you want to continue anyway?',
+            }),
+          );
 
       analytics.setTag('continue-with-dirty-repo', continueWithDirtyRepo);
 
@@ -548,14 +554,19 @@ export function isUsingTypeScript({
  * @param options wizard options
  * @returns project data (token, url)
  */
-export async function getOrAskForProjectData(_options: WizardOptions): Promise<{
+export async function getOrAskForProjectData(
+  _options: WizardOptions & {
+    cloudRegion: CloudRegion;
+  },
+): Promise<{
   wizardHash: string;
   host: string;
   projectApiKey: string;
 }> {
+  const cloudUrl = getCloudUrlFromRegion(_options.cloudRegion);
   const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
     askForWizardLogin({
-      url: CLOUD_URL,
+      url: cloudUrl,
     }),
   );
 
@@ -570,7 +581,7 @@ ${chalk.cyan(ISSUES_URL)}`);
         `"${DUMMY_PROJECT_API_KEY}"`,
       )}) for you to replace later.
 You can find your Project API key here:
-${chalk.cyan(`${CLOUD_URL}/settings/project#variables`)}`);
+${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
   return {
