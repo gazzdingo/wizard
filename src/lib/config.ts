@@ -51,7 +51,6 @@ export const INTEGRATION_CONFIG = {
   },
 } as const satisfies Record<Integration, IntegrationConfig>;
 
-
 export const INTEGRATION_ORDER = [
   Integration.nextjs,
   Integration.react,

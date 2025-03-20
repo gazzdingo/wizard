@@ -1,5 +1,5 @@
-import { IS_DEV } from "../lib/constants";
-import type { CloudRegion } from "./types";
+import { IS_DEV } from '../lib/constants';
+import type { CloudRegion } from './types';
 
 export const getAssetHostFromHost = (host: string) => {
   if (host.includes('us.i.posthog.com')) {

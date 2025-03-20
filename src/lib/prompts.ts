@@ -1,7 +1,12 @@
 import { PromptTemplate } from '@langchain/core/prompts';
 
 export const baseFilterFilesPromptTemplate = new PromptTemplate({
-  inputVariables: ['documentation', 'file_list', 'integration_name', 'integration_rules'],
+  inputVariables: [
+    'documentation',
+    'file_list',
+    'integration_name',
+    'integration_rules',
+  ],
   template: `You are a PostHog installation wizard, a master AI programming assistant that implements PostHog for {integration_name} projects.
 Given the following list of file paths from a project, determine which files are likely to require modifications 
 to integrate PostHog. Use the installation documentation as a reference for what files might need modifications, do not include files that are unlikely to require modification based on the documentation.

@@ -44,7 +44,10 @@ export async function addOrUpdateEnvironmentVariables({
         const regex = new RegExp(`^${key}=.*$`, 'm');
 
         if (dotEnvFileContent.match(regex)) {
-          dotEnvFileContent = dotEnvFileContent.replace(regex, `${key}=${value}`);
+          dotEnvFileContent = dotEnvFileContent.replace(
+            regex,
+            `${key}=${value}`,
+          );
           updated = true;
         } else {
           if (!dotEnvFileContent.endsWith('\n')) {
@@ -61,18 +64,22 @@ export async function addOrUpdateEnvironmentVariables({
           flag: 'w',
         });
         clack.log.success(
-          `Updated environment variables in ${chalk.bold.cyan(relativeEnvFilePath)}`
+          `Updated environment variables in ${chalk.bold.cyan(
+            relativeEnvFilePath,
+          )}`,
         );
       } else {
         clack.log.success(
-          `${chalk.bold.cyan(relativeEnvFilePath)} already has the necessary environment variables.`
+          `${chalk.bold.cyan(
+            relativeEnvFilePath,
+          )} already has the necessary environment variables.`,
         );
       }
     } catch (error) {
       clack.log.warning(
         `Failed to update environment variables in ${chalk.bold.cyan(
-          relativeEnvFilePath
-        )}. Please update them manually. Error: ${error.message}`
+          relativeEnvFilePath,
+        )}. Please update them manually. Error: ${error.message}`,
       );
     }
   } else {
@@ -82,11 +89,17 @@ export async function addOrUpdateEnvironmentVariables({
         flag: 'w',
       });
       clack.log.success(
-        `Created ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables.`
+        `Created ${chalk.bold.cyan(
+          relativeEnvFilePath,
+        )} with environment variables.`,
       );
     } catch (error) {
       clack.log.warning(
-        `Failed to create ${chalk.bold.cyan(relativeEnvFilePath)} with environment variables. Please add them manually. Error: ${error.message}`
+        `Failed to create ${chalk.bold.cyan(
+          relativeEnvFilePath,
+        )} with environment variables. Please add them manually. Error: ${
+          error.message
+        }`,
       );
     }
   }
@@ -96,33 +109,51 @@ export async function addOrUpdateEnvironmentVariables({
 
   if (gitignorePath) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-    const missingEnvFiles = envFiles.filter(file => !gitignoreContent.includes(file));
+    const missingEnvFiles = envFiles.filter(
+      (file) => !gitignoreContent.includes(file),
+    );
 
     if (missingEnvFiles.length > 0) {
       try {
-        const newGitignoreContent = `${gitignoreContent}\n${missingEnvFiles.join('\n')}`;
+        const newGitignoreContent = `${gitignoreContent}\n${missingEnvFiles.join(
+          '\n',
+        )}`;
         await fs.promises.writeFile(gitignorePath, newGitignoreContent, {
           encoding: 'utf8',
           flag: 'w',
         });
-        clack.log.success(`Updated ${chalk.bold.cyan('.gitignore')} to include environment files.`);
+        clack.log.success(
+          `Updated ${chalk.bold.cyan(
+            '.gitignore',
+          )} to include environment files.`,
+        );
       } catch (error) {
         clack.log.warning(
-          `Failed to update ${chalk.bold.cyan('.gitignore')} to include environment files. Error: ${error.message}`
+          `Failed to update ${chalk.bold.cyan(
+            '.gitignore',
+          )} to include environment files. Error: ${error.message}`,
         );
       }
     }
   } else {
     try {
       const newGitignoreContent = `${envFiles.join('\n')}\n`;
-      await fs.promises.writeFile(path.join(installDir, '.gitignore'), newGitignoreContent, {
-        encoding: 'utf8',
-        flag: 'w',
-      });
-      clack.log.success(`Created ${chalk.bold.cyan('.gitignore')} with environment files.`);
+      await fs.promises.writeFile(
+        path.join(installDir, '.gitignore'),
+        newGitignoreContent,
+        {
+          encoding: 'utf8',
+          flag: 'w',
+        },
+      );
+      clack.log.success(
+        `Created ${chalk.bold.cyan('.gitignore')} with environment files.`,
+      );
     } catch (error) {
       clack.log.warning(
-        `Failed to create ${chalk.bold.cyan('.gitignore')} with environment files. Error: ${error.message}`
+        `Failed to create ${chalk.bold.cyan(
+          '.gitignore',
+        )} with environment files. Error: ${error.message}`,
       );
     }
   }
