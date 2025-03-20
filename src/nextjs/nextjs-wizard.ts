@@ -26,7 +26,11 @@ import { Integration, ISSUES_URL } from '../lib/constants';
 import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 import { addOrUpdateEnvironmentVariables } from '../utils/environment';
-import { generateFileChangesForIntegration, getFilesToChange, getRelevantFilesForIntegration } from '../utils/file-utils';
+import {
+  generateFileChangesForIntegration,
+  getFilesToChange,
+  getRelevantFilesForIntegration,
+} from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
 
@@ -91,7 +95,10 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const router = await getNextJsRouter(options);
 
-  const relevantFiles = await getRelevantFilesForIntegration({ ...options, integration: Integration.nextjs });
+  const relevantFiles = await getRelevantFilesForIntegration({
+    installDir: options.installDir,
+    integration: Integration.nextjs,
+  });
 
   const installationDocumentation = getInstallationDocumentation({
     router,
@@ -120,7 +127,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     cloudRegion,
   });
 
-
   await addOrUpdateEnvironmentVariables({
     variables: {
       NEXT_PUBLIC_POSTHOG_KEY: projectApiKey,
@@ -138,18 +144,18 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+    aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-      `${packageManagerForOutro.runScriptCommand} dev`,
-    )})`}
+  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+    `${packageManagerForOutro.runScriptCommand} dev`,
+  )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
   await analytics.shutdown('success');
 }
-
 
 function getInstallationDocumentation({
   router,
@@ -166,6 +172,3 @@ function getInstallationDocumentation({
 
   return getNextjsAppRouterDocs({ host, language });
 }
-
-
-

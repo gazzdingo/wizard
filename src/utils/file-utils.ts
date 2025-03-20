@@ -93,13 +93,15 @@ export async function getFilesToChange({
     files: z.array(z.string()),
   });
 
+  const prompt = await baseFilterFilesPromptTemplate.format({
+    documentation,
+    file_list: relevantFiles.join('\n'),
+    integration_name: integration,
+    integration_rules: INTEGRATION_CONFIG[integration].filterFilesRules,
+  });
+
   const filterFilesResponse = await query({
-    message: await baseFilterFilesPromptTemplate.format({
-      documentation,
-      file_list: relevantFiles.join('\n'),
-      integration_name: integration,
-      integration_rules: INTEGRATION_CONFIG[integration].filterFilesRules,
-    }),
+    message: prompt,
     schema: filterFilesResponseSchmea,
     wizardHash,
     region: cloudRegion,
@@ -191,7 +193,7 @@ export async function generateFileChangesForIntegration({
         file_content: oldContent,
         file_path: filePath,
         documentation,
-        integration_name: integration,
+        integration_name: INTEGRATION_CONFIG[integration].name,
         integration_rules: INTEGRATION_CONFIG[integration].generateFilesRules,
         changed_files: changes
           .map((change) => `${change.filePath}\n${change.oldContent}`)
