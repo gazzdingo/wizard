@@ -50,3 +50,9 @@ export const INTEGRATION_CONFIG = {
     filterFilesRules: '',
   },
 } as const satisfies Record<Integration, IntegrationConfig>;
+
+
+export const INTEGRATION_ORDER = [
+  Integration.nextjs,
+  Integration.react,
+] as const;

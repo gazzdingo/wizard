@@ -1,4 +1,4 @@
-import { getAssetHostFromHost, getUiHostFromHost } from './utils';
+import { getAssetHostFromHost, getUiHostFromHost } from '../utils/urls';
 
 export const getNextjsAppRouterDocs = ({
   host,
@@ -9,9 +9,8 @@ export const getNextjsAppRouterDocs = ({
 }) => {
   return `
 ==============================
-FILE: PostHogProvider.${
-    language === 'typescript' ? 'tsx' : 'jsx'
-  } (put it somewhere where client files are, like the components folder)
+FILE: PostHogProvider.${language === 'typescript' ? 'tsx' : 'jsx'
+    } (put it somewhere where client files are, like the components folder)
 LOCATION: Wherever other providers are, or the components folder
 ==============================
 Changes:
@@ -166,9 +165,8 @@ export const getNextjsPagesRouterDocs = ({
   return `
 ==============================
 FILE: _app.${language === 'typescript' ? 'tsx' : 'jsx'}
-LOCATION: Wherever the root _app.${
-    language === 'typescript' ? 'tsx' : 'jsx'
-  } file is
+LOCATION: Wherever the root _app.${language === 'typescript' ? 'tsx' : 'jsx'
+    } file is
 ==============================
 Changes:
 - Initialize PostHog in _app.js.
@@ -242,8 +240,8 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: "/ingest/static/:path*", destination: "${getAssetHostFromHost(
-        host,
-      )}/static/:path*" },
+      host,
+    )}/static/:path*" },
       { source: "/ingest/:path*", destination: "${host}/:path*" },
       { source: "/ingest/decide", destination: "${host}/decide" },
     ]

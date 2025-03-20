@@ -25,7 +25,7 @@ import {
 } from '../lib/constants';
 import { analytics } from './analytics';
 import clack from './clack';
-import { getCloudUrlFromRegion } from '../nextjs/utils';
+import { getCloudUrlFromRegion } from './urls';
 
 interface ProjectData {
   projectApiKey: string;
