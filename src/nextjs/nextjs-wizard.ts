@@ -51,7 +51,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion(options));
+  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -250,27 +250,23 @@ async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
   });
 }
 
-async function askForCloudRegion(
-  options: Pick<WizardOptions, 'default'>,
-): Promise<CloudRegion> {
+async function askForCloudRegion(): Promise<CloudRegion> {
   return await traceStep('ask-for-cloud-region', async () => {
-    const cloudRegion: CloudRegion = options.default
-      ? 'us'
-      : await abortIfCancelled(
-          clack.select({
-            message: 'Select your cloud region',
-            options: [
-              {
-                label: 'US 🇺🇸',
-                value: 'us',
-              },
-              {
-                label: 'EU 🇪🇺',
-                value: 'eu',
-              },
-            ],
-          }),
-        );
+    const cloudRegion: CloudRegion = await abortIfCancelled(
+      clack.select({
+        message: 'Select your cloud region',
+        options: [
+          {
+            label: 'US 🇺🇸',
+            value: 'us',
+          },
+          {
+            label: 'EU 🇪🇺',
+            value: 'eu',
+          },
+        ],
+      }),
+    );
 
     return cloudRegion;
   });
