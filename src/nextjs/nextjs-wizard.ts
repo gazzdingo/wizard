@@ -38,13 +38,12 @@ import { getNextjsAppRouterDocs, getNextjsPagesRouterDocs } from './docs';
 import { analytics } from '../utils/analytics';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
-  const { forceInstall } = options;
 
   printWelcome({
     wizardName: 'PostHog Next.js Wizard',
   });
 
-  const aiConsent = await askForAIConsent();
+  const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
     await abort(
@@ -53,11 +52,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion(options));
 
   const typeScriptDetected = isUsingTypeScript(options);
 
-  await confirmContinueIfNoOrDirtyGitRepo();
+  await confirmContinueIfNoOrDirtyGitRepo(options);
 
   const packageJson = await getPackageDotJson(options);
 
@@ -81,7 +80,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       packageName: 'posthog-js',
       packageNameDisplayLabel: 'posthog-js',
       alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
-      forceInstall,
+      forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
       integration: Integration.nextjs,
@@ -92,7 +91,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     packageNameDisplayLabel: 'posthog-node',
     packageManager: packageManagerFromInstallStep,
     alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
-    forceInstall,
+    forceInstall: options.forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
     integration: Integration.nextjs,
@@ -212,22 +211,21 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${
-    aiConsent
+${chalk.green('Successfully installed PostHog!')} ${`\n\n${aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, pleaes check!\n`
       : ``
-  }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-    `${packageManagerForOutro.runScriptCommand} dev`,
-  )})`}
+    }You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
+      `${packageManagerForOutro.runScriptCommand} dev`,
+    )})`}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
 
   await analytics.shutdown('success');
 }
 
-async function askForAIConsent() {
+async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
   return await traceStep('ask-for-ai-consent', async () => {
-    const aiConsent = await abortIfCancelled(
+    const aiConsent = options.default ? true : await abortIfCancelled(
       clack.select({
         message: 'Use AI to setup PostHog automatically? ✨',
         options: [
@@ -250,9 +248,9 @@ async function askForAIConsent() {
   });
 }
 
-async function askForCloudRegion(): Promise<CloudRegion> {
+async function askForCloudRegion(options: Pick<WizardOptions, 'default'>): Promise<CloudRegion> {
   return await traceStep('ask-for-cloud-region', async () => {
-    const cloudRegion: CloudRegion = await abortIfCancelled(
+    const cloudRegion: CloudRegion = options.default ? 'us' : await abortIfCancelled(
       clack.select({
         message: 'Select your cloud region',
         options: [
@@ -496,8 +494,7 @@ export async function addOrUpdateEnvironmentVariables({
       clack.log.warning(
         `Failed to create ${chalk.bold.cyan(
           relativeEnvFilePath,
-        )} with environment variables for PostHog. Please add them manually. Error: ${
-          error.message
+        )} with environment variables for PostHog. Please add them manually. Error: ${error.message
         }`,
       );
     }

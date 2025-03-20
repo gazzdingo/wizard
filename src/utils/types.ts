@@ -30,6 +30,11 @@ export type WizardOptions = {
    * The cloud region to use.
    */
   cloudRegion?: CloudRegion;
+
+  /**
+   * Whether to select the default option for all questions automatically.
+   */
+  default: boolean;
 };
 
 export interface Feature {
