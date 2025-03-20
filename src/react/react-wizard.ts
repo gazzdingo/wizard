@@ -27,7 +27,6 @@ import {
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
-import { major } from 'semver';
 
 export async function runReactWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -56,7 +55,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
   const reactVersion = getPackageVersion('react', packageJson);
 
   if (reactVersion) {
-    analytics.setTag('react-version', major(reactVersion));
+    analytics.setTag('react-version', reactVersion);
   }
 
   const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
