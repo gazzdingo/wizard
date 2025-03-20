@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { PostHogProvider } from '../components/PostHogProvider';
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -12,7 +11,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <PostHogProvider>{children}</PostHogProvider>
+        {children}
       </body>
     </html>
   );

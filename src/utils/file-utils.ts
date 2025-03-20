@@ -9,7 +9,10 @@ import { analytics } from './analytics';
 import { Integration } from '../lib/constants';
 import { abort } from './clack-utils';
 import { INTEGRATION_CONFIG } from '../lib/config';
-import { baseFilterFilesPromptTemplate, baseGenerateFileChangesPromptTemplate, getFilterFilesPromptTemplate } from '../lib/prompts';
+import {
+  baseFilterFilesPromptTemplate,
+  baseGenerateFileChangesPromptTemplate,
+} from '../lib/prompts';
 
 export const GLOBAL_IGNORE_PATTERN = [
   'node_modules',
@@ -120,11 +123,10 @@ export async function generateFileContent({
   wizardHash,
   cloudRegion,
 }: {
-  prompt: string,
+  prompt: string;
   wizardHash: string;
   cloudRegion: CloudRegion;
 }) {
-
   const response = await query({
     message: prompt,
     schema: z.object({
@@ -185,8 +187,6 @@ export async function generateFileChangesForIntegration({
         (filePath) => !changes.some((change) => change.filePath === filePath),
       );
 
-
-
       const prompt = await baseGenerateFileChangesPromptTemplate.format({
         file_content: oldContent,
         file_path: filePath,
@@ -224,7 +224,6 @@ export async function generateFileChangesForIntegration({
     }
   }
 
-
   analytics.capture('wizard interaction', {
     action: 'completed file changes',
     integration,
@@ -240,7 +239,6 @@ export async function getRelevantFilesForIntegration({
 }: Pick<WizardOptions, 'installDir'> & {
   integration: Integration;
 }) {
-
   const filterPatterns = INTEGRATION_CONFIG[integration].filterPatterns;
   const ignorePatterns = INTEGRATION_CONFIG[integration].ignorePatterns;
 
@@ -254,7 +252,6 @@ export async function getRelevantFilesForIntegration({
     integration,
     number_of_files: filteredFiles.length,
   });
-
 
   return filteredFiles;
 }

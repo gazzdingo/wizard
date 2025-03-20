@@ -1,7 +1,7 @@
-import { getPackageDotJson } from "../utils/clack-utils";
-import { hasPackageInstalled } from "../utils/package-json";
-import type { WizardOptions } from "../utils/types";
-import { Integration } from "./constants";
+import { getPackageDotJson } from '../utils/clack-utils';
+import { hasPackageInstalled } from '../utils/package-json';
+import type { WizardOptions } from '../utils/types';
+import { Integration } from './constants';
 
 type IntegrationConfig = {
   name: string;
@@ -16,8 +16,15 @@ export const INTEGRATION_CONFIG = {
   [Integration.nextjs]: {
     name: 'Next.js',
     filterPatterns: ['**/*.{tsx,ts,jsx,js,mjs,cjs}'],
-    ignorePatterns: ['node_modules', 'dist', 'build', 'public', 'static', 'next-env.d.*'],
-    detect: async (options: WizardOptions) => {
+    ignorePatterns: [
+      'node_modules',
+      'dist',
+      'build',
+      'public',
+      'static',
+      'next-env.d.*',
+    ],
+    detect: async (options) => {
       const packageJson = await getPackageDotJson(options);
       return hasPackageInstalled('next', packageJson);
     },
@@ -27,8 +34,15 @@ export const INTEGRATION_CONFIG = {
   [Integration.react]: {
     name: 'React',
     filterPatterns: ['**/*.{tsx,ts,jsx,js}'],
-    ignorePatterns: ['node_modules', 'dist', 'build', 'public', 'static', 'assets'],
-    detect: async (options: WizardOptions) => {
+    ignorePatterns: [
+      'node_modules',
+      'dist',
+      'build',
+      'public',
+      'static',
+      'assets',
+    ],
+    detect: async (options) => {
       const packageJson = await getPackageDotJson(options);
       return hasPackageInstalled('react', packageJson);
     },
