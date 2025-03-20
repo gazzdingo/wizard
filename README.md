@@ -3,8 +3,7 @@
 </p>
 
 > **⚠️ Experimental:** This wizard is still in an experimental phase. If you
-> have any feedback, please drop an email to **joshua** [at] **posthog** [dot] >
-> **com**.
+> have any feedback, please drop an email to **joshua** [at] **posthog** [dot] **com**.
 
 <h1>PostHog Wizard</h1>
 <h4>The PostHog Wizard helps you quickly add PostHog to your project.</h4>
@@ -25,15 +24,15 @@ you would like the wizard to support, please open a
 
 The following CLI arguments are available:
 
-| Option            | Description                                           | Type    | Default                         | Choices    | Environment Variable         |
-| ----------------- | ----------------------------------------------------- | ------- | ------------------------------- | ---------- | ---------------------------- |
-| `--help`          | Show help                                             | boolean |                                 |            |                              |
-| `--version`       | Show version number                                   | boolean |                                 |            |                              |
-| `--debug`         | Enable verbose logging                                | boolean | `false`                         |            | `POSTHOG_WIZARD_DEBUG`       |
-| `--integration`   | Choose the integration to setup                       | choices | Select integration during setup | "nextjs"   | `POSTHOG_WIZARD_INTEGRATION` |
-| `--force-install` | Force install the SDK NPM package (use with caution!) | boolean | `false`                         |            |                              |
-| `--install-dir`   | Relative path to install in                           | string  | `.`                             |            | `POSTHOG_WIZARD_INSTALL_DIR` |
-| `--region`        | PostHog region to use                                 | choices | `us`                            | "us", "eu" | `POSTHOG_WIZARD_REGION`      |
+| Option            | Description                                           | Type    | Default                         | Choices              | Environment Variable         |
+| ----------------- | ----------------------------------------------------- | ------- | ------------------------------- | -------------------- | ---------------------------- |
+| `--help`          | Show help                                             | boolean |                                 |                      |                              |
+| `--version`       | Show version number                                   | boolean |                                 |                      |                              |
+| `--debug`         | Enable verbose logging                                | boolean | `false`                         |                      | `POSTHOG_WIZARD_DEBUG`       |
+| `--integration`   | Choose the integration to setup                       | choices | Select integration during setup | "nextjs"             | `POSTHOG_WIZARD_INTEGRATION` |
+| `--force-install` | Force install the SDK NPM package (use with caution!) | boolean | `false`                         |                      |                              |
+| `--install-dir`   | Relative path to install in                           | string  | `.`                             |                      | `POSTHOG_WIZARD_INSTALL_DIR` |
+| `--region`        | PostHog region to use                                 | choices |                                 | "us", "eu", "custom" | `POSTHOG_WIZARD_REGION`      |
 
 > Note: A large amount of the scaffolding for this came from the amazing Sentry
 > wizard, which you can find [here](https://github.com/getsentry/sentry-wizard)
