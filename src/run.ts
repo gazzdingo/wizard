@@ -89,7 +89,10 @@ async function getIntegrationForSetup(
   const integration: Integration = await abortIfCancelled(
     clack.select({
       message: 'What do you want to set up?',
-      options: [{ value: Integration.nextjs, label: 'Next.js' }],
+      options: [
+        { value: Integration.nextjs, label: 'Next.js' },
+        { value: Integration.react, label: 'React' },
+      ],
     }),
   );
 
