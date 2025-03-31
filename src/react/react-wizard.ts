@@ -75,7 +75,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
-      integration: Integration.nextjs,
+      integration: Integration.react,
     });
 
   const relevantFiles = await getRelevantFilesForIntegration({
@@ -120,7 +120,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
 
   await runPrettierIfInstalled({
     installDir: options.installDir,
-    integration: Integration.nextjs,
+    integration: Integration.react,
   });
 
   clack.outro(`
