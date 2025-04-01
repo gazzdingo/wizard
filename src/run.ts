@@ -9,6 +9,7 @@ import clack from './utils/clack';
 import path from 'path';
 import { INTEGRATION_CONFIG, INTEGRATION_ORDER } from './lib/config';
 import { runReactWizard } from './react/react-wizard';
+import { analytics } from './utils/analytics';
 
 type Args = {
   integration?: Integration;
@@ -43,6 +44,8 @@ async function runWizard(argv: Args) {
 
   const integration =
     finalArgs.integration ?? (await getIntegrationForSetup(wizardOptions));
+
+  analytics.setTag('integration', integration);
 
   switch (integration) {
     case Integration.nextjs:
