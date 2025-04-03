@@ -19,7 +19,10 @@ import clack from '../utils/clack';
 import { Integration, ISSUES_URL } from '../lib/constants';
 import { getReactDocumentation } from './docs';
 import { analytics } from '../utils/analytics';
-import { addOrUpdateEnvironmentVariables } from '../utils/environment';
+import {
+  addOrUpdateEnvironmentVariables,
+  detectEnvVarPrefix,
+} from '../utils/environment';
 import {
   generateFileChangesForIntegration,
   getFilesToChange,
@@ -83,9 +86,12 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     integration: Integration.react,
   });
 
+  const envVarPrefix = await detectEnvVarPrefix(options);
+
   const installationDocumentation = getReactDocumentation({
     host,
     language: typeScriptDetected ? 'typescript' : 'javascript',
+    envVarPrefix,
   });
 
   clack.log.info(`Reviewing PostHog documentation for React`);
@@ -109,7 +115,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
 
   await addOrUpdateEnvironmentVariables({
     variables: {
-      REACT_APP_PUBLIC_POSTHOG_KEY: projectApiKey,
+      [envVarPrefix + 'POSTHOG_KEY']: projectApiKey,
     },
     installDir: options.installDir,
     integration: Integration.react,

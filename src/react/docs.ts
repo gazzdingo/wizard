@@ -1,10 +1,16 @@
 export const getReactDocumentation = ({
   host,
   language,
+  envVarPrefix,
 }: {
   host: string;
   language: 'typescript' | 'javascript';
+  envVarPrefix: string;
 }) => {
+  const apiKeyText =
+    envVarPrefix === 'VITE_PUBLIC_'
+      ? 'import.meta.env.VITE_PUBLIC_POSTHOG_KEY'
+      : `process.env.${envVarPrefix}POSTHOG_KEY`;
   return `
 ==============================
 FILE: {index / App}.${
@@ -28,7 +34,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <PostHogProvider
-      apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY}
+      apiKey={${apiKeyText}}
       options={{
   api_host: ${host},
 }}
