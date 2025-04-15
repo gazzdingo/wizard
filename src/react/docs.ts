@@ -36,8 +36,13 @@ root.render(
     <PostHogProvider
       apiKey={${apiKeyText}}
       options={{
-  api_host: ${host},
-}}
+        api_host: ${host},
+        debug: ${
+          envVarPrefix === 'VITE_PUBLIC_'
+            ? 'import.meta.env.MODE === "development"'
+            : 'process.env.NODE_ENV === "development"'
+        },
+      }}
     >
       <App />
     </PostHogProvider>

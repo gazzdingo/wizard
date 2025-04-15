@@ -33,6 +33,7 @@ import {
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
+import { addEditorRules } from '../utils/rules/add-editor-rules';
 
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -143,8 +144,14 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     integration: Integration.nextjs,
   });
 
-  clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${
+  await addEditorRules({
+    rulesName: 'next-rules.md',
+    installDir: options.installDir,
+    integration: Integration.nextjs,
+    default: options.default,
+  });
+
+  clack.outro(`${chalk.green('Successfully installed PostHog!')} ${`\n\n${
     aiConsent
       ? `Note: This uses experimental AI to setup your project. It might have got it wrong, please check!\n`
       : ``
