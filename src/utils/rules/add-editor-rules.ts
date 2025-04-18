@@ -19,7 +19,7 @@ export const addEditorRules = async ({
   rulesName,
   integration,
   default: defaultAddEditorRules,
-}: AddEditorRulesOptions) => {
+}: AddEditorRulesOptions): Promise<boolean> => {
   // Add rules file if in Cursor environment
   if (process.env.CURSOR_TRACE_ID) {
     const addEditorRules: boolean = defaultAddEditorRules
@@ -42,7 +42,7 @@ export const addEditorRules = async ({
         );
 
     if (!addEditorRules) {
-      return;
+      return false;
     }
 
     return traceStep('add-editor-rules', async () => {
@@ -77,6 +77,10 @@ export const addEditorRules = async ({
       });
 
       clack.log.info(`Added Cursor rules to ${chalk.bold.cyan(docsDir)}`);
+
+      return true;
     });
   }
+
+  return false;
 };

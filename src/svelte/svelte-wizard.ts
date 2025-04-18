@@ -17,12 +17,9 @@ import {
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import clack from '../utils/clack';
 import { Integration, ISSUES_URL } from '../lib/constants';
-import { getReactDocumentation } from './docs';
+import { getSvelteDocumentation } from './docs';
 import { analytics } from '../utils/analytics';
-import {
-  addOrUpdateEnvironmentVariables,
-  detectEnvVarPrefix,
-} from '../utils/environment';
+import { addOrUpdateEnvironmentVariables } from '../utils/environment';
 import {
   generateFileChangesForIntegration,
   getFilesToChange,
@@ -32,16 +29,16 @@ import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
 import { addEditorRules } from '../utils/rules/add-editor-rules';
 
-export async function runReactWizard(options: WizardOptions): Promise<void> {
+export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   printWelcome({
-    wizardName: 'PostHog React Wizard',
+    wizardName: 'PostHog Svelte Wizard',
   });
 
   const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
     await abort(
-      'The React wizard requires AI to get setup right now. Please view the docs to setup React manually instead: https://posthog.com/docs/libraries/react',
+      'The Svelte wizard requires AI to get setup right now. Please view the docs to setup Svelte manually instead: https://posthog.com/docs/libraries/svelte',
       0,
     );
   }
@@ -54,12 +51,12 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
 
   const packageJson = await getPackageDotJson(options);
 
-  await ensurePackageIsInstalled(packageJson, 'react', 'React');
+  await ensurePackageIsInstalled(packageJson, '@sveltejs/kit', '@sveltejs/kit');
 
-  const reactVersion = getPackageVersion('react', packageJson);
+  const svelteVersion = getPackageVersion('@sveltejs/kit', packageJson);
 
-  if (reactVersion) {
-    analytics.setTag('react-version', reactVersion);
+  if (svelteVersion) {
+    analytics.setTag('svelte-version', svelteVersion);
   }
 
   const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
@@ -79,26 +76,33 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
-      integration: Integration.react,
+      integration: Integration.svelte,
     });
+
+  await installPackage({
+    packageName: 'posthog-node',
+    packageNameDisplayLabel: 'posthog-node',
+    packageManager: packageManagerFromInstallStep,
+    alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
+    forceInstall: options.forceInstall,
+    askBeforeUpdating: false,
+    installDir: options.installDir,
+    integration: Integration.svelte,
+  });
 
   const relevantFiles = await getRelevantFilesForIntegration({
     installDir: options.installDir,
-    integration: Integration.react,
+    integration: Integration.svelte,
   });
 
-  const envVarPrefix = await detectEnvVarPrefix(options);
-
-  const installationDocumentation = getReactDocumentation({
-    host,
+  const installationDocumentation = getSvelteDocumentation({
     language: typeScriptDetected ? 'typescript' : 'javascript',
-    envVarPrefix,
   });
 
-  clack.log.info(`Reviewing PostHog documentation for React`);
+  clack.log.info(`Reviewing PostHog documentation for Svelte`);
 
   const filesToChange = await getFilesToChange({
-    integration: Integration.react,
+    integration: Integration.svelte,
     relevantFiles,
     documentation: installationDocumentation,
     wizardHash,
@@ -106,7 +110,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
   });
 
   await generateFileChangesForIntegration({
-    integration: Integration.react,
+    integration: Integration.svelte,
     filesToChange,
     wizardHash,
     installDir: options.installDir,
@@ -116,10 +120,11 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
 
   await addOrUpdateEnvironmentVariables({
     variables: {
-      [envVarPrefix + 'POSTHOG_KEY']: projectApiKey,
+      ['PUBLIC_POSTHOG_KEY']: projectApiKey,
+      ['PUBLIC_POSTHOG_HOST']: host,
     },
     installDir: options.installDir,
-    integration: Integration.react,
+    integration: Integration.svelte,
   });
 
   const packageManagerForOutro =
@@ -127,13 +132,13 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
 
   await runPrettierIfInstalled({
     installDir: options.installDir,
-    integration: Integration.react,
+    integration: Integration.svelte,
   });
 
   const addedEditorRules = await addEditorRules({
     installDir: options.installDir,
-    rulesName: 'react-rules.md',
-    integration: Integration.react,
+    rulesName: 'svelte-rules.md',
+    integration: Integration.svelte,
     default: options.default,
   });
 
@@ -144,13 +149,17 @@ ${chalk.green('Successfully installed PostHog!')} ${`\n\n${
       : ``
   }
 ${chalk.cyan('Changes made:')}
-• Installed posthog-js package
-• Added PostHogProvider to the root of the app, to initialize PostHog
+• Installed posthog-js & posthog-node packages
+• Added PostHog initialization to your Svelte app
+• Setup pageview & pageleave tracking
+• Setup event auto-capture to capture events as users interact with your app
+• Added a getPostHogClient() function to use PostHog server-side
 • Added your Project API key to your .env file
 ${addedEditorRules ? `• Added cursor rules for PostHog` : ''}
   
 ${chalk.yellow('Next steps:')}
 • Call posthog.identify() when a user signs into your app
+• Use getPostHogClient() to start capturing events server-side
 • Upload environment variables to your production environment
 
 You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
@@ -159,7 +168,7 @@ You should validate your setup by (re)starting your dev environment (e.g. ${chal
 
     
 ${chalk.blue(
-  `Learn more about PostHog + React: https://posthog.com/docs/libraries/react`,
+  `Learn more about PostHog + Svelte: https://posthog.com/docs/libraries/svelte`,
 )}
 
 ${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);

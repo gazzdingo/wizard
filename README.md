@@ -16,21 +16,21 @@ To use the wizard, you can run it directly using:
 npx @posthog/wizard
 ```
 
-Currently the wizard can be used for React & Next.js projects. If you have other integrations you would like the wizard to support, please open a [GitHub issue](https://github.com/posthog/wizard/issues)!
+Currently the wizard can be used for React, NextJS and Svelte projects. If you have other integrations you would like the wizard to support, please open a [GitHub issue](https://github.com/posthog/wizard/issues)!
 
 # Options
 
 The following CLI arguments are available:
 
-| Option            | Description                                                                | Type    | Default                         | Choices           | Environment Variable         |
-| ----------------- | -------------------------------------------------------------------------- | ------- | ------------------------------- | ----------------- | ---------------------------- |
-| `--help`          | Show help                                                                  | boolean |                                 |                   |                              |
-| `--version`       | Show version number                                                        | boolean |                                 |                   |                              |
-| `--debug`         | Enable verbose logging                                                     | boolean | `false`                         |                   | `POSTHOG_WIZARD_DEBUG`       |
-| `--integration`   | Choose the integration to setup                                            | choices | Select integration during setup | "nextjs", "react" | `POSTHOG_WIZARD_INTEGRATION` |
-| `--force-install` | Force install the SDK NPM package (use with caution!)                      | boolean | `false`                         |                   |                              |
-| `--install-dir`   | Relative path to install in                                                | string  | `.`                             |                   | `POSTHOG_WIZARD_INSTALL_DIR` |
-| `--region`        | PostHog region to use                                                      | choices |                                 | "us", "eu"        | `POSTHOG_WIZARD_REGION`      |
-| `--default`       | Select the default option for all questions automatically (where possible) | boolean | `false`                         |                   | `POSTHOG_WIZARD_DEFAULT`     |
+| Option            | Description                                                                | Type    | Default                         | Choices                     | Environment Variable         |
+| ----------------- | -------------------------------------------------------------------------- | ------- | ------------------------------- | --------------------------- | ---------------------------- |
+| `--help`          | Show help                                                                  | boolean |                                 |                             |                              |
+| `--version`       | Show version number                                                        | boolean |                                 |                             |                              |
+| `--debug`         | Enable verbose logging                                                     | boolean | `false`                         |                             | `POSTHOG_WIZARD_DEBUG`       |
+| `--integration`   | Choose the integration to setup                                            | choices | Select integration during setup | "nextjs", "react", "svelte" | `POSTHOG_WIZARD_INTEGRATION` |
+| `--force-install` | Force install the SDK NPM package (use with caution!)                      | boolean | `false`                         |                             |                              |
+| `--install-dir`   | Relative path to install in                                                | string  | `.`                             |                             | `POSTHOG_WIZARD_INSTALL_DIR` |
+| `--region`        | PostHog region to use                                                      | choices |                                 | "us", "eu"                  | `POSTHOG_WIZARD_REGION`      |
+| `--default`       | Select the default option for all questions automatically (where possible) | boolean | `false`                         |                             | `POSTHOG_WIZARD_DEFAULT`     |
 
 > Note: A large amount of the scaffolding for this came from the amazing Sentry wizard, which you can find [here](https://github.com/getsentry/sentry-wizard) 💖
