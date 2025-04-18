@@ -11,6 +11,7 @@ import { INTEGRATION_CONFIG, INTEGRATION_ORDER } from './lib/config';
 import { runReactWizard } from './react/react-wizard';
 import { analytics } from './utils/analytics';
 import { runSvelteWizard } from './svelte/svelte-wizard';
+import { runReactNativeWizard } from './react-native/react-native-wizard';
 
 type Args = {
   integration?: Integration;
@@ -58,6 +59,9 @@ async function runWizard(argv: Args) {
     case Integration.svelte:
       await runSvelteWizard(wizardOptions);
       break;
+    case Integration.reactNative:
+      await runReactNativeWizard(wizardOptions);
+      break;
     default:
       clack.log.error('No setup wizard selected!');
   }
@@ -99,6 +103,7 @@ async function getIntegrationForSetup(
         { value: Integration.nextjs, label: 'Next.js' },
         { value: Integration.react, label: 'React' },
         { value: Integration.svelte, label: 'Svelte' },
+        { value: Integration.reactNative, label: 'React Native' },
       ],
     }),
   );

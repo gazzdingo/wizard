@@ -197,7 +197,37 @@ export const NPM: PackageManager = {
   },
 };
 
-export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM];
+export const EXPO: PackageManager = {
+  name: 'expo',
+  label: 'Expo',
+  installCommand: 'npx expo install',
+  buildCommand: 'npx expo build',
+  runScriptCommand: 'npx expo run',
+  flags: '',
+  forceInstallFlag: '--force',
+  detect: () => false,
+  addOverride: async (
+    pkgName,
+    pkgVersion,
+    { installDir }: Pick<WizardOptions, 'installDir'>,
+  ): Promise<void> => {
+    const packageDotJson = await getPackageDotJson({ installDir });
+    const overrides = packageDotJson.overrides || {};
+
+    await updatePackageDotJson(
+      {
+        ...packageDotJson,
+        overrides: {
+          ...overrides,
+          [pkgName]: pkgVersion,
+        },
+      },
+      { installDir },
+    );
+  },
+};
+
+export const packageManagers = [BUN, YARN_V1, YARN_V2, PNPM, NPM, EXPO];
 
 export function detectPackageManger({
   installDir,

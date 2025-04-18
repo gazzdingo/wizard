@@ -411,6 +411,7 @@ export async function runPrettierIfInstalled({
       });
     } catch (e) {
       prettierSpinner.stop('Prettier failed to run.');
+
       clack.log.warn(
         'Prettier failed to run. There may be formatting issues in your updated files.',
       );

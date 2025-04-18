@@ -2,6 +2,7 @@ export enum Integration {
   nextjs = 'nextjs',
   react = 'react',
   svelte = 'svelte',
+  reactNative = 'react-native',
 }
 
 export function getIntegrationDescription(type: string): string {
@@ -10,6 +11,8 @@ export function getIntegrationDescription(type: string): string {
       return 'Next.js';
     case Integration.react:
       return 'React';
+    case Integration.reactNative:
+      return 'React Native';
     case Integration.svelte:
       return 'Svelte';
     default:

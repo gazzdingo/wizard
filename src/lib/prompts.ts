@@ -20,10 +20,12 @@ Rules:
 - Only return files that you think will be required to look at or modify to integrate PostHog.
 - Do not return files that are unlikely to require modification based on the documentation.
 - If you are unsure, return the file, since it's better to have more files than less.
+- If two files might include the content you need to edit, return both.
 - If you create a new file, it should not conflict with any existing files.
 - If the user is using TypeScript, you should return .ts and .tsx files.
-- The file structure of the project may be different than the documentation, you should follow the file structure of the project.
+- The file structure of the project may be different than the documentation, you should follow the file structure of the project. e.g. if there is an existing file containing providers, you should edit that file instead of creating a new one.
 {integration_rules}
+- Look for existing files that contain providers, components, hooks, etc. and edit those files instead of creating new ones if appropriate.
 
 Installation documentation:
 {documentation}
@@ -55,6 +57,7 @@ Rules:
 - If the current file is empty, and you think it should be created, you can add the contents of the new file.
 - The file structure of the project may be different than the documentation, you should follow the file structure of the project.
 - Use relative imports if you are unsure what the project import paths are.
+- It's okay not to edit a file if it's not needed (e.g. if you have already edited another one or this one is not needed).
 {integration_rules}
 
 
