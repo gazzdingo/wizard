@@ -155,7 +155,7 @@ ${chalk.cyan('Changes made:')}
 • Setup event auto-capture to capture events as users interact with your app
 • Added a getPostHogClient() function to use PostHog server-side
 • Added your Project API key to your .env file
-${addedEditorRules ? `• Added cursor rules for PostHog` : ''}
+${addedEditorRules ? `• Added Cursor rules for PostHog` : ''}
   
 ${chalk.yellow('Next steps:')}
 • Call posthog.identify() when a user signs into your app

@@ -131,6 +131,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   await addOrUpdateEnvironmentVariables({
     variables: {
       NEXT_PUBLIC_POSTHOG_KEY: projectApiKey,
+      NEXT_PUBLIC_POSTHOG_HOST: host,
     },
     installDir: options.installDir,
     integration: Integration.nextjs,
@@ -163,7 +164,7 @@ ${chalk.cyan('Changes made:')}
 • Created a PostHogClient to use PostHog server-side
 • Setup a reverse proxy to avoid ad blockers blocking analytics requests
 • Added your Project API key to your .env file
-${addedEditorRules ? `• Added cursor rules for PostHog` : ''}
+${addedEditorRules ? `• Added Cursor rules for PostHog` : ''}
   
 ${chalk.yellow('Next steps:')}
 • Call posthog.identify() when a user signs into your app
