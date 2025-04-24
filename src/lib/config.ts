@@ -10,6 +10,9 @@ type IntegrationConfig = {
   detect: (options: Pick<WizardOptions, 'installDir'>) => Promise<boolean>;
   generateFilesRules: string;
   filterFilesRules: string;
+  docsUrl: string;
+  changes: string;
+  nextSteps: string;
 };
 
 export const INTEGRATION_CONFIG = {
@@ -30,6 +33,11 @@ export const INTEGRATION_CONFIG = {
     },
     generateFilesRules: '',
     filterFilesRules: '',
+    docsUrl: 'https://posthog.com/docs/libraries/next-js',
+    changes:
+      '• Installed posthog-js & posthog-node packages\n• Initialized PostHog, and added pageview tracking\n• Created a PostHogClient to use PostHog server-side\n• Setup a reverse proxy to avoid ad blockers blocking analytics requests\n• Added your Project API key to your .env/.env.local file',
+    nextSteps:
+      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app\n• Upload environment variables to your production environment',
   },
   [Integration.react]: {
     name: 'React',
@@ -48,6 +56,11 @@ export const INTEGRATION_CONFIG = {
     },
     generateFilesRules: '',
     filterFilesRules: '',
+    docsUrl: 'https://posthog.com/docs/libraries/react',
+    changes:
+      '• Installed posthog-js package\n• Added PostHogProvider to the root of the app, to initialize PostHog and enable autocapture\n• Added your Project API key to your .env/.env.local file',
+    nextSteps:
+      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app\n• Upload environment variables to your production environment',
   },
   [Integration.svelte]: {
     name: 'Svelte',
@@ -59,6 +72,11 @@ export const INTEGRATION_CONFIG = {
     },
     generateFilesRules: '',
     filterFilesRules: '',
+    docsUrl: 'https://posthog.com/docs/libraries/svelte',
+    changes:
+      '• Installed posthog-js & posthog-node packages\n• Added PostHog initialization to your Svelte app\n• Setup pageview & pageleave tracking\n• Setup event auto - capture to capture events as users interact with your app\n• Added a getPostHogClient() function to use PostHog server-side\n• Added your Project API key to your .env/.env.local file',
+    nextSteps:
+      '• Call posthog.identify() when a user signs into your app\n• Use getPostHogClient() to start capturing events server - side\n• Upload environment variables to your production environment',
   },
   [Integration.reactNative]: {
     name: 'React Native',
@@ -70,6 +88,11 @@ export const INTEGRATION_CONFIG = {
     },
     generateFilesRules: '',
     filterFilesRules: '',
+    docsUrl: 'https://posthog.com/docs/libraries/react-native',
+    changes:
+      '• Installed required packages\n• Added PostHogProvider to the root of the app\n• Enabled autocapture and session replay',
+    nextSteps:
+      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app',
   },
 } as const satisfies Record<Integration, IntegrationConfig>;
 

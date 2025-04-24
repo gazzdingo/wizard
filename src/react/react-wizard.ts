@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 
-import chalk from 'chalk';
 import {
   abort,
   askForAIConsent,
@@ -16,7 +15,7 @@ import {
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import clack from '../utils/clack';
-import { Integration, ISSUES_URL } from '../lib/constants';
+import { Integration } from '../lib/constants';
 import { getReactDocumentation } from './docs';
 import { analytics } from '../utils/analytics';
 import {
@@ -31,6 +30,7 @@ import {
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
 import { addEditorRules } from '../utils/rules/add-editor-rules';
+import { getOutroMessage } from '../lib/messages';
 
 export async function runReactWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -137,32 +137,15 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     default: options.default,
   });
 
-  clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${
-    aiConsent
-      ? `Note: This uses experimental AI to setup your project. It might have got it wrong, please check!\n`
-      : ``
-  }
-${chalk.cyan('Changes made:')}
-• Installed posthog-js package
-• Added PostHogProvider to the root of the app, to initialize PostHog and enable autocapture
-• Added your Project API key to your .env file
-${addedEditorRules ? `• Added Cursor rules for PostHog` : ''}
-  
-${chalk.yellow('Next steps:')}
-• Call posthog.identify() when a user signs into your app
-• Upload environment variables to your production environment
+  const outroMessage = getOutroMessage({
+    options,
+    integration: Integration.react,
+    cloudRegion,
+    addedEditorRules,
+    packageManager: packageManagerForOutro,
+  });
 
-You should validate your setup by (re)starting your dev environment (e.g. ${chalk.cyan(
-    `${packageManagerForOutro.runScriptCommand} dev`,
-  )})`}
-
-    
-${chalk.blue(
-  `Learn more about PostHog + React: https://posthog.com/docs/libraries/react`,
-)}
-
-${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
+  clack.outro(outroMessage);
 
   await analytics.shutdown('success');
 }

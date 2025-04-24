@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 
-import chalk from 'chalk';
 import {
   abort,
   askForAIConsent,
@@ -8,6 +7,7 @@ import {
   ensurePackageIsInstalled,
   getOrAskForProjectData,
   getPackageDotJson,
+  getPackageManager,
   installPackage,
   isUsingTypeScript,
   printWelcome,
@@ -15,7 +15,7 @@ import {
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import clack from '../utils/clack';
-import { Integration, ISSUES_URL } from '../lib/constants';
+import { Integration } from '../lib/constants';
 import { getReactNativeDocumentation } from './docs';
 import { analytics } from '../utils/analytics';
 import {
@@ -27,6 +27,7 @@ import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
 import { addEditorRules } from '../utils/rules/add-editor-rules';
 import { EXPO } from '../utils/package-manager';
+import { getOutroMessage } from '../lib/messages';
 
 export async function runReactNativeWizard(
   options: WizardOptions,
@@ -153,30 +154,19 @@ export async function runReactNativeWizard(
     default: options.default,
   });
 
-  clack.outro(`
-${chalk.green('Successfully installed PostHog!')} ${`\n\n${
-    aiConsent
-      ? `Note: This uses experimental AI to setup your project. It might have got it wrong, please check!\n`
-      : ``
-  }
-${chalk.cyan('Changes made:')}
-• Installed required packages
-• Added PostHogProvider to the root of the app
-• Enabled autocapture and session replay
-${addedEditorRules ? `• Added Cursor rules for PostHog` : ''}
-  
-${chalk.yellow('Next steps:')}
-• Call posthog.identify() when a user signs into your app
-• Call posthog.capture() to capture custom events in your app
+  const packageManagerForOutro = await getPackageManager({
+    installDir: options.installDir,
+  });
 
-You should validate your setup by (re)starting your dev environment and launching your app`}
+  const outroMessage = getOutroMessage({
+    options,
+    integration: Integration.reactNative,
+    cloudRegion,
+    addedEditorRules,
+    packageManager: packageManagerForOutro,
+  });
 
-    
-${chalk.blue(
-  `Learn more about PostHog + React Native: https://posthog.com/docs/libraries/react-native`,
-)}
-
-${chalk.dim(`If you encounter any issues, let us know here: ${ISSUES_URL}`)}`);
+  clack.outro(outroMessage);
 
   await analytics.shutdown('success');
 }

@@ -20,6 +20,7 @@ type Args = {
   installDir?: string;
   region?: CloudRegion;
   default?: boolean;
+  signup?: boolean;
 };
 
 export async function run(argv: Args) {
@@ -40,6 +41,7 @@ async function runWizard(argv: Args) {
       : process.cwd(),
     cloudRegion: finalArgs.region ?? undefined,
     default: finalArgs.default ?? false,
+    signup: finalArgs.signup ?? false,
   };
 
   clack.intro(`Welcome to the PostHog setup wizard ✨`);

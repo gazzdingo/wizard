@@ -569,6 +569,7 @@ export async function getOrAskForProjectData(
   const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
     askForWizardLogin({
       url: cloudUrl,
+      signup: _options.signup,
     }),
   );
 
@@ -595,6 +596,7 @@ ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
 
 async function askForWizardLogin(options: {
   url: string;
+  signup: boolean;
 }): Promise<ProjectData> {
   let wizardHash: string;
 
@@ -610,16 +612,29 @@ async function askForWizardLogin(options: {
         `Please try again in a few minutes and let us know if this issue persists: ${ISSUES_URL}`,
       ),
     );
+    throw e;
   }
 
-  const loginUrl = new URL(`${options.url}/wizard?hash=${wizardHash!}`);
+  const loginUrl = new URL(`${options.url}/wizard?hash=${wizardHash}`);
 
-  const urlToOpen = loginUrl.toString();
+  const signupUrl = new URL(
+    `${options.url}/signup?next=${encodeURIComponent(
+      `/wizard?hash=${wizardHash}`,
+    )}`,
+  );
+
+  const urlToOpen = options.signup ? signupUrl.toString() : loginUrl.toString();
 
   clack.log.info(
     `${chalk.bold(
       `If the browser window didn't open automatically, please open the following link to login into PostHog:`,
-    )}\n\n${chalk.cyan(urlToOpen)}`,
+    )}\n\n${chalk.cyan(urlToOpen)}${
+      options.signup
+        ? `\n\nIf you already have an account, you can use this link:\n\n${chalk.cyan(
+            loginUrl.toString(),
+          )}`
+        : ``
+    }`,
   );
 
   opn(urlToOpen, { wait: false }).catch(() => {
@@ -671,7 +686,9 @@ async function askForWizardLogin(options: {
     }, 180_000);
   });
 
-  loginSpinner.stop('Login complete.');
+  loginSpinner.stop(
+    `Login complete. ${options.signup ? 'Welcome to PostHog! 🎉' : ''}`,
+  );
   analytics.setTag('opened-wizard-link', true);
   analytics.setDistinctId(data.distinctId);
 

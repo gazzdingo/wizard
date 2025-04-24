@@ -35,6 +35,11 @@ export type WizardOptions = {
    * Whether to select the default option for all questions automatically.
    */
   default: boolean;
+
+  /**
+   * Whether to create a new PostHog account during setup.
+   */
+  signup: boolean;
 };
 
 export interface Feature {
