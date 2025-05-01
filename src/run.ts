@@ -12,6 +12,9 @@ import { runReactWizard } from './react/react-wizard';
 import { analytics } from './utils/analytics';
 import { runSvelteWizard } from './svelte/svelte-wizard';
 import { runReactNativeWizard } from './react-native/react-native-wizard';
+import { EventEmitter } from 'events';
+
+EventEmitter.defaultMaxListeners = 50;
 
 type Args = {
   integration?: Integration;

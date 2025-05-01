@@ -196,7 +196,7 @@ export async function generateFileChangesForIntegration({
         integration_name: INTEGRATION_CONFIG[integration].name,
         integration_rules: INTEGRATION_CONFIG[integration].generateFilesRules,
         changed_files: changes
-          .map((change) => `${change.filePath}\n${change.oldContent}`)
+          .map((change) => `${change.filePath}\n${change.newContent}`)
           .join('\n'),
         unchanged_files: unchangedFiles,
       });

@@ -11,7 +11,6 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import clack from '../utils/clack';
@@ -25,7 +24,7 @@ import {
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
-import { addEditorRules } from '../utils/rules/add-editor-rules';
+import { addEditorRulesStep, runPrettierStep } from '../steps';
 import { EXPO } from '../utils/package-manager';
 import { getOutroMessage } from '../lib/messages';
 
@@ -142,12 +141,12 @@ export async function runReactNativeWizard(
     cloudRegion,
   });
 
-  await runPrettierIfInstalled({
+  await runPrettierStep({
     installDir: options.installDir,
     integration: Integration.reactNative,
   });
 
-  const addedEditorRules = await addEditorRules({
+  const addedEditorRules = await addEditorRulesStep({
     installDir: options.installDir,
     rulesName: 'react-native-rules.md',
     integration: Integration.reactNative,

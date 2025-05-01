@@ -11,17 +11,13 @@ import {
   installPackage,
   isUsingTypeScript,
   printWelcome,
-  runPrettierIfInstalled,
 } from '../utils/clack-utils';
 import { getPackageVersion, hasPackageInstalled } from '../utils/package-json';
 import clack from '../utils/clack';
 import { Integration } from '../lib/constants';
 import { getReactDocumentation } from './docs';
 import { analytics } from '../utils/analytics';
-import {
-  addOrUpdateEnvironmentVariables,
-  detectEnvVarPrefix,
-} from '../utils/environment';
+import { detectEnvVarPrefix } from '../utils/environment';
 import {
   generateFileChangesForIntegration,
   getFilesToChange,
@@ -29,8 +25,12 @@ import {
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
 import { askForCloudRegion } from '../utils/clack-utils';
-import { addEditorRules } from '../utils/rules/add-editor-rules';
 import { getOutroMessage } from '../lib/messages';
+import {
+  addEditorRulesStep,
+  addOrUpdateEnvironmentVariablesStep,
+  runPrettierStep,
+} from '../steps';
 
 export async function runReactWizard(options: WizardOptions): Promise<void> {
   printWelcome({
@@ -113,24 +113,25 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     cloudRegion,
   });
 
-  await addOrUpdateEnvironmentVariables({
-    variables: {
-      [envVarPrefix + 'POSTHOG_KEY']: projectApiKey,
-      [envVarPrefix + 'POSTHOG_HOST']: host,
-    },
-    installDir: options.installDir,
-    integration: Integration.react,
-  });
+  const { relativeEnvFilePath, addedEnvVariables } =
+    await addOrUpdateEnvironmentVariablesStep({
+      variables: {
+        [envVarPrefix + 'POSTHOG_KEY']: projectApiKey,
+        [envVarPrefix + 'POSTHOG_HOST']: host,
+      },
+      installDir: options.installDir,
+      integration: Integration.react,
+    });
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager(options));
 
-  await runPrettierIfInstalled({
+  await runPrettierStep({
     installDir: options.installDir,
     integration: Integration.react,
   });
 
-  const addedEditorRules = await addEditorRules({
+  const addedEditorRules = await addEditorRulesStep({
     installDir: options.installDir,
     rulesName: 'react-rules.md',
     integration: Integration.react,
@@ -143,6 +144,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     cloudRegion,
     addedEditorRules,
     packageManager: packageManagerForOutro,
+    envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,
   });
 
   clack.outro(outroMessage);

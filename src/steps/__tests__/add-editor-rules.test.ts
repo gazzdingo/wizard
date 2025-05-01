@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import path from 'path';
-import { addEditorRules } from '../../../src/utils/rules/add-editor-rules';
-import { analytics } from '../../../src/utils/analytics';
-import clack from '../../../src/utils/clack';
-import { Integration } from '../../../src/lib/constants';
+import { addEditorRulesStep } from '../add-editor-rules';
+import { analytics } from '../../utils/analytics';
+import clack from '../../utils/clack';
+import { Integration } from '../../lib/constants';
+import chalk from 'chalk';
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -14,7 +15,7 @@ jest.mock('fs', () => ({
   },
 }));
 
-jest.mock('../../../src/utils/analytics', () => ({
+jest.mock('../../utils/analytics', () => ({
   analytics: {
     capture: jest.fn(),
     setTag: jest.fn(),
@@ -22,7 +23,7 @@ jest.mock('../../../src/utils/analytics', () => ({
   },
 }));
 
-jest.mock('../../../src/utils/clack', () => ({
+jest.mock('../../utils/clack', () => ({
   log: {
     info: jest.fn(),
   },
@@ -34,7 +35,7 @@ jest.mock('../../../src/utils/clack', () => ({
 describe('addEditorRules', () => {
   const mockOptions = {
     installDir: '/test/dir',
-    rulesName: 'test-rules.md',
+    rulesName: 'react-rules.md',
     integration: 'react' as Integration,
   };
 
@@ -71,7 +72,7 @@ describe('addEditorRules', () => {
   it('should not install rules when CURSOR_TRACE_ID is not set', async () => {
     delete process.env.CURSOR_TRACE_ID;
 
-    await addEditorRules(mockOptions);
+    await addEditorRulesStep(mockOptions);
 
     expect(mkdirMock).not.toHaveBeenCalled();
     expect(readFileMock).not.toHaveBeenCalled();
@@ -92,7 +93,7 @@ describe('addEditorRules', () => {
       .mockImplementationOnce(() => Promise.resolve(mockFrameworkRules))
       .mockImplementationOnce(() => Promise.resolve(mockUniversalRules));
 
-    await addEditorRules(mockOptions);
+    await addEditorRulesStep(mockOptions);
 
     // Check if directory was created
     expect(mkdirMock).toHaveBeenCalledWith(
@@ -101,22 +102,15 @@ describe('addEditorRules', () => {
     );
 
     // Check if correct files were read
-    expect(readFileMock).toHaveBeenCalledWith(
-      path.join(
-        path.dirname(
-          require.resolve('../../../src/utils/rules/add-editor-rules'),
-        ),
-        mockOptions.rulesName,
-      ),
+    expect(readFileMock).toHaveBeenCalledTimes(2);
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringMatching(/react-rules\.md$/),
       'utf8',
     );
-    expect(readFileMock).toHaveBeenCalledWith(
-      path.join(
-        path.dirname(
-          require.resolve('../../../src/utils/rules/add-editor-rules'),
-        ),
-        'universal.md',
-      ),
+    expect(readFileMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching(/universal\.md$/),
       'utf8',
     );
 
@@ -135,7 +129,9 @@ describe('addEditorRules', () => {
 
     // Check if success message was logged
     expect(infoMock).toHaveBeenCalledWith(
-      expect.stringContaining(path.join('/test/dir', '.cursor', 'rules')),
+      `Added Cursor rules to ${chalk.bold.cyan(
+        '.cursor/rules/posthog-integration.mdc',
+      )}`,
     );
   });
 
@@ -146,7 +142,7 @@ describe('addEditorRules', () => {
     // Mock readFile to throw an error
     (fs.promises.readFile as jest.Mock).mockRejectedValue(mockError);
 
-    await expect(addEditorRules(mockOptions)).rejects.toThrow(mockError);
+    await expect(addEditorRulesStep(mockOptions)).rejects.toThrow(mockError);
 
     expect(writeFileMock).not.toHaveBeenCalled();
     expect(captureMock).not.toHaveBeenCalled();
@@ -160,7 +156,7 @@ describe('addEditorRules', () => {
     // Mock mkdir to throw an error
     (fs.promises.mkdir as jest.Mock).mockRejectedValue(mockError);
 
-    await expect(addEditorRules(mockOptions)).rejects.toThrow(mockError);
+    await expect(addEditorRulesStep(mockOptions)).rejects.toThrow(mockError);
 
     expect(writeFileMock).not.toHaveBeenCalled();
     expect(captureMock).not.toHaveBeenCalled();
@@ -208,7 +204,7 @@ A given feature flag should be used in as few places as possible. Do not increas
       .mockImplementationOnce(() => Promise.resolve(mockFrameworkRules))
       .mockImplementationOnce(() => Promise.resolve(mockUniversalRules));
 
-    await addEditorRules(mockOptions);
+    await addEditorRulesStep(mockOptions);
 
     // Check if directory was created
     expect(mkdirMock).toHaveBeenCalledWith(
@@ -218,25 +214,15 @@ A given feature flag should be used in as few places as possible. Do not increas
 
     // Check if correct files were read
     expect(readFileMock).toHaveBeenCalledWith(
-      path.join(
-        path.dirname(
-          require.resolve('../../../src/utils/rules/add-editor-rules'),
-        ),
-        mockOptions.rulesName,
-      ),
+      expect.stringMatching(/react-rules\.md$/),
       'utf8',
     );
     expect(readFileMock).toHaveBeenCalledWith(
-      path.join(
-        path.dirname(
-          require.resolve('../../../src/utils/rules/add-editor-rules'),
-        ),
-        'universal.md',
-      ),
+      expect.stringMatching(/universal\.md$/),
       'utf8',
     );
 
-    // Check if combined rules were written correctly with proper formatting preserved
+    // Check if combined rules were written correctly
     expect(writeFileMock).toHaveBeenCalledWith(
       path.join('/test/dir', '.cursor', 'rules', 'posthog-integration.mdc'),
       expectedCombinedRules,
@@ -251,7 +237,9 @@ A given feature flag should be used in as few places as possible. Do not increas
 
     // Check if success message was logged
     expect(infoMock).toHaveBeenCalledWith(
-      expect.stringContaining(path.join('/test/dir', '.cursor', 'rules')),
+      `Added Cursor rules to ${chalk.bold.cyan(
+        '.cursor/rules/posthog-integration.mdc',
+      )}`,
     );
   });
 
@@ -259,7 +247,7 @@ A given feature flag should be used in as few places as possible. Do not increas
     process.env.CURSOR_TRACE_ID = 'test-trace-id';
     selectMock.mockResolvedValue(false);
 
-    await addEditorRules(mockOptions);
+    await addEditorRulesStep(mockOptions);
 
     expect(mkdirMock).not.toHaveBeenCalled();
     expect(readFileMock).not.toHaveBeenCalled();

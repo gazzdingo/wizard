@@ -1,25 +1,25 @@
 import * as fs from 'fs';
 import chalk from 'chalk';
 import path from 'path';
-import { Integration } from '../../lib/constants';
-import { analytics } from '../analytics';
-import clack from '../clack';
-import { traceStep } from '../../telemetry';
-import { abortIfCancelled } from '../clack-utils';
+import { Integration } from '../lib/constants';
+import { analytics } from '../utils/analytics';
+import clack from '../utils/clack';
+import { traceStep } from '../telemetry';
+import { abortIfCancelled } from '../utils/clack-utils';
 
-type AddEditorRulesOptions = {
+type AddEditorRulesStepOptions = {
   installDir: string;
   rulesName: string;
   integration: Integration;
   default?: boolean;
 };
 
-export const addEditorRules = async ({
+export const addEditorRulesStep = async ({
   installDir,
   rulesName,
   integration,
   default: defaultAddEditorRules,
-}: AddEditorRulesOptions): Promise<boolean> => {
+}: AddEditorRulesStepOptions): Promise<boolean> => {
   // Add rules file if in Cursor environment
   if (process.env.CURSOR_TRACE_ID) {
     const addEditorRules: boolean = defaultAddEditorRules
@@ -51,10 +51,16 @@ export const addEditorRules = async ({
       await fs.promises.mkdir(docsDir, { recursive: true });
 
       const frameworkRules = await fs.promises.readFile(
-        path.join(__dirname, rulesName),
+        path.join(__dirname, '..', 'utils', 'rules', rulesName),
         'utf8',
       );
-      const universalRulesPath = path.join(__dirname, 'universal.md');
+      const universalRulesPath = path.join(
+        __dirname,
+        '..',
+        'utils',
+        'rules',
+        'universal.md',
+      );
 
       const universalRules = await fs.promises.readFile(
         universalRulesPath,
@@ -76,7 +82,11 @@ export const addEditorRules = async ({
         integration,
       });
 
-      clack.log.info(`Added Cursor rules to ${chalk.bold.cyan(docsDir)}`);
+      clack.log.info(
+        `Added Cursor rules to ${chalk.bold.cyan(
+          `.cursor/rules/posthog-integration.mdc`,
+        )}`,
+      );
 
       return true;
     });

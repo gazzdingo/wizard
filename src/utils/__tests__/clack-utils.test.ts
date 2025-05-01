@@ -1,7 +1,7 @@
-import { installPackage } from '../../src/utils/clack-utils';
+import { installPackage } from '../clack-utils';
 
 import * as ChildProcess from 'node:child_process';
-import type { PackageManager } from '../../src/utils/package-manager';
+import type { PackageManager } from '../package-manager';
 
 jest.mock('node:child_process', () => ({
   __esModule: true,

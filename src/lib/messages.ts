@@ -5,18 +5,47 @@ import type { PackageManager } from '../utils/package-manager';
 import { ISSUES_URL, Integration } from './constants';
 import { INTEGRATION_CONFIG } from './config';
 
+export const getPRDescription = ({
+  integration,
+  addedEditorRules,
+}: {
+  integration: Integration;
+  addedEditorRules: boolean;
+}) => {
+  const integrationConfig = INTEGRATION_CONFIG[integration];
+
+  return `This PR adds an integration for PostHog.
+
+  The following changes were made:
+  ${integrationConfig.changes}
+  ${addedEditorRules ? `• Added Cursor rules for PostHog\n` : ''}
+  
+  
+  Note: This used the ${
+    integrationConfig.name
+  } wizard to setup PostHog, this is still in alpha and like all AI, might have got it wrong. Please check the installation carefully!
+  
+  Learn more about PostHog + ${integrationConfig.name}: ${
+    integrationConfig.docsUrl
+  }`;
+};
+
 export const getOutroMessage = ({
   options,
   integration,
   cloudRegion,
   addedEditorRules,
   packageManager,
+  envFileChanged,
+  prUrl,
 }: {
   options: WizardOptions;
   integration: Integration;
   cloudRegion: CloudRegion;
   addedEditorRules: boolean;
   packageManager?: PackageManager;
+  envFileChanged?: string;
+  prUrl?: string;
 }) => {
   const continueUrl = options.signup
     ? `${getCloudUrlFromRegion(cloudRegion)}/products?source=wizard`
@@ -29,8 +58,13 @@ ${chalk.green('Successfully installed PostHog!')}
   
 ${chalk.cyan('Changes made:')}
 ${integrationConfig.changes}
-${addedEditorRules ? `• Added Cursor rules for PostHog` : ''}
-  
+${addedEditorRules ? `• Added Cursor rules for PostHog\n` : ''}${
+    prUrl ? `• Created a PR for your changes: ${chalk.cyan(prUrl)}\n` : ''
+  }${
+    envFileChanged
+      ? `• Added your Project API key to your ${envFileChanged} file\n`
+      : ''
+  }
 ${chalk.yellow('Next steps:')}
 ${integrationConfig.nextSteps}
 
