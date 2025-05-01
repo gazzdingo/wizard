@@ -1,8 +1,9 @@
 name: "Publish"
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -48,6 +49,9 @@ jobs:
       - name: Install package.json dependencies with pnpm
         run: pnpm install
 
+      - name: Build the package
+        run: pnpm build
+        
       - name: Publish the package in the npm registry
         run: pnpm publish --access public
         env:
