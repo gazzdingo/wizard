@@ -3,113 +3,124 @@ export const getSvelteDocumentation = ({
 }: {
   language: 'typescript' | 'javascript';
 }) => {
+  const ts = language === 'typescript';
   return `
 ==============================
-FILE: Root layout.${
-    language === 'typescript' ? 'ts' : 'js'
-  } file (e.g routes/+layout.${language === 'typescript' ? 'ts' : 'js'})
-LOCATION: Usually placed at the root of the app (e.g src/routes/+layout.${
-    language === 'typescript' ? 'ts' : 'js'
-  })
+FILE: routes/+layout.${ts ? 'ts' : 'js'}
+LOCATION: Root of the application routes
 ==============================
 Changes:
-- Add a load function to initialize PostHog, checking if the browser is available to make sure it only initializes on the client
+- Initialize GrowthBook instance on the server or universal load function.
+- Fetch features and pass the instance to the page data.
+- Uses PUBLIC_GROWTHBOOK_CLIENT_KEY and PUBLIC_GROWTHBOOK_API_HOST environment variables.
 Example:
 --------------------------------------------------
-import posthog from 'posthog-js'
-import { browser } from '$app/environment';
-import { PUBLIC_POSTHOG_KEY } from '$env/static/public';
+import { GrowthBook } from "@growthbook/growthbook-svelte";
+import { PUBLIC_GROWTHBOOK_CLIENT_KEY, PUBLIC_GROWTHBOOK_API_HOST } from "$env/static/public";
+${ts ? "import type { LayoutLoad } from './$types';\n" : ''}
+// Create a GrowthBook instance
+// IMPORTANT: Create instance outside load() if using SSR to avoid memory leaks,
+// or ensure proper instance management based on your SvelteKit setup.
+const gb = new GrowthBook({
+  apiHost: PUBLIC_GROWTHBOOK_API_HOST,
+  clientKey: PUBLIC_GROWTHBOOK_CLIENT_KEY,
+  // enableDevMode: process.env.NODE_ENV === 'development',
+  // trackingCallback: (experiment, result) => { /* Track experiment */ },
+});
 
-export const load = async () => {
+export const load${ts ? ': LayoutLoad' : ''} = async () => {
+  // Load features async
+  await gb.loadFeatures();
 
-  if (browser) {
-    posthog.init(
-      PUBLIC_POSTHOG_KEY,
-      {
-        api_host: PUBLIC_POSTHOG_HOST,
-        capture_pageview: false,
-        capture_pageleave: false
-      }
-    )
-  }
-  return
+  // Optional: Set attributes from server/request if needed
+  // gb.setAttributes({ ... });
+
+  return {
+    growthbook: gb, // Pass the instance to page data
+  };
 };
 --------------------------------------------------
 
 ==============================
-File: Root layout .svelte file (e.g routes/+layout.svelte)
-LOCATION: Usually placed at the root of the app (e.g src/routes/+layout.svelte)
+FILE: routes/+layout.svelte
+LOCATION: Root of the application routes
 ==============================
 Changes:
-- Add pageview & pageleave tracking to the layout
+- Get GrowthBook instance from page data.
+- Set the GrowthBook instance in Svelte context.
+- Remove PostHog pageview tracking logic.
 
 Example:
 --------------------------------------------------
-<script>
-  import { browser } from '$app/environment';
-  import { beforeNavigate, afterNavigate } from '$app/navigation';
-  import posthog from 'posthog-js'
-
-  if (browser) {
-    beforeNavigate(() => posthog.capture('$pageleave'));
-    afterNavigate(() => posthog.capture('$pageview'));
-  }
-</script>
---------------------------------------------------
-
-==============================
-File: PostHog server initializion
-LOCATION: With other server-side code, e.g. src/lib/server/posthog${
-    language === 'typescript' ? '.ts' : '.js'
-  }
-==============================
-Changes:
-- Initialize a PostHog client for the server using posthog-node that can be used in other server-side code
-Example:
---------------------------------------------------
-import posthog, { PostHog } from 'posthog-node';
-import { PUBLIC_POSTHOG_KEY, PUBLIC_POSTHOG_HOST } from '$env/static/public';
-
-let _client: PostHog | null = null;
-
-export function getPostHogClient() {
-  if (!_client) {
-    _client = new posthog.PostHog(PUBLIC_POSTHOG_KEY, {
-      host: PUBLIC_POSTHOG_HOST,
-    });
-  }
-  return _client;
+<script${ts ? ' lang="ts"' : ''}>
+  import { setContext } from 'svelte';
+  import { GROWTHBOOK_KEY } from '@growthbook/growthbook-svelte'; // Key for context
+${
+  ts
+    ? "  import type { LayoutData } from './$types';\n\n  export let data: LayoutData;\n"
+    : '  export let data;'
 }
+  // Get the GrowthBook instance passed from load function
+  const growthbook = data.growthbook;
+
+  // Set the instance in context so components can use it
+  setContext(GROWTHBOOK_KEY, growthbook);
+
+  // --- Removed PostHog pageview tracking logic --- 
+  // import { browser } from '$app/environment';
+  // import { beforeNavigate, afterNavigate } from '$app/navigation';
+  // import posthog from 'posthog-js'
+  // 
+  // if (browser) {
+  //   beforeNavigate(() => posthog.capture('$pageleave'));
+  //   afterNavigate(() => posthog.capture('$pageview'));
+  // }
+  // --------------------------------------------
+
+  // Note: GrowthBook does not track pageviews automatically.
+  // Implement manual pageview tracking if needed.
+</script>
+
+<slot />
 --------------------------------------------------
 
 ==============================
-FILE: Svelte Config (e.g svelte.config.js)
-LOCATION: Wherever the root of the app is
+FILE: src/routes/some-page/+page.svelte (Example Usage)
+LOCATION: Any component/page that needs feature flags/experiments
 ==============================
 Changes:
-- Set config to not use relative asset paths
+- Show example of using the <Feature> component or 'feature' store.
 
-Example:
+Example using <Feature> component:
 --------------------------------------------------
-import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+<script${ts ? ' lang="ts"' : ''}>
+  import { Feature } from '@growthbook/growthbook-svelte';
+</script>
 
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-	// Consult https://svelte.dev/docs/kit/integrations
-	// for more information about preprocessors
-	preprocess: vitePreprocess(),
+<h1>My Page</h1>
 
-	kit: {
-    // ...
-    paths: {
-        relative: false, // Required for PostHog session replay to work correctly
-    },
-    // ...
-	}
-};
+<Feature id="new-signup-flow">
+  <p>Showing the new signup flow!</p>
+  <svelte:fragment slot="fallback">
+    <p>Showing the old signup flow.</p>
+  </svelte:fragment>
+</Feature>
 
-export default config;
+Example using 'feature' store:
+--------------------------------------------------
+<script${ts ? ' lang="ts"' : ''}>
+  import { feature } from '@growthbook/growthbook-svelte';
 
+  const newSignupFlowEnabled = feature('new-signup-flow');
+</script>
+
+<h1>My Page</h1>
+
+{#if $newSignupFlowEnabled}
+  <p>Showing the new signup flow!</p>
+{:else}
+  <p>Showing the old signup flow.</p>
+{/if}
 --------------------------------------------------`;
+  // Note: Removed PostHog server client setup and svelte.config.js changes.
 };

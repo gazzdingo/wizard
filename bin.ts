@@ -15,7 +15,7 @@ const NODE_VERSION_RANGE = '>=18.20.0';
 // has the problematic imports.
 if (!satisfies(process.version, NODE_VERSION_RANGE)) {
   red(
-    `PostHog Wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
+    `GrowthBook Wizard requires Node.js ${NODE_VERSION_RANGE}. You are using Node.js ${process.version}. Please upgrade your Node.js version.`,
   );
   process.exit(1);
 }
@@ -25,7 +25,7 @@ import { run } from './src/run';
 const argv = yargs(hideBin(process.argv)).options({
   debug: {
     default: false,
-    describe: 'Enable verbose logging\nenv: POSTHOG_WIZARD_DEBUG',
+    describe: 'Enable verbose logging\nenv: GROWTHBOOK_WIZARD_DEBUG',
     type: 'boolean',
   },
 }).argv;

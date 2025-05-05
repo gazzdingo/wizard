@@ -2,11 +2,7 @@ import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import { basename, isAbsolute, join, relative } from 'node:path';
-import { setInterval } from 'node:timers';
-import { URL } from 'node:url';
-import axios from 'axios';
 import chalk from 'chalk';
-import opn from 'opn';
 import { traceStep } from '../telemetry';
 import { debug } from './debug';
 import { type PackageDotJson, hasPackageInstalled } from './package-json';
@@ -75,20 +71,20 @@ export async function abortIfCancelled<T>(
   }
 }
 
-export function printWelcome(options: {
+export const printWelcome = (options: {
   wizardName: string;
   message?: string;
-}): void {
+}): void => {
   // eslint-disable-next-line no-console
   console.log('');
   clack.intro(chalk.inverse(` ${options.wizardName} `));
 
   const welcomeText =
     options.message ||
-    `The ${options.wizardName} will help you set up PostHog for your application.\nThank you for using PostHog :)`;
+    `The ${options.wizardName} will help you set up GrowthBook for your application.\nThank you for using GrowthBook :)`;
 
   clack.note(welcomeText);
-}
+};
 
 export async function confirmContinueIfNoOrDirtyGitRepo(
   options: Pick<WizardOptions, 'default'>,
@@ -226,7 +222,7 @@ export async function confirmContinueIfPackageVersionNotSupported({
 
     clack.note(
       note ??
-        `Please upgrade to ${acceptableVersions} if you wish to use the PostHog Wizard.`,
+        `Please upgrade to ${acceptableVersions} if you wish to use the GrowthBook Wizard.`,
     );
     const continueWithUnsupportedVersion = await abortIfCancelled(
       clack.confirm({
@@ -260,7 +256,7 @@ export async function installPackage({
   integration,
   installDir,
 }: {
-  /** The string that is passed to the package manager CLI as identifier to install (e.g. `posthog-js`, or `posthog-js@^1.100.0`) */
+  /** The string that is passed to the package manager CLI as identifier to install (e.g. `@growthbook/growthbook-react`, or `@growthbook/growthbook-react@^2.0.0`) */
   packageName: string;
   alreadyInstalled: boolean;
   askBeforeUpdating?: boolean;
@@ -310,19 +306,18 @@ export async function installPackage({
           (err, stdout, stderr) => {
             if (err) {
               // Write a log file so we can better troubleshoot issues
-              fs.writeFileSync(
-                join(
-                  process.cwd(),
-                  `posthog-wizard-installation-error-${Date.now()}.log`,
-                ),
-                JSON.stringify({
-                  stdout,
-                  stderr,
-                }),
-                { encoding: 'utf8' },
+              const filename = join(
+                os.tmpdir(),
+                `growthbook-wizard-installation-error-${Date.now()}.log`,
               );
+              const errorString = JSON.stringify({
+                stdout,
+                stderr,
+              });
+              fs.writeFileSync(filename, errorString, 'utf8');
 
               reject(err);
+              return;
             } else {
               resolve();
             }
@@ -332,12 +327,7 @@ export async function installPackage({
     } catch (e) {
       sdkInstallSpinner.stop('Installation failed.');
       clack.log.error(
-        `${chalk.red(
-          'Encountered the following error during installation:',
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        )}\n\n${e}\n\n${chalk.dim(
-          `The wizard has created a \`posthog-wizard-installation-error-*.log\` file. If you think this issue is caused by the PostHog Wizard, create an issue on GitHub and include the log file's content:\n${ISSUES_URL}`,
-        )}`,
+        `Could not install package(s) automatically.\n\n${e}\n\nThe wizard has created a \`growthbook-wizard-installation-error-*.log\` file. If you think this issue is caused by the GrowthBook Wizard, create an issue on GitHub and include the log file's content:\n${ISSUES_URL}`,
       );
       await abort();
     }
@@ -500,10 +490,7 @@ export async function getOrAskForProjectData(
 }> {
   const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
   const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
-    askForWizardLogin({
-      url: _options.host,
-      signup: _options.signup,
-    }),
+    askForWizardLogin(_options),
   );
 
   if (!projectApiKey) {
@@ -527,15 +514,15 @@ ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   };
 }
 
-async function askForWizardLogin(options: {
-  url: string;
-  signup: boolean;
-}): Promise<ProjectData> {
+async function askForWizardLogin(
+  _options: WizardOptions,
+): Promise<ProjectData> {
+  // Placeholder implementation
   return {
-    wizardHash: 'mywizardhash',
-    projectApiKey: 'myprojectapikey',
-    host: 'myhost',
-    distinctId: 'mydistinctid',
+    wizardHash: 'placeholder-wizard-hash', // Replace with actual hash later
+    projectApiKey: DUMMY_PROJECT_API_KEY, // Use dummy key for now
+    host: DEFAULT_HOST_URL, // Use default host for now
+    distinctId: 'placeholder-distinct-id', // Replace with actual ID later
   };
 }
 

@@ -47,7 +47,7 @@ async function runWizard(argv: Args) {
     signup: finalArgs.signup ?? false,
   };
 
-  clack.intro(`Welcome to the PostHog setup wizard ✨`);
+  clack.intro(`Welcome to the GrowthBook setup wizard ✨`);
 
   const integration =
     finalArgs.integration ?? (await getIntegrationForSetup(wizardOptions));

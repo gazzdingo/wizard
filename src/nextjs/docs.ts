@@ -1,269 +1,144 @@
-import { getAssetHostFromHost, getUiHostFromHost } from '../utils/urls';
-
 export const getNextjsAppRouterDocs = ({
-  host,
   language,
 }: {
-  host: string;
   language: 'typescript' | 'javascript';
 }) => {
+  const tsx = language === 'typescript';
   return `
 ==============================
-FILE: PostHogProvider.${
-    language === 'typescript' ? 'tsx' : 'jsx'
-  } (put it somewhere where client files are, like the components folder)
-LOCATION: Wherever other providers are, or the components folder
+FILE: GrowthBookProviderWrapper.${tsx ? 'tsx' : 'jsx'}
+LOCATION: Wherever other providers are, or in a client components folder
 ==============================
 Changes:
-- Create a PostHogProvider component that will be imported into the layout file.
+- Create a GrowthBookProviderWrapper component to initialize GrowthBook and wrap the application.
+- Fetches features on the client side.
+- Uses NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY and NEXT_PUBLIC_GROWTHBOOK_API_HOST environment variables.
 
 Example:
 --------------------------------------------------
-"use client"
+"use client";
 
-import posthog from "posthog-js"
-import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react"
-import { Suspense, useEffect } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { GrowthBook, GrowthBookProvider } from "@growthbook/growthbook-react";
+import { useEffect } from "react";
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+// Create a GrowthBook instance
+const gb = new GrowthBook({
+  apiHost: process.env.NEXT_PUBLIC_GROWTHBOOK_API_HOST,
+  clientKey: process.env.NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY,
+  // Optional: Set attributes, features, tracking callback, etc.
+  // attributes: { id: "user-123" },
+  // enableDevMode: process.env.NODE_ENV === "development",
+  // trackingCallback: (experiment, result) => {
+  //   console.log("Viewed Experiment", {
+  //     experimentId: experiment.key,
+  //     variationId: result.key,
+  //   });
+  // },
+});
+
+export function GrowthBookProviderWrapper({ children }${
+    tsx ? ': { children: React.ReactNode }' : ''
+  }) {
   useEffect(() => {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: "/ingest",
-      ui_host: "${getUiHostFromHost(host)}",
-      capture_pageview: false, // We capture pageviews manually
-      capture_pageleave: true, // Enable pageleave capture
-      debug: process.env.NODE_ENV === "development",
-    })
-  }, [])
+    // Load features asynchronously
+    gb.loadFeatures();
 
-  return (
-    <PHProvider client={posthog}>
-      <SuspendedPostHogPageView />
-      {children}
-    </PHProvider>
-  )
+    // Optional: Refresh features periodically or based on events
+    // const interval = setInterval(() => gb.refreshFeatures(), 60000); // Refresh every minute
+    // return () => clearInterval(interval);
+  }, []);
+
+  return <GrowthBookProvider growthbook={gb}>{children}</GrowthBookProvider>;
 }
 
-
-function PostHogPageView() {
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const posthog = usePostHog()
-
-  useEffect(() => {
-    if (pathname && posthog) {
-      let url = window.origin + pathname
-      const search = searchParams.toString()
-      if (search) {
-        url += "?" + search
-      }
-      posthog.capture("$pageview", { "$current_url": url })
-    }
-  }, [pathname, searchParams, posthog])
-
-  return null
-}
-
-function SuspendedPostHogPageView() {
-  return (
-    <Suspense fallback={null}>
-      <PostHogPageView />
-    </Suspense>
-  )
-}
+// Note: GrowthBook does not automatically track pageviews like some other tools.
+// You would need to implement pageview tracking manually if required,
+// potentially using a trackingCallback or analytics integration.
 --------------------------------------------------
 
 ==============================
-FILE: layout.${language === 'typescript' ? 'tsx' : 'jsx'}
+FILE: layout.${tsx ? 'tsx' : 'jsx'}
 LOCATION: Wherever the root layout is
 ==============================
 Changes:
-- Import the PostHogProvider from the providers file and wrap the app in it.
+- Import the GrowthBookProviderWrapper and wrap the main content.
 
 Example:
 --------------------------------------------------
 // other imports
-import { PostHogProvider } from "LOCATION_OF_POSTHOG_PROVIDER"
+import { GrowthBookProviderWrapper } from "LOCATION_OF_GROWTHBOOK_PROVIDER_WRAPPER";
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }${
+    tsx ? ': { children: React.ReactNode }' : ''
+  }) {
   return (
     <html lang="en">
       <body>
-        <PostHogProvider>
+        <GrowthBookProviderWrapper>
           {/* other providers */}
           {children}
           {/* other providers */}
-        </PostHogProvider>
+        </GrowthBookProviderWrapper>
       </body>
     </html>
-  )
+  );
 }
---------------------------------------------------
-
-==============================
-FILE: posthog.${language === 'typescript' ? 'ts' : 'js'}
-LOCATION: Wherever works best given the project structure
-==============================
-Changes:
-- Initialize the PostHog Node.js client
-
-Example:
---------------------------------------------------
-import { PostHog } from "posthog-node"
-
-export default function PostHogClient() {
-  const posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    flushAt: 1,
-    flushInterval: 0,
-  })
-  return posthogClient
-}
---------------------------------------------------
-
-==============================
-FILE: next.config.{js,ts,mjs,cjs}
-LOCATION: Wherever the root next config is
-==============================
-Changes:
-- Add rewrites to the Next.js config to support PostHog, if there are existing rewrites, add the PostHog rewrites to them.
-- Add skipTrailingSlashRedirect to the Next.js config to support PostHog trailing slash API requests.
-- This can be of type js, ts, mjs, cjs etc. You should adapt the file according to what extension it uses, and if it does not exist yet use '.js'.
-
-Example:
---------------------------------------------------
-const nextConfig = {
-  // other config
-  async rewrites() {
-    return [
-      {
-        source: "/ingest/static/:path*",
-        destination: "${getAssetHostFromHost(host)}/static/:path*",
-      },
-      {
-        source: "/ingest/:path*",
-        destination: "${host}/:path*",
-      },
-      {
-        source: "/ingest/decide",
-        destination: "${host}/decide",
-      },
-    ];
-  },
-  // This is required to support PostHog trailing slash API requests
-  skipTrailingSlashRedirect: true,
-}
-module.exports = nextConfig
 --------------------------------------------------`;
 };
 
 export const getNextjsPagesRouterDocs = ({
-  host,
   language,
 }: {
-  host: string;
   language: 'typescript' | 'javascript';
 }) => {
+  const tsx = language === 'typescript';
   return `
 ==============================
-FILE: _app.${language === 'typescript' ? 'tsx' : 'jsx'}
-LOCATION: Wherever the root _app.${
-    language === 'typescript' ? 'tsx' : 'jsx'
-  } file is
+FILE: _app.${tsx ? 'tsx' : 'jsx'}
+LOCATION: Wherever the root _app.${tsx ? 'tsx' : 'jsx'} file is
 ==============================
 Changes:
-- Initialize PostHog in _app.js.
-- Wrap the application in PostHogProvider.
-- Manually capture $pageview events.
+- Initialize GrowthBook client-side.
+- Wrap the application in GrowthBookProvider.
+- Uses NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY and NEXT_PUBLIC_GROWTHBOOK_API_HOST environment variables.
 
 Example:
 --------------------------------------------------
-import { useEffect } from "react"
-import { Router } from "next/router"
-import posthog from "posthog-js"
-import { PostHogProvider } from "posthog-js/react"
+import { useEffect } from "react";
+import { GrowthBook, GrowthBookProvider } from "@growthbook/growthbook-react";
+// Remove Router import if not used elsewhere
+// import { Router } from "next/router";
 
-export default function App({ Component, pageProps }) {
+// Create a GrowthBook instance (outside the component ensures it's created once)
+const gb = new GrowthBook({
+  apiHost: process.env.NEXT_PUBLIC_GROWTHBOOK_API_HOST,
+  clientKey: process.env.NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY,
+  // Optional: Set attributes, enableDevMode, trackingCallback, etc.
+  // enableDevMode: process.env.NODE_ENV === "development",
+  // trackingCallback: (experiment, result) => { /* Track experiment */ },
+});
+
+export default function App({ Component, pageProps }${
+    tsx ? ': { Component: any, pageProps: any }' : ''
+  }) {
   useEffect(() => {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: "/ingest",
-      ui_host: "${getUiHostFromHost(host)}",
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === "development") posthog.debug()
-      },
-      debug: process.env.NODE_ENV === "development",
-    })
+    // Load features asynchronously when the app mounts
+    gb.loadFeatures();
 
-    const handleRouteChange = () => posthog?.capture("$pageview")
-    Router.events.on("routeChangeComplete", handleRouteChange)
+    // Optional: Set user attributes when they change
+    // For example, if user logs in:
+    // gb.setAttributes({ ...gb.getAttributes(), id: userId, loggedIn: true });
 
-    return () => {
-      Router.events.off("routeChangeComplete", handleRouteChange)
-    }
-  }, [])
+    // Note: GrowthBook doesn't track pageviews automatically.
+    // Implement manual pageview tracking here if needed, potentially using Router events.
+
+  }, []);
 
   return (
-    <PostHogProvider client={posthog}>
+    <GrowthBookProvider growthbook={gb}>
       <Component {...pageProps} />
-    </PostHogProvider>
-  )
+    </GrowthBookProvider>
+  );
 }
---------------------------------------------------
-
-==============================
-FILE: posthog.${language === 'typescript' ? 'ts' : 'js'}
-LOCATION: Wherever works best given the project structure
-==============================
-Changes:
-- Initialize the PostHog Node.js client
-
-Example:
---------------------------------------------------
-import { PostHog } from "posthog-node"
-
-export default function PostHogClient() {
-  const posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    flushAt: 1,
-    flushInterval: 0,
-  })
-  return posthogClient
-}
---------------------------------------------------
-
-==============================
-FILE: next.config.{js,ts,mjs,cjs}
-LOCATION: Wherever the root next config is
-==============================
-Changes:
-- Add rewrites to the Next.js config to support PostHog, if there are existing rewrites, add the PostHog rewrites to them.
-- Add skipTrailingSlashRedirect to the Next.js config to support PostHog trailing slash API requests.
-- This can be of type js, ts, mjs, cjs etc. You should adapt the file according to what extension it uses, and if it does not exist yet use '.js'.
-
-Example:
---------------------------------------------------
-const nextConfig = {
-  // other config
-  async rewrites() {
-    return [
-      {
-        source: "/ingest/static/:path*",
-        destination: "${getAssetHostFromHost(host)}/static/:path*",
-      },
-      {
-        source: "/ingest/:path*",
-        destination: "${host}/:path*",
-      },
-      {
-        source: "/ingest/decide",
-        destination: "${host}/decide",
-      },
-    ];
-  },
-  // This is required to support PostHog trailing slash API requests
-  skipTrailingSlashRedirect: true,
-}
-module.exports = nextConfig
 --------------------------------------------------`;
 };

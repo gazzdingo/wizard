@@ -1,7 +1,7 @@
-export type PostHogProjectData = Record<string, unknown>;
+export type GrowthBookProjectData = Record<string, unknown>;
 
 export type PreselectedProject = {
-  project: PostHogProjectData;
+  project: GrowthBookProjectData;
   authToken: string;
 };
 
@@ -32,7 +32,7 @@ export type WizardOptions = {
   default: boolean;
 
   /**
-   * Whether to create a new PostHog account during setup.
+   * Whether to create a new GrowthBook account during setup.
    */
   signup: boolean;
 
@@ -56,3 +56,8 @@ export type FileChange = {
 };
 
 export type UsingCloud = boolean;
+
+export interface WizardLoginData {
+  project: GrowthBookProjectData;
+  user: Record<string, unknown>;
+}

@@ -127,6 +127,143 @@ interface CreatePRStepOptions {
   addedEditorRules: boolean;
 }
 
+export const createPRStep = traceStep('create-pr', async (opts) => {
+  const {
+    defaultBranchName = 'growthbook-integration',
+    defaultTitle = 'feat: add GrowthBook integration',
+    integration,
+    installDir,
+    addedEditorRules,
+  } = opts as CreatePRStepOptions;
+
+  if (!isInGitRepo()) {
+    clack.log.warn('Not in a git repository. Cannot create a pull request.');
+    return;
+  }
+
+  // Get current branch
+  const currentBranchResult = await getCurrentBranch(installDir);
+  if (!currentBranchResult.success || !currentBranchResult.data) {
+    analytics.capture('wizard interaction', {
+      action: 'skipping pr creation',
+      reason: 'failed to get current branch',
+      error: currentBranchResult.error,
+      integration,
+    });
+
+    if (DEBUG) {
+      clack.log.error(
+        currentBranchResult.error ?? 'Failed to get current branch',
+      );
+    }
+
+    return;
+  }
+  const baseBranch = currentBranchResult.data;
+
+  if (!['main', 'master'].includes(baseBranch)) {
+    analytics.capture('wizard interaction', {
+      action: 'skipping pr creation',
+      reason: 'not on main or master',
+      base_branch: baseBranch,
+      integration,
+    });
+
+    if (DEBUG) {
+      clack.log.error(`Not on main or master. Skipping PR creation.`);
+    }
+    return;
+  }
+
+  // Check GitHub auth
+  const authResult = await checkGitHubAuth(installDir);
+  if (!authResult.success) {
+    analytics.capture('wizard interaction', {
+      action: 'skipping pr creation',
+      reason: 'not logged into github',
+      integration,
+    });
+
+    if (DEBUG) {
+      clack.log.error(authResult.error ?? 'Failed to check github auth');
+    }
+
+    return;
+  }
+
+  const newBranch = defaultBranchName;
+
+  // Check if branch exists
+  const branchExistsResult = await checkBranchExists(newBranch, installDir);
+  if (!branchExistsResult.success) {
+    analytics.capture('wizard interaction', {
+      action: 'skipping pr creation',
+      reason: 'branch already exists',
+      error: branchExistsResult.error,
+      integration,
+    });
+
+    if (DEBUG) {
+      clack.log.error(
+        branchExistsResult.error ?? 'Failed to check branch exists',
+      );
+    }
+
+    return;
+  }
+
+  const prTitle = defaultTitle;
+  const prDescription = getPRDescription({
+    integration,
+    addedEditorRules,
+  });
+
+  const createPR = await abortIfCancelled(
+    clack.select({
+      message: 'Would you like to create a PR automatically?',
+      initialValue: true,
+      options: [
+        {
+          value: true,
+          label: 'Yes',
+          hint: 'We will create a PR for you',
+        },
+        {
+          value: false,
+          label: 'No',
+          hint: 'You can create a PR manually later',
+        },
+      ],
+    }),
+  );
+
+  if (!createPR) {
+    clack.log.info('Skipping PR creation');
+    return;
+  }
+
+  // Create branch
+  const createBranchResult = await createBranch(newBranch, installDir);
+  if (!createBranchResult.success) {
+    analytics.capture('wizard interaction', {
+      action: 'aborting pr creation',
+      reason: 'failed to create branch',
+      error: createBranchResult.error,
+      integration,
+    });
+    clack.log.warn('Failed to create branch. Aborting PR creation 🚶‍➡️');
+    return;
+  }
+
+  // Stage changes
+  const stageResult = await stageChanges(installDir);
+  if (!stageResult.success) {
+    analytics.capture('wizard interaction', {
+      action: 'aborting pr creation',
+      reason: 'failed to stage changes',
+      error: stageResult.error,
+      integration,
+    });
 export async function createPRStep({
   installDir,
   integration,

@@ -1,100 +1,61 @@
-import { getPackageDotJson } from '../utils/clack-utils';
-import { hasPackageInstalled } from '../utils/package-json';
-import type { WizardOptions } from '../utils/types';
 import { Integration } from './constants';
 
-type IntegrationConfig = {
-  name: string;
-  filterPatterns: string[];
-  ignorePatterns: string[];
-  detect: (options: Pick<WizardOptions, 'installDir'>) => Promise<boolean>;
-  generateFilesRules: string;
-  filterFilesRules: string;
+export type IntegrationConfig = {
+  id: string;
+  label: string;
+  default?: boolean;
   docsUrl: string;
-  changes: string;
+  featuresDescription: string;
   nextSteps: string;
+  frameworks?: {
+    id: string;
+    label: string;
+  }[];
 };
 
-export const INTEGRATION_CONFIG = {
-  [Integration.nextjs]: {
-    name: 'Next.js',
-    filterPatterns: ['**/*.{tsx,ts,jsx,js,mjs,cjs}'],
-    ignorePatterns: [
-      'node_modules',
-      'dist',
-      'build',
-      'public',
-      'static',
-      'next-env.d.*',
+export const SUPPORTED_INTEGRATIONS: ReadonlyArray<IntegrationConfig> = [
+  {
+    id: 'nextjs',
+    label: 'Next.js',
+    default: true,
+    docsUrl: 'https://docs.growthbook.io/lib/react', // Use React docs for Next.js
+    featuresDescription:
+      '• Installed @growthbook/growthbook-react & @growthbook/growthbook-node packages\n• Initialized GrowthBook client-side in a Provider wrapper\n• Set up basic GrowthBook configuration using environment variables',
+    nextSteps:
+      '• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the useFeature() hook\n• Set up experiments using useExperiment() and <Experiment> components\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Consider server-side rendering/fetching of features for performance optimization (see GrowthBook docs)\n• Upload environment variables to your production environment',
+    frameworks: [
+      { id: 'nextjs-app', label: 'App Router' },
+      { id: 'nextjs-pages', label: 'Pages Router' },
     ],
-    detect: async (options) => {
-      const packageJson = await getPackageDotJson(options);
-      return hasPackageInstalled('next', packageJson);
-    },
-    generateFilesRules: '',
-    filterFilesRules: '',
-    docsUrl: 'https://posthog.com/docs/libraries/next-js',
-    changes:
-      '• Installed posthog-js & posthog-node packages\n• Initialized PostHog, and added pageview tracking\n• Created a PostHogClient to use PostHog server-side\n• Setup a reverse proxy to avoid ad blockers blocking analytics requests',
-    nextSteps:
-      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app\n• Upload environment variables to your production environment',
   },
-  [Integration.react]: {
-    name: 'React',
-    filterPatterns: ['**/*.{tsx,ts,jsx,js}'],
-    ignorePatterns: [
-      'node_modules',
-      'dist',
-      'build',
-      'public',
-      'static',
-      'assets',
-    ],
-    detect: async (options) => {
-      const packageJson = await getPackageDotJson(options);
-      return hasPackageInstalled('react', packageJson);
-    },
-    generateFilesRules: '',
-    filterFilesRules: '',
-    docsUrl: 'https://posthog.com/docs/libraries/react',
-    changes:
-      '• Installed Growthbook react package\n• Added PostHogProvider to the root of the app, to initialize PostHog and enable autocapture',
+  {
+    id: 'react',
+    label: 'React',
+    docsUrl: 'https://docs.growthbook.io/lib/react',
+    featuresDescription:
+      '• Installed @growthbook/growthbook-react package\n• Initialized GrowthBook and added GrowthBookProvider to the root of the app',
     nextSteps:
-      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app\n• Upload environment variables to your production environment',
+      '• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the useFeature() hook\n• Set up experiments using useExperiment() and <Experiment> components\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Upload environment variables to your production environment',
   },
-  [Integration.svelte]: {
-    name: 'Svelte',
-    filterPatterns: ['**/*.{svelte,ts,js,jsx,tsx}'],
-    ignorePatterns: ['node_modules', 'dist', 'build', 'public', 'static'],
-    detect: async (options) => {
-      const packageJson = await getPackageDotJson(options);
-      return hasPackageInstalled('@sveltejs/kit', packageJson);
-    },
-    generateFilesRules: '',
-    filterFilesRules: '',
-    docsUrl: 'https://posthog.com/docs/libraries/svelte',
-    changes:
-      '• Installed posthog-js & posthog-node packages\n• Added PostHog initialization to your Svelte app\n• Setup pageview & pageleave tracking\n• Setup event auto - capture to capture events as users interact with your app\n• Added a getPostHogClient() function to use PostHog server-side',
+  {
+    id: 'svelte',
+    label: 'Svelte',
+    docsUrl: 'https://docs.growthbook.io/lib/svelte', // Assuming Svelte docs exist
+    featuresDescription:
+      '• Installed @growthbook/growthbook-svelte package\n• Initialized GrowthBook client-side\n• Added GrowthBook component/context provider',
     nextSteps:
-      '• Call posthog.identify() when a user signs into your app\n• Use getPostHogClient() to start capturing events server - side\n• Upload environment variables to your production environment',
+      "• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the 'feature' store or useFeature() hook\n• Set up experiments using 'experiment' store or useExperiment() hook\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Upload environment variables to your production environment",
   },
-  [Integration.reactNative]: {
-    name: 'React Native',
-    filterPatterns: ['**/*.{ts,js,jsx,tsx}'],
-    ignorePatterns: ['node_modules', 'dist', 'build', 'public', 'static'],
-    detect: async (options) => {
-      const packageJson = await getPackageDotJson(options);
-      return hasPackageInstalled('react-native', packageJson);
-    },
-    generateFilesRules: '',
-    filterFilesRules: '',
-    docsUrl: 'https://posthog.com/docs/libraries/react-native',
-    changes:
-      '• Installed required packages\n• Added PostHogProvider to the root of the app\n• Enabled autocapture and session replay',
+  {
+    id: 'react-native',
+    label: 'React Native',
+    docsUrl: 'https://docs.growthbook.io/lib/react-native', // Assuming React Native docs exist
+    featuresDescription:
+      '• Installed @growthbook/growthbook-react-native package\n• Added GrowthBookProvider to the root of the app\n• Initialized GrowthBook',
     nextSteps:
-      '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app',
+      '• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the useFeature() hook\n• Set up experiments using useExperiment() and <Experiment> components\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Ensure features are loaded/refreshed appropriately for mobile lifecycle',
   },
-} as const satisfies Record<Integration, IntegrationConfig>;
+];
 
 export const INTEGRATION_ORDER = [
   Integration.nextjs,

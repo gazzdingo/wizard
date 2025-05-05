@@ -31,16 +31,17 @@ import { addOrUpdateEnvironmentVariablesStep, runPrettierStep } from '../steps';
 
 export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   printWelcome({
-    wizardName: 'PostHog Svelte Wizard',
+    wizardName: 'GrowthBook Svelte Wizard',
   });
 
   const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
-    await abort(
-      'The Svelte wizard requires AI to get setup right now. Please view the docs to setup Svelte manually instead: https://posthog.com/docs/libraries/svelte',
-      0,
+    clack.log.error(
+      'The Svelte wizard requires AI to get setup right now. Please view the docs to setup Svelte manually instead: https://docs.growthbook.io/lib/svelte',
     );
+    clack.outro('Setup cancelled');
+    return;
   }
 
   const usingCloud = await isUsingCloud();
@@ -67,15 +68,19 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     host,
   });
 
-  const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
+  const sdkAlreadyInstalled = hasPackageInstalled(
+    '@growthbook/growthbook-svelte',
+    packageJson,
+  );
 
   analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: 'posthog-js',
-      packageNameDisplayLabel: 'posthog-js',
-      alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
+      packageName: '@growthbook/growthbook-svelte',
+      packageNameDisplayLabel: '@growthbook/growthbook-svelte',
+      alreadyInstalled:
+        !!packageJson?.dependencies?.['@growthbook/growthbook-svelte'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
@@ -102,7 +107,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     language: typeScriptDetected ? 'typescript' : 'javascript',
   });
 
-  clack.log.info(`Reviewing PostHog documentation for Svelte`);
+  clack.log.info(`Reviewing GrowthBook documentation for Svelte`);
 
   const filesToChange = await getFilesToChange({
     integration: Integration.svelte,
@@ -124,8 +129,8 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   const { relativeEnvFilePath, addedEnvVariables } =
     await addOrUpdateEnvironmentVariablesStep({
       variables: {
-        ['PUBLIC_POSTHOG_KEY']: projectApiKey,
-        ['PUBLIC_POSTHOG_HOST']: host,
+        PUBLIC_GROWTHBOOK_CLIENT_KEY: projectApiKey,
+        PUBLIC_GROWTHBOOK_API_HOST: host,
       },
       installDir: options.installDir,
       integration: Integration.svelte,

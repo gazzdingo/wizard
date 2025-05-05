@@ -1,13 +1,10 @@
 /* eslint-disable max-lines */
 
 import {
-  abort,
   askForAIConsent,
   askForGrowthbookApiKey,
-  askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
-  getOrAskForProjectData,
   getPackageDotJson,
   getPackageManager,
   installPackage,
@@ -28,31 +25,24 @@ import {
 import type { WizardOptions } from '../utils/types';
 import { isUsingCloud } from '../utils/clack-utils';
 import { getOutroMessage } from '../lib/messages';
-import {
-  addEditorRulesStep,
-  addOrUpdateEnvironmentVariablesStep,
-  runPrettierStep,
-} from '../steps';
+import { addEditorRulesStep, runPrettierStep } from '../steps';
 
 export async function runReactWizard(options: WizardOptions): Promise<void> {
   printWelcome({
-    wizardName: 'PostHog React Wizard',
+    wizardName: 'GrowthBook React Wizard',
   });
 
   const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
-    await abort(
-      'The React wizard requires AI to get setup right now. Please view the docs to setup React manually instead: https://posthog.com/docs/libraries/react',
-      0,
+    clack.log.error(
+      'The React wizard requires AI to get setup right now. Please view the docs to setup React manually instead: https://docs.growthbook.io/lib/react',
     );
+    clack.outro('Setup cancelled');
+    return;
   }
 
   const usingCloud = await isUsingCloud();
-  const host = usingCloud
-    ? 'https://app.growthbook.io'
-    : await askForSelfHostedUrl();
-  console.log(host);
 
   const growthbookApiKey = await askForGrowthbookApiKey();
 
@@ -70,13 +60,10 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     analytics.setTag('react-version', reactVersion);
   }
 
-  // const { projectApiKey, wizardHash } = await getOrAskForProjectData({
-  //   ...options,
-  //   usingCloud,
-  //   host,
-  // });
-
-  const sdkAlreadyInstalled = hasPackageInstalled('@growthbook/growthbook-react', packageJson);
+  const sdkAlreadyInstalled = hasPackageInstalled(
+    '@growthbook/growthbook-react',
+    packageJson,
+  );
 
   analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
@@ -84,7 +71,8 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     await installPackage({
       packageName: '@growthbook/growthbook-react',
       packageNameDisplayLabel: '@growthbook/growthbook-react',
-      alreadyInstalled: !!packageJson?.dependencies?.['@growthbook/growthbook-react'],
+      alreadyInstalled:
+        !!packageJson?.dependencies?.['@growthbook/growthbook-react'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
@@ -103,7 +91,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     envVarPrefix,
   });
 
-  clack.log.info(`Reviewing PostHog documentation for React`);
+  clack.log.info(`Reviewing GrowthBook documentation for React`);
 
   const filesToChange = await getFilesToChange({
     integration: Integration.react,
@@ -143,7 +131,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     usingCloud,
     addedEditorRules: addedEditorRules,
     packageManager: packageManagerForOutro,
-    envFileChanged:  undefined,
+    envFileChanged: undefined,
   });
 
   clack.outro(outroMessage);

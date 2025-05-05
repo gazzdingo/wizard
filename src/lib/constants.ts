@@ -44,10 +44,8 @@ export const DEBUG = false;
 export const DEFAULT_URL = IS_DEV
   ? 'http://localhost:8010'
   : 'https://app.growthbook.io';
-export const ISSUES_URL = 'https://github.com/posthog/wizard/issues';
-export const DEFAULT_HOST_URL = IS_DEV
-  ? 'http://localhost:8010'
-  : 'https://app.growthbook.io';
+export const ISSUES_URL = 'https://github.com/growthbook/wizard/issues';
+export const DEFAULT_HOST_URL = 'https://cdn.growthbook.io';
 export const ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY = 'sTMFPsFhdP1Ssg';
 export const ANALYTICS_HOST_URL = 'https://internal-t.posthog.com';
-export const DUMMY_PROJECT_API_KEY = '_YOUR_POSTHOG_PROJECT_API_KEY_';
+export const DUMMY_PROJECT_API_KEY = '_YOUR_GROWTHBOOK_CLIENT_KEY_';

@@ -116,7 +116,7 @@ describe('addEditorRules', () => {
 
     // Check if combined rules were written correctly
     expect(writeFileMock).toHaveBeenCalledWith(
-      path.join('/test/dir', '.cursor', 'rules', 'posthog-integration.mdc'),
+      path.join('/test/dir', '.cursor', 'rules', 'growthbook-integration.mdc'),
       expectedCombinedRules,
       'utf8',
     );
@@ -125,12 +125,15 @@ describe('addEditorRules', () => {
     expect(captureMock).toHaveBeenCalledWith('wizard interaction', {
       action: 'added editor rules',
       integration: mockOptions.integration,
+      description:
+        'apply when interacting with GrowthBook/experimentation tasks',
+      content: expectedCombinedRules,
     });
 
     // Check if success message was logged
     expect(infoMock).toHaveBeenCalledWith(
       `Added Cursor rules to ${chalk.bold.cyan(
-        '.cursor/rules/posthog-integration.mdc',
+        '.cursor/rules/growthbook-integration.mdc',
       )}`,
     );
   });
@@ -167,7 +170,7 @@ describe('addEditorRules', () => {
     process.env.CURSOR_TRACE_ID = 'test-trace-id';
 
     const mockFrameworkRules = `---
-description: apply when interacting with PostHog/analytics tasks
+description: apply when interacting with GrowthBook/experimentation tasks
 globs: 
 alwaysApply: true
 ---
@@ -185,7 +188,7 @@ alwaysApply: true
 A given feature flag should be used in as few places as possible. Do not increase the risk of undefined behavior by scattering the same feature flag across multiple areas of code.`;
 
     const expectedCombinedRules = `---
-description: apply when interacting with PostHog/analytics tasks
+description: apply when interacting with GrowthBook/experimentation tasks
 globs: 
 alwaysApply: true
 ---
@@ -233,6 +236,8 @@ A given feature flag should be used in as few places as possible. Do not increas
     expect(captureMock).toHaveBeenCalledWith('wizard interaction', {
       action: 'added editor rules',
       integration: mockOptions.integration,
+      description:
+        'apply when interacting with GrowthBook/experimentation tasks',
     });
 
     // Check if success message was logged

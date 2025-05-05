@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import {
-  abort,
   askForAIConsent,
   askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -37,18 +36,20 @@ import {
   createPRStep,
   runPrettierStep,
 } from '../steps';
+
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   printWelcome({
-    wizardName: 'PostHog Next.js Wizard',
+    wizardName: 'GrowthBook Next.js Wizard',
   });
 
   const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
-    await abort(
-      'The Next.js wizard requires AI to get setup right now. Please view the docs to setup Next.js manually instead: https://posthog.com/docs/libraries/next-js',
-      0,
+    clack.log.error(
+      'The Next.js wizard requires AI to get setup right now. Please view the docs to setup Next.js manually instead: https://docs.growthbook.io/lib/react',
     );
+    clack.outro('Setup cancelled');
+    return;
   }
 
   const usingCloud = await isUsingCloud();
@@ -75,15 +76,19 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     host,
   });
 
-  const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
+  const sdkAlreadyInstalled = hasPackageInstalled(
+    '@growthbook/growthbook-react',
+    packageJson,
+  );
 
   analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: 'posthog-js',
-      packageNameDisplayLabel: 'posthog-js',
-      alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
+      packageName: '@growthbook/growthbook-react',
+      packageNameDisplayLabel: '@growthbook/growthbook-react',
+      alreadyInstalled:
+        !!packageJson?.dependencies?.['@growthbook/growthbook-react'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
@@ -91,10 +96,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     });
 
   await installPackage({
-    packageName: 'posthog-node',
-    packageNameDisplayLabel: 'posthog-node',
+    packageName: '@growthbook/growthbook-node',
+    packageNameDisplayLabel: '@growthbook/growthbook-node',
     packageManager: packageManagerFromInstallStep,
-    alreadyInstalled: !!packageJson?.dependencies?.['posthog-node'],
+    alreadyInstalled:
+      !!packageJson?.dependencies?.['@growthbook/growthbook-node'],
     forceInstall: options.forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
@@ -115,7 +121,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   clack.log.info(
-    `Reviewing PostHog documentation for ${getNextJsRouterName(router)}`,
+    `Reviewing GrowthBook documentation for ${getNextJsRouterName(router)}`,
   );
 
   const filesToChange = await getFilesToChange({
@@ -138,8 +144,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const { relativeEnvFilePath, addedEnvVariables } =
     await addOrUpdateEnvironmentVariablesStep({
       variables: {
-        NEXT_PUBLIC_POSTHOG_KEY: projectApiKey,
-        NEXT_PUBLIC_POSTHOG_HOST: host,
+        NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY: projectApiKey,
+        NEXT_PUBLIC_GROWTHBOOK_API_HOST: host,
       },
       installDir: options.installDir,
       integration: Integration.nextjs,

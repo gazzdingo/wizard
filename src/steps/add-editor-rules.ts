@@ -27,7 +27,7 @@ export const addEditorRulesStep = async ({
       : await abortIfCancelled(
           clack.select({
             message:
-              'Would you like to have PostHog added to your Cursor rules?',
+              'Would you like to have GrowthBook added to your Cursor rules?',
             options: [
               {
                 label: 'Yes, please!',
@@ -72,7 +72,7 @@ export const addEditorRulesStep = async ({
         '{universal}',
         universalRules,
       );
-      const targetPath = path.join(docsDir, 'posthog-integration.mdc');
+      const targetPath = path.join(docsDir, 'growthbook-integration.mdc');
 
       // Write the combined rules
       await fs.promises.writeFile(targetPath, combinedRules, 'utf8');
@@ -84,7 +84,7 @@ export const addEditorRulesStep = async ({
 
       clack.log.info(
         `Added Cursor rules to ${chalk.bold.cyan(
-          `.cursor/rules/posthog-integration.mdc`,
+          `.cursor/rules/growthbook-integration.mdc`,
         )}`,
       );
 

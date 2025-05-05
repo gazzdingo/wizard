@@ -1,7 +1,6 @@
 /* eslint-disable max-lines */
 
 import {
-  abort,
   askForAIConsent,
   askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -33,16 +32,17 @@ export async function runReactNativeWizard(
   options: WizardOptions,
 ): Promise<void> {
   printWelcome({
-    wizardName: 'PostHog React Native Wizard',
+    wizardName: 'GrowthBook React Native Wizard',
   });
 
   const aiConsent = await askForAIConsent(options);
 
   if (!aiConsent) {
-    await abort(
-      'The React Native wizard requires AI to get setup right now. Please view the docs to setup React Native manually instead: https://posthog.com/docs/libraries/react-native',
-      0,
+    clack.log.error(
+      'The React Native wizard requires AI to get setup right now. Please view the docs to setup React Native manually instead: https://docs.growthbook.io/lib/react-native',
     );
+    clack.outro('Setup cancelled');
+    return;
   }
 
   const usingCloud = await isUsingCloud();
@@ -70,7 +70,10 @@ export async function runReactNativeWizard(
     host,
   });
 
-  const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
+  const sdkAlreadyInstalled = hasPackageInstalled(
+    '@growthbook/growthbook-react-native',
+    packageJson,
+  );
 
   analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
@@ -83,34 +86,21 @@ export async function runReactNativeWizard(
 
   clack.log.info(`Detected ${isUsingExpo ? 'Expo' : 'React Native'}`);
 
-  const packagesToInstall = isUsingExpo
-    ? [
-        'posthog-react-native',
-        'posthog-react-native-session-replay',
-        'expo-file-system',
-        'expo-application',
-        'expo-device',
-        'expo-localization',
-      ]
-    : [
-        'posthog-react-native',
-        '@react-native-async-storage/async-storage',
-        'react-native-device-info',
-        'react-native-localize',
-      ];
+  const installDependencies = [
+    '@react-native-async-storage/async-storage',
+    '@growthbook/growthbook-react-native',
+  ];
 
-  for (const packageName of packagesToInstall) {
-    await installPackage({
-      packageName,
-      packageNameDisplayLabel: packageName,
-      alreadyInstalled: !!packageJson?.dependencies?.[packageName],
-      forceInstall: options.forceInstall,
-      askBeforeUpdating: false,
-      installDir: options.installDir,
-      integration: Integration.reactNative,
-      packageManager: isUsingExpo ? EXPO : undefined,
-    });
-  }
+  await installPackage({
+    packageName: '@growthbook/growthbook-react-native',
+    packageNameDisplayLabel: installDependencies.join(' '),
+    alreadyInstalled: sdkAlreadyInstalled,
+    forceInstall: options.forceInstall,
+    askBeforeUpdating: false,
+    installDir: options.installDir,
+    integration: Integration.reactNative,
+    packageManager: isUsingExpo ? EXPO : undefined,
+  });
 
   const relevantFiles = await getRelevantFilesForIntegration({
     installDir: options.installDir,
@@ -123,11 +113,7 @@ export async function runReactNativeWizard(
     projectApiKey,
   });
 
-  clack.log.info(
-    `Reviewing PostHog documentation for ${
-      isUsingExpo ? 'Expo' : 'React Native'
-    }`,
-  );
+  clack.log.info(`Reviewing GrowthBook documentation for React Native`);
 
   const filesToChange = await getFilesToChange({
     integration: Integration.reactNative,
