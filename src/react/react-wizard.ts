@@ -3,6 +3,7 @@
 import {
   abort,
   askForAIConsent,
+  askForGrowthbookApiKey,
   askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
@@ -48,7 +49,12 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
   }
 
   const usingCloud = await isUsingCloud();
-  const host = usingCloud ? 'https://app.growthbook.io' : await askForSelfHostedUrl();
+  const host = usingCloud
+    ? 'https://app.growthbook.io'
+    : await askForSelfHostedUrl();
+  console.log(host);
+
+  const growthbookApiKey = await askForGrowthbookApiKey();
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -64,21 +70,21 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     analytics.setTag('react-version', reactVersion);
   }
 
-  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
-    ...options,
-    usingCloud,
-    host,
-  });
+  // const { projectApiKey, wizardHash } = await getOrAskForProjectData({
+  //   ...options,
+  //   usingCloud,
+  //   host,
+  // });
 
-  const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
+  const sdkAlreadyInstalled = hasPackageInstalled('@growthbook/growthbook-react', packageJson);
 
   analytics.setTag('sdk-already-installed', sdkAlreadyInstalled);
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: 'posthog-js',
-      packageNameDisplayLabel: 'posthog-js',
-      alreadyInstalled: !!packageJson?.dependencies?.['posthog-js'],
+      packageName: '@growthbook/growthbook-react',
+      packageNameDisplayLabel: '@growthbook/growthbook-react',
+      alreadyInstalled: !!packageJson?.dependencies?.['@growthbook/growthbook-react'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
@@ -103,28 +109,18 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     integration: Integration.react,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash,
+    wizardHash: growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.react,
     filesToChange,
-    wizardHash,
+    wizardHash: growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,
   });
-
-  const { relativeEnvFilePath, addedEnvVariables } =
-    await addOrUpdateEnvironmentVariablesStep({
-      variables: {
-        [envVarPrefix + 'POSTHOG_KEY']: projectApiKey,
-        [envVarPrefix + 'POSTHOG_HOST']: host,
-      },
-      installDir: options.installDir,
-      integration: Integration.react,
-    });
 
   const packageManagerForOutro =
     packageManagerFromInstallStep ?? (await getPackageManager(options));
@@ -145,9 +141,9 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     options,
     integration: Integration.react,
     usingCloud,
-    addedEditorRules,
+    addedEditorRules: addedEditorRules,
     packageManager: packageManagerForOutro,
-    envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,
+    envFileChanged:  undefined,
   });
 
   clack.outro(outroMessage);

@@ -161,11 +161,6 @@ export async function generateFileChangesForIntegration({
   for (const filePath of filesToChange) {
     const fileChangeSpinner = clack.spinner();
 
-    analytics.capture('wizard interaction', {
-      action: 'processing file',
-      integration,
-      file: filePath,
-    });
 
     try {
       let oldContent = undefined;
@@ -249,11 +244,6 @@ export async function getRelevantFilesForIntegration({
     ignore: ignorePatterns,
   });
 
-  analytics.capture('wizard interaction', {
-    action: 'detected relevant files',
-    integration,
-    number_of_files: filteredFiles.length,
-  });
 
   return filteredFiles;
 }

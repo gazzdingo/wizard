@@ -58,7 +58,7 @@ export const INTEGRATION_CONFIG = {
     filterFilesRules: '',
     docsUrl: 'https://posthog.com/docs/libraries/react',
     changes:
-      '• Installed posthog-js package\n• Added PostHogProvider to the root of the app, to initialize PostHog and enable autocapture',
+      '• Installed Growthbook react package\n• Added PostHogProvider to the root of the app, to initialize PostHog and enable autocapture',
     nextSteps:
       '• Call posthog.identify() when a user signs into your app\n• Call posthog.capture() to capture custom events in your app\n• Upload environment variables to your production environment',
   },

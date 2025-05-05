@@ -570,7 +570,7 @@ async function askForWizardLogin(options: {
     }`,
   );
 
-  opn(urlToOpen, { wait: false }).catch(() => {
+  opn("https://app.growthbook.io", { wait: false }).catch(() => {
     // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
   });
 
@@ -588,12 +588,12 @@ async function askForWizardLogin(options: {
         }>(`${options.url}/api/wizard/data`, {
           headers: {
             'Accept-Encoding': 'deflate',
-            'X-PostHog-Wizard-Hash': wizardHash,
+            'X-PostHog-Wizard-Hash': "guy",
           },
         })
         .then((result) => {
           const data: ProjectData = {
-            wizardHash,
+            wizardHash: "guy",
             projectApiKey: result.data.project_api_key,
             host: result.data.host,
             distinctId: result.data.user_distinct_id,
@@ -873,6 +873,23 @@ export async function askShouldAddPackageOverride(
       }),
     ),
   );
+}
+/**
+ * ask for the Growthbook API key
+ * @param options api key
+ * @returns 
+ */
+export async function askForGrowthbookApiKey() {
+  return await traceStep('ask-for-growthbook-api-key', async () => {
+    const growthbookApiKey = await abortIfCancelled(
+      clack.text({
+        message: 'What is your Growthbook API key?',
+        placeholder: 'your-api-key-here',
+      }),
+    );
+
+    return growthbookApiKey;
+  });
 }
 
 export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {

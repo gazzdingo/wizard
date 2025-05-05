@@ -65,7 +65,9 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const host = usingCloud ? 'https://app.growthbook.io' : await askForSelfHostedUrl();
+  const host = usingCloud
+    ? 'https://app.growthbook.io'
+    : await askForSelfHostedUrl();
 
   const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,

@@ -46,7 +46,9 @@ export async function runReactNativeWizard(
   }
 
   const usingCloud = await isUsingCloud();
-  const host = usingCloud ? 'https://app.growthbook.io' : await askForSelfHostedUrl();
+  const host = usingCloud
+    ? 'https://app.growthbook.io'
+    : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -65,7 +67,7 @@ export async function runReactNativeWizard(
   const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
     usingCloud,
-    host
+    host,
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);

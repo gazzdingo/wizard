@@ -5,7 +5,7 @@ export const getReactDocumentation = ({
   language: 'typescript' | 'javascript';
   envVarPrefix: string;
 }) => {
-  const apiKeyText =
+  const clientKeyText =
     envVarPrefix === 'VITE_PUBLIC_'
       ? 'import.meta.env.VITE_PUBLIC_POSTHOG_KEY'
       : `process.env.${envVarPrefix}POSTHOG_KEY`;
@@ -27,29 +27,42 @@ Changes:
 
 Example:
 --------------------------------------------------
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import { useEffect } from "react";
+import { GrowthBook, GrowthBookProvider } from "@growthbook/growthbook-react";
 
-import { PostHogProvider} from 'posthog-js/react'
+// Create a GrowthBook instance
+const gb = new GrowthBook({
+  apiHost: ${hostText},
+  clientKey: ${clientKeyText},
+  enableDevMode: true,
+  // Only required for A/B testing
+  // Called every time a user is put into an experiment
+  trackingCallback: (experiment, result) => {
+    console.log("Experiment Viewed", {
+      experimentId: experiment.key,
+      variationId: result.key,
+    });
+  },
+});
+gb.init({
+  // Optional, enable streaming updates
+  streaming: true
+})
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+export default function App() {
+  useEffect(() => {
+    // Set user attributes for targeting (from cookie, auth system, etc.)
+    gb.setAttributes({
+      id: user.id,
+      company: user.company,
+    });
+  }, [user])
 
-root.render(
-  <React.StrictMode>
-    <PostHogProvider
-      apiKey={${apiKeyText}}
-      options={{
-        api_host: ${hostText},
-        debug: ${
-          envVarPrefix === 'VITE_PUBLIC_'
-            ? 'import.meta.env.MODE === "development"'
-            : 'process.env.NODE_ENV === "development"'
-        },
-      }}
-    >
-      <App />
-    </PostHogProvider>
-  </React.StrictMode>
+  return (
+    <GrowthBookProvider growthbook={gb}>
+      <OtherComponent />
+    </GrowthBookProvider>
+  );
+}
 --------------------------------------------------`;
 };

@@ -26,7 +26,6 @@ export type WizardOptions = {
    */
   installDir: string;
 
-
   /**
    * Whether to select the default option for all questions automatically.
    */

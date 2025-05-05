@@ -58,11 +58,13 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   if (svelteVersion) {
     analytics.setTag('svelte-version', svelteVersion);
   }
-  const host = usingCloud ? "https://app.growthbook.io" : await askForSelfHostedUrl();
+  const host = usingCloud
+    ? 'https://app.growthbook.io'
+    : await askForSelfHostedUrl();
   const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
     usingCloud,
-    host
+    host,
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
