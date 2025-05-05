@@ -42,10 +42,7 @@ export const query = async <S>({
     ],
   });
 
-  const validation = schema.safeParse(
-    // @ts-expect-error
-    response.output.find((item) => item.type === 'message')[0].content,
-  );
+  const validation = schema.safeParse(JSON.parse(response.output_text));
 
   if (!validation.success) {
     throw new Error(`Invalid response from wizard: ${validation.error}`);
