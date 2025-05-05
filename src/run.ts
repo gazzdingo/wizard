@@ -1,7 +1,7 @@
 import { abortIfCancelled } from './utils/clack-utils';
 
 import { runNextjsWizard } from './nextjs/nextjs-wizard';
-import type { CloudRegion, WizardOptions } from './utils/types';
+import type { UsingCloud, WizardOptions } from './utils/types';
 
 import { getIntegrationDescription, Integration } from './lib/constants';
 import { readEnvironment } from './utils/environment';
@@ -21,7 +21,7 @@ type Args = {
   debug?: boolean;
   forceInstall?: boolean;
   installDir?: string;
-  region?: CloudRegion;
+  usingCloud?: UsingCloud;
   default?: boolean;
   signup?: boolean;
 };
@@ -42,7 +42,7 @@ async function runWizard(argv: Args) {
     installDir: finalArgs.installDir
       ? path.join(process.cwd(), finalArgs.installDir)
       : process.cwd(),
-    cloudRegion: finalArgs.region ?? undefined,
+    usingCloud: finalArgs.usingCloud ?? true,
     default: finalArgs.default ?? false,
     signup: finalArgs.signup ?? false,
   };

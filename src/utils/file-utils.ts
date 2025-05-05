@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import type { CloudRegion, FileChange, WizardOptions } from './types';
+import type { UsingCloud, FileChange, WizardOptions } from './types';
 import clack from './clack';
 import z from 'zod';
 import { query } from './query';
@@ -77,13 +77,13 @@ export async function getFilesToChange({
   relevantFiles,
   documentation,
   wizardHash,
-  cloudRegion,
+  usingCloud,
 }: {
   integration: Integration;
   relevantFiles: string[];
   documentation: string;
   wizardHash: string;
-  cloudRegion: CloudRegion;
+  usingCloud: UsingCloud;
 }) {
   const filterFilesSpinner = clack.spinner();
 
@@ -104,7 +104,7 @@ export async function getFilesToChange({
     message: prompt,
     schema: filterFilesResponseSchmea,
     wizardHash,
-    region: cloudRegion,
+    usingCloud,
   });
 
   const filesToChange = filterFilesResponse.files;
@@ -123,11 +123,11 @@ export async function getFilesToChange({
 export async function generateFileContent({
   prompt,
   wizardHash,
-  cloudRegion,
+  usingCloud,
 }: {
   prompt: string;
   wizardHash: string;
-  cloudRegion: CloudRegion;
+  usingCloud: UsingCloud;
 }) {
   const response = await query({
     message: prompt,
@@ -135,7 +135,7 @@ export async function generateFileContent({
       newContent: z.string(),
     }),
     wizardHash: wizardHash,
-    region: cloudRegion,
+    usingCloud,
   });
 
   return response.newContent;
@@ -147,14 +147,14 @@ export async function generateFileChangesForIntegration({
   wizardHash,
   documentation,
   installDir,
-  cloudRegion,
+  usingCloud,
 }: {
   integration: Integration;
   filesToChange: string[];
   wizardHash: string;
   documentation: string;
   installDir: string;
-  cloudRegion: CloudRegion;
+  usingCloud: UsingCloud;
 }) {
   const changes: FileChange[] = [];
 
@@ -204,7 +204,7 @@ export async function generateFileChangesForIntegration({
       const newContent = await generateFileContent({
         prompt,
         wizardHash,
-        cloudRegion,
+        usingCloud,
       });
 
       if (newContent !== oldContent) {

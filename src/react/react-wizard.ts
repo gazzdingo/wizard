@@ -3,6 +3,7 @@
 import {
   abort,
   askForAIConsent,
+  askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -24,7 +25,7 @@ import {
   getRelevantFilesForIntegration,
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
-import { askForCloudRegion } from '../utils/clack-utils';
+import { isUsingCloud } from '../utils/clack-utils';
 import { getOutroMessage } from '../lib/messages';
 import {
   addEditorRulesStep,
@@ -46,7 +47,8 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+  const usingCloud = await isUsingCloud();
+  const host = usingCloud ? 'https://app.growthbook.io' : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -62,9 +64,10 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     analytics.setTag('react-version', reactVersion);
   }
 
-  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
+  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
-    cloudRegion,
+    usingCloud,
+    host,
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
@@ -101,7 +104,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     relevantFiles,
     documentation: installationDocumentation,
     wizardHash,
-    cloudRegion,
+    usingCloud,
   });
 
   await generateFileChangesForIntegration({
@@ -110,7 +113,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
     wizardHash,
     installDir: options.installDir,
     documentation: installationDocumentation,
-    cloudRegion,
+    usingCloud,
   });
 
   const { relativeEnvFilePath, addedEnvVariables } =
@@ -141,7 +144,7 @@ export async function runReactWizard(options: WizardOptions): Promise<void> {
   const outroMessage = getOutroMessage({
     options,
     integration: Integration.react,
-    cloudRegion,
+    usingCloud,
     addedEditorRules,
     packageManager: packageManagerForOutro,
     envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,

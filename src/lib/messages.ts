@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import type { CloudRegion, WizardOptions } from '../utils/types';
+import type { UsingCloud, WizardOptions } from '../utils/types';
 import { getCloudUrlFromRegion } from '../utils/urls';
 import type { PackageManager } from '../utils/package-manager';
 import { ISSUES_URL, Integration } from './constants';
@@ -33,7 +33,7 @@ export const getPRDescription = ({
 export const getOutroMessage = ({
   options,
   integration,
-  cloudRegion,
+  usingCloud,
   addedEditorRules,
   packageManager,
   envFileChanged,
@@ -41,14 +41,14 @@ export const getOutroMessage = ({
 }: {
   options: WizardOptions;
   integration: Integration;
-  cloudRegion: CloudRegion;
+  usingCloud: UsingCloud;
   addedEditorRules: boolean;
   packageManager?: PackageManager;
   envFileChanged?: string;
   prUrl?: string;
 }) => {
   const continueUrl = options.signup
-    ? `${getCloudUrlFromRegion(cloudRegion)}/products?source=wizard`
+    ? `${getCloudUrlFromRegion(usingCloud)}/products?source=wizard`
     : undefined;
 
   const integrationConfig = INTEGRATION_CONFIG[integration];

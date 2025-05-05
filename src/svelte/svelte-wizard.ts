@@ -3,6 +3,7 @@
 import {
   abort,
   askForAIConsent,
+  askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -23,7 +24,7 @@ import {
   getRelevantFilesForIntegration,
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
-import { askForCloudRegion } from '../utils/clack-utils';
+import { isUsingCloud } from '../utils/clack-utils';
 import { addEditorRulesStep } from '../steps/add-editor-rules';
 import { getOutroMessage } from '../lib/messages';
 import { addOrUpdateEnvironmentVariablesStep, runPrettierStep } from '../steps';
@@ -42,7 +43,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+  const usingCloud = await isUsingCloud();
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -57,10 +58,11 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   if (svelteVersion) {
     analytics.setTag('svelte-version', svelteVersion);
   }
-
-  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
+  const host = usingCloud ? "https://app.growthbook.io" : await askForSelfHostedUrl();
+  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
-    cloudRegion,
+    usingCloud,
+    host
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
@@ -105,7 +107,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     relevantFiles,
     documentation: installationDocumentation,
     wizardHash,
-    cloudRegion,
+    usingCloud,
   });
 
   await generateFileChangesForIntegration({
@@ -114,7 +116,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     wizardHash,
     installDir: options.installDir,
     documentation: installationDocumentation,
-    cloudRegion,
+    usingCloud,
   });
 
   const { relativeEnvFilePath, addedEnvVariables } =
@@ -145,7 +147,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   const outroMessage = getOutroMessage({
     options,
     integration: Integration.svelte,
-    cloudRegion,
+    usingCloud,
     addedEditorRules,
     packageManager: packageManagerForOutro,
     envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,

@@ -3,6 +3,7 @@
 import {
   abort,
   askForAIConsent,
+  askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -23,7 +24,7 @@ import {
   getRelevantFilesForIntegration,
 } from '../utils/file-utils';
 import type { WizardOptions } from '../utils/types';
-import { askForCloudRegion } from '../utils/clack-utils';
+import { isUsingCloud } from '../utils/clack-utils';
 import { addEditorRulesStep, runPrettierStep } from '../steps';
 import { EXPO } from '../utils/package-manager';
 import { getOutroMessage } from '../lib/messages';
@@ -44,7 +45,8 @@ export async function runReactNativeWizard(
     );
   }
 
-  const cloudRegion = options.cloudRegion ?? (await askForCloudRegion());
+  const usingCloud = await isUsingCloud();
+  const host = usingCloud ? 'https://app.growthbook.io' : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -60,9 +62,10 @@ export async function runReactNativeWizard(
     analytics.setTag('react-native-version', reactNativeVersion);
   }
 
-  const { projectApiKey, wizardHash, host } = await getOrAskForProjectData({
+  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
-    cloudRegion,
+    usingCloud,
+    host
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled('posthog-js', packageJson);
@@ -129,7 +132,7 @@ export async function runReactNativeWizard(
     relevantFiles,
     documentation: installationDocumentation,
     wizardHash,
-    cloudRegion,
+    usingCloud,
   });
 
   await generateFileChangesForIntegration({
@@ -138,7 +141,7 @@ export async function runReactNativeWizard(
     wizardHash,
     installDir: options.installDir,
     documentation: installationDocumentation,
-    cloudRegion,
+    usingCloud,
   });
 
   await runPrettierStep({
@@ -160,7 +163,7 @@ export async function runReactNativeWizard(
   const outroMessage = getOutroMessage({
     options,
     integration: Integration.reactNative,
-    cloudRegion,
+    usingCloud,
     addedEditorRules,
     packageManager: packageManagerForOutro,
   });

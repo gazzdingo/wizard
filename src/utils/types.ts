@@ -26,10 +26,6 @@ export type WizardOptions = {
    */
   installDir: string;
 
-  /**
-   * The cloud region to use.
-   */
-  cloudRegion?: CloudRegion;
 
   /**
    * Whether to select the default option for all questions automatically.
@@ -40,6 +36,11 @@ export type WizardOptions = {
    * Whether to create a new PostHog account during setup.
    */
   signup: boolean;
+
+  /**
+   * Whether to use the cloud or self-hosted version of Growthbook.
+   */
+  usingCloud: UsingCloud;
 };
 
 export interface Feature {
@@ -55,4 +56,4 @@ export type FileChange = {
   newContent: string;
 };
 
-export type CloudRegion = 'us' | 'eu';
+export type UsingCloud = boolean;

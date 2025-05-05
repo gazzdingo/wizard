@@ -16,7 +16,7 @@ import {
   packageManagers,
 } from './package-manager';
 import { fulfillsVersionRange } from './semver';
-import type { CloudRegion, Feature, WizardOptions } from './types';
+import type { UsingCloud, Feature, WizardOptions } from './types';
 import {
   DEFAULT_HOST_URL,
   DUMMY_PROJECT_API_KEY,
@@ -490,17 +490,18 @@ export function isUsingTypeScript({
  */
 export async function getOrAskForProjectData(
   _options: WizardOptions & {
-    cloudRegion: CloudRegion;
+    usingCloud: UsingCloud;
+    host: string;
   },
 ): Promise<{
   wizardHash: string;
   host: string;
   projectApiKey: string;
 }> {
-  const cloudUrl = getCloudUrlFromRegion(_options.cloudRegion);
+  const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
   const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
     askForWizardLogin({
-      url: cloudUrl,
+      url: _options.host,
       signup: _options.signup,
     }),
   );
@@ -885,7 +886,7 @@ export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
               {
                 label: 'Yes',
                 value: true,
-                hint: 'We will use AI to help you setup PostHog quickly',
+                hint: 'We will use AI to help you setup Growthbook quickly',
               },
               {
                 label: 'No',
@@ -900,25 +901,44 @@ export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
     return aiConsent;
   });
 }
+/**
+ * ask the user what there self hosted url is
+ */
+export async function askForSelfHostedUrl(): Promise<string> {
+  return await traceStep('ask-for-host', async () => {
+    const selfHostedUrl = await abortIfCancelled(
+      clack.text({
+        message: 'What is your self hosted Growthbook URL?',
+        placeholder: 'https://app.growthbook.io',
+      }),
+    );
 
-export async function askForCloudRegion(): Promise<CloudRegion> {
-  return await traceStep('ask-for-cloud-region', async () => {
-    const cloudRegion: CloudRegion = await abortIfCancelled(
+    return selfHostedUrl;
+  });
+}
+
+/**
+ * Asks the user if they are using Growthbook Cloud or Self Hosted.
+ * @returns true if they are using Growthbook Cloud, false otherwise
+ */
+export async function isUsingCloud(): Promise<UsingCloud> {
+  return await traceStep('ask-for-using-cloud', async () => {
+    const usingCloud: UsingCloud = await abortIfCancelled(
       clack.select({
-        message: 'Select your cloud region',
+        message: 'Select where you are Hosting Growthbook',
         options: [
           {
-            label: 'US 🇺🇸',
-            value: 'us',
+            label: 'Cloud',
+            value: true,
           },
           {
-            label: 'EU 🇪🇺',
-            value: 'eu',
+            label: 'Self Hosted',
+            value: false,
           },
         ],
       }),
     );
 
-    return cloudRegion;
+    return usingCloud;
   });
 }

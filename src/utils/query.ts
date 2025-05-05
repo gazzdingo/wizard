@@ -1,24 +1,24 @@
 import axios from 'axios';
 import type { ZodSchema } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import type { CloudRegion } from './types';
+import type { UsingCloud } from './types';
 import { getCloudUrlFromRegion } from './urls';
 
 export const query = async <S>({
   message,
-  region,
+  usingCloud,
   schema,
   wizardHash,
 }: {
   message: string;
-  region: CloudRegion;
+  usingCloud: UsingCloud;
   schema: ZodSchema<S>;
   wizardHash: string;
 }): Promise<S> => {
   const jsonSchema = zodToJsonSchema(schema, 'schema').definitions;
 
   const response = await axios.post<{ data: unknown }>(
-    `${getCloudUrlFromRegion(region)}/api/wizard/query`,
+    `${getCloudUrlFromRegion(usingCloud)}/api/wizard/query`,
     {
       message,
       json_schema: { ...jsonSchema, name: 'schema', strict: true },
