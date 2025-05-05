@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 import { satisfies } from 'semver';
 import { red } from './src/utils/logging';
+import { config } from 'dotenv';
+config({
+  path: __dirname + '/.env',
+});
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';

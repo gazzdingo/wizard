@@ -41,6 +41,7 @@
     "glob": "9.3.5",
     "inquirer": "^6.2.0",
     "magicast": "^0.2.10",
+    "openai": "^4.97.0",
     "opn": "^5.4.0",
     "posthog-node": "^4.9.0",
     "read-env": "^1.3.0",

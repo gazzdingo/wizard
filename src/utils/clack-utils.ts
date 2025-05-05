@@ -531,101 +531,12 @@ async function askForWizardLogin(options: {
   url: string;
   signup: boolean;
 }): Promise<ProjectData> {
-  let wizardHash: string;
-
-  try {
-    wizardHash = (
-      await axios.post<{ hash: string }>(`${options.url}/api/wizard/initialize`)
-    ).data.hash;
-  } catch (e: unknown) {
-    clack.log.error('Loading wizard failed.');
-    clack.log.info(JSON.stringify(e, null, 2));
-    await abort(
-      chalk.red(
-        `Please try again in a few minutes and let us know if this issue persists: ${ISSUES_URL}`,
-      ),
-    );
-    throw e;
-  }
-
-  const loginUrl = new URL(`${options.url}/wizard?hash=${wizardHash}`);
-
-  const signupUrl = new URL(
-    `${options.url}/signup?next=${encodeURIComponent(
-      `/wizard?hash=${wizardHash}`,
-    )}`,
-  );
-
-  const urlToOpen = options.signup ? signupUrl.toString() : loginUrl.toString();
-
-  clack.log.info(
-    `${chalk.bold(
-      `If the browser window didn't open automatically, please open the following link to login into PostHog:`,
-    )}\n\n${chalk.cyan(urlToOpen)}${
-      options.signup
-        ? `\n\nIf you already have an account, you can use this link:\n\n${chalk.cyan(
-            loginUrl.toString(),
-          )}`
-        : ``
-    }`,
-  );
-
-  opn("https://app.growthbook.io", { wait: false }).catch(() => {
-    // opn throws in environments that don't have a browser (e.g. remote shells) so we just noop here
-  });
-
-  const loginSpinner = clack.spinner();
-
-  loginSpinner.start('Waiting for you to log in using the link above');
-
-  const data = await new Promise<ProjectData>((resolve) => {
-    const pollingInterval = setInterval(() => {
-      axios
-        .get<{
-          project_api_key: string;
-          host: string;
-          user_distinct_id: string;
-        }>(`${options.url}/api/wizard/data`, {
-          headers: {
-            'Accept-Encoding': 'deflate',
-            'X-PostHog-Wizard-Hash': "guy",
-          },
-        })
-        .then((result) => {
-          const data: ProjectData = {
-            wizardHash: "guy",
-            projectApiKey: result.data.project_api_key,
-            host: result.data.host,
-            distinctId: result.data.user_distinct_id,
-          };
-
-          resolve(data);
-          clearTimeout(timeout);
-          clearInterval(pollingInterval);
-        })
-        .catch(() => {
-          // noop - just try again
-        });
-    }, 500);
-
-    const timeout = setTimeout(() => {
-      clearInterval(pollingInterval);
-      loginSpinner.stop(
-        'Login timed out. No worries - it happens to the best of us.',
-      );
-
-      analytics.setTag('opened-wizard-link', false);
-      void abort('Please restart the Wizard and log in to complete the setup.');
-    }, 180_000);
-  });
-
-  loginSpinner.stop(
-    `Login complete. ${options.signup ? 'Welcome to PostHog! 🎉' : ''}`,
-  );
-  analytics.setTag('opened-wizard-link', true);
-  analytics.setDistinctId(data.distinctId);
-
-  return data;
+  return {
+    wizardHash: 'mywizardhash',
+    projectApiKey: 'myprojectapikey',
+    host: 'myhost',
+    distinctId: 'mydistinctid',
+  };
 }
 
 /**
@@ -877,7 +788,7 @@ export async function askShouldAddPackageOverride(
 /**
  * ask for the Growthbook API key
  * @param options api key
- * @returns 
+ * @returns
  */
 export async function askForGrowthbookApiKey() {
   return await traceStep('ask-for-growthbook-api-key', async () => {
