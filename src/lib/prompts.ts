@@ -7,17 +7,17 @@ export const baseFilterFilesPromptTemplate = new PromptTemplate({
     'integration_name',
     'integration_rules',
   ],
-  template: `You are a PostHog installation wizard, a master AI programming assistant that implements PostHog for {integration_name} projects.
+  template: `You are a Growthbook installation wizard, a master AI programming assistant that implements Growthbook for {integration_name} projects.
 Given the following list of file paths from a project, determine which files are likely to require modifications 
-to integrate PostHog. Use the installation documentation as a reference for what files might need modifications, do not include files that are unlikely to require modification based on the documentation.
+to integrate Growthbook. Use the installation documentation as a reference for what files might need modifications, do not include files that are unlikely to require modification based on the documentation.
 
 - If you would like to create a new file, you can include the file path in your response.
 - If you would like to modify an existing file, you can include the file path in your response.
 
-You should return all files that you think will be required to look at or modify to integrate PostHog. You should return them in the order you would like to see them processed, with new files first, followed by the files that you want to update to integrate PostHog.
+You should return all files that you think will be required to look at or modify to integrate Growthbook. You should return them in the order you would like to see them processed, with new files first, followed by the files that you want to update to integrate Growthbook.
 
 Rules:
-- Only return files that you think will be required to look at or modify to integrate PostHog.
+- Only return files that you think will be required to look at or modify to integrate Growthbook.
 - Do not return files that are unlikely to require modification based on the documentation.
 - If you are unsure, return the file, since it's better to have more files than less.
 - If two files might include the content you need to edit, return both.
@@ -45,9 +45,9 @@ export const baseGenerateFileChangesPromptTemplate = new PromptTemplate({
     'integration_name',
     'integration_rules',
   ],
-  template: `You are a PostHog installation wizard, a master AI programming assistant that implements PostHog for {integration_name} projects.
+  template: `You are a Growthbook installation wizard, a master AI programming assistant that implements Growthbook for {integration_name} projects.
 
-Your task is to update the file to integrate PostHog according to the documentation.
+Your task is to update the file to integrate Growthbook according to the documentation.
 Do not return a diff — you should return the complete updated file content.
 
 Rules:
@@ -64,7 +64,7 @@ Rules:
 CONTEXT
 ---
 
-Documentation for integrating PostHog with {integration_name}:
+Documentation for integrating Growthbook with {integration_name}:
 {documentation}
 
 The file you are updating is:

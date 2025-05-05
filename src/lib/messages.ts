@@ -14,18 +14,18 @@ export const getPRDescription = ({
 }) => {
   const integrationConfig = INTEGRATION_CONFIG[integration];
 
-  return `This PR adds an integration for PostHog.
+  return `This PR adds an integration for Growthbook.
 
   The following changes were made:
   ${integrationConfig.changes}
-  ${addedEditorRules ? `• Added Cursor rules for PostHog\n` : ''}
+  ${addedEditorRules ? `• Added Cursor rules for Growthbook\n` : ''}
   
   
   Note: This used the ${
     integrationConfig.name
-  } wizard to setup PostHog, this is still in alpha and like all AI, might have got it wrong. Please check the installation carefully!
+  } wizard to setup Growthbook, this is still in alpha and like all AI, might have got it wrong. Please check the installation carefully!
   
-  Learn more about PostHog + ${integrationConfig.name}: ${
+  Learn more about Growthbook + ${integrationConfig.name}: ${
     integrationConfig.docsUrl
   }`;
 };
@@ -54,11 +54,11 @@ export const getOutroMessage = ({
   const integrationConfig = INTEGRATION_CONFIG[integration];
 
   return `
-${chalk.green('Successfully installed PostHog!')}  
+${chalk.green('Successfully installed Growthbook!')}  
   
 ${chalk.cyan('Changes made:')}
 ${integrationConfig.changes}
-${addedEditorRules ? `• Added Cursor rules for PostHog\n` : ''}${
+${addedEditorRules ? `• Added Cursor rules for Growthbook\n` : ''}${
     prUrl ? `• Created a PR for your changes: ${chalk.cyan(prUrl)}\n` : ''
   }${
     envFileChanged
@@ -68,7 +68,7 @@ ${addedEditorRules ? `• Added Cursor rules for PostHog\n` : ''}${
 ${chalk.yellow('Next steps:')}
 ${integrationConfig.nextSteps}
 
-Learn more about PostHog + ${integrationConfig.name}: ${chalk.cyan(
+Learn more about Growthbook + ${integrationConfig.name}: ${chalk.cyan(
     integrationConfig.docsUrl,
   )}
 ${continueUrl ? `\nContinue onboarding: ${chalk.cyan(continueUrl)}\n` : ``}
