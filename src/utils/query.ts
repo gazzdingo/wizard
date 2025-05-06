@@ -9,9 +9,9 @@ const client = new OpenAI({
 
 export const query = async <S>({
   message,
-  usingCloud,
+  // usingCloud,
   schema,
-  wizardHash,
+  // wizardHash,
 }: {
   message: string;
   usingCloud: UsingCloud;

@@ -51,8 +51,8 @@ export interface CliSetupConfigContent {
   url?: string;
 }
 
-export async function abort(message?: string, status?: number): Promise<never> {
-  await analytics.shutdown('cancelled');
+export function abort(message?: string, status?: number): Promise<never> {
+  analytics.shutdown('cancelled');
 
   clack.outro(message ?? 'Wizard setup cancelled.');
   return process.exit(status ?? 1);
@@ -61,7 +61,7 @@ export async function abort(message?: string, status?: number): Promise<never> {
 export async function abortIfCancelled<T>(
   input: T | Promise<T>,
 ): Promise<Exclude<T, symbol>> {
-  await analytics.shutdown('cancelled');
+   analytics.shutdown('cancelled');
 
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');

@@ -77,7 +77,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   });
 
   const sdkAlreadyInstalled = hasPackageInstalled(
-    '@growthbook/growthbook-react',
+    '@growthbook/growthbook',
     packageJson,
   );
 
@@ -96,11 +96,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     });
 
   await installPackage({
-    packageName: '@growthbook/growthbook-node',
-    packageNameDisplayLabel: '@growthbook/growthbook-node',
+    packageName: '@growthbook/growthbook',
+    packageNameDisplayLabel: '@growthbook/growthbook',
     packageManager: packageManagerFromInstallStep,
     alreadyInstalled:
-      !!packageJson?.dependencies?.['@growthbook/growthbook-node'],
+      !!packageJson?.dependencies?.['@growthbook/growthbook'],
     forceInstall: options.forceInstall,
     askBeforeUpdating: false,
     installDir: options.installDir,
@@ -116,7 +116,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const installationDocumentation = getInstallationDocumentation({
     router,
-    host,
     language: typeScriptDetected ? 'typescript' : 'javascript',
   });
 
@@ -184,21 +183,19 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   clack.outro(outroMessage);
 
-  await analytics.shutdown('success');
+   analytics.shutdown('success');
 }
 
 function getInstallationDocumentation({
   router,
-  host,
   language,
 }: {
   router: NextJsRouter;
-  host: string;
   language: 'typescript' | 'javascript';
 }) {
   if (router === NextJsRouter.PAGES_ROUTER) {
-    return getNextjsPagesRouterDocs({ host, language });
+    return getNextjsPagesRouterDocs({ language });
   }
 
-  return getNextjsAppRouterDocs({ host, language });
+  return getNextjsAppRouterDocs({ language });
 }

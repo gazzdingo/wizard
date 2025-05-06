@@ -7,7 +7,7 @@ import { getIntegrationDescription, Integration } from './lib/constants';
 import { readEnvironment } from './utils/environment';
 import clack from './utils/clack';
 import path from 'path';
-import { INTEGRATION_CONFIG, INTEGRATION_ORDER } from './lib/config';
+import { SUPPORTED_INTEGRATIONS, INTEGRATION_ORDER } from './lib/config';
 import { runReactWizard } from './react/react-wizard';
 import { analytics } from './utils/analytics';
 import { runSvelteWizard } from './svelte/svelte-wizard';
@@ -48,9 +48,8 @@ async function runWizard(argv: Args) {
   };
 
   clack.intro(`Welcome to the GrowthBook setup wizard ✨`);
-
-  const integration =
-    finalArgs.integration ?? (await getIntegrationForSetup(wizardOptions));
+  
+  const integration = await getIntegrationForSetup(wizardOptions);
 
   analytics.setTag('integration', integration);
 
@@ -68,25 +67,31 @@ async function runWizard(argv: Args) {
       await runReactNativeWizard(wizardOptions);
       break;
     default:
-      clack.log.error('No setup wizard selected!');
+       
   }
 }
 
 async function detectIntegration(
   options: Pick<WizardOptions, 'installDir'>,
 ): Promise<Integration | undefined> {
-  const integrationConfigs = Object.entries(INTEGRATION_CONFIG).sort(
+  const integrationConfigs = Object.entries(SUPPORTED_INTEGRATIONS).sort(
     ([a], [b]) =>
       INTEGRATION_ORDER.indexOf(a as Integration) -
       INTEGRATION_ORDER.indexOf(b as Integration),
   );
 
   for (const [integration, config] of integrationConfigs) {
-    const detected = await config.detect(options);
-    if (detected) {
-      return integration as Integration;
+    try {
+      const detected = await config.detect(options);
+      if (detected) {
+        return integration as Integration;
+      }
+    } catch (error) {
+      // If there's an error reading package.json or detecting, continue to next integration
+      continue;
     }
   }
+  return undefined;
 }
 
 async function getIntegrationForSetup(
@@ -94,12 +99,14 @@ async function getIntegrationForSetup(
 ) {
   const detectedIntegration = await detectIntegration(options);
 
-  if (detectedIntegration) {
-    clack.log.success(
-      `Detected integration: ${getIntegrationDescription(detectedIntegration)}`,
-    );
-    return detectedIntegration;
-  }
+  // if (detectedIntegration !== undefined) {
+  //   clack.log.success(
+  //     `Detected integration: ${getIntegrationDescription(detectedIntegration)}`,
+  //   );
+  //   return detectedIntegration;
+  // }
+
+  clack.log.info('No integration detected. Please select one manually:');
 
   const integration: Integration = await abortIfCancelled(
     clack.select({

@@ -1,7 +1,6 @@
 /* eslint-disable max-lines */
 
 import {
-  abort,
   askForAIConsent,
   askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -162,5 +161,5 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
 
   clack.outro(outroMessage);
 
-  await analytics.shutdown('success');
+  analytics.shutdown('success');
 }

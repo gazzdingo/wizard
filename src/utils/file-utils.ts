@@ -8,7 +8,7 @@ import fg from 'fast-glob';
 import { analytics } from './analytics';
 import { Integration } from '../lib/constants';
 import { abort } from './clack-utils';
-import { INTEGRATION_CONFIG } from '../lib/config';
+import { SUPPORTED_INTEGRATIONS } from '../lib/config';
 import {
   baseFilterFilesPromptTemplate,
   baseGenerateFileChangesPromptTemplate,
@@ -97,7 +97,7 @@ export async function getFilesToChange({
     documentation,
     file_list: relevantFiles.join('\n'),
     integration_name: integration,
-    integration_rules: INTEGRATION_CONFIG[integration].filterFilesRules,
+    integration_rules: SUPPORTED_INTEGRATIONS.find(i => i.id === integration)?.filterFilesRules,
   });
 
   const filterFilesResponse = await query({
@@ -157,10 +157,10 @@ export async function generateFileChangesForIntegration({
   usingCloud: UsingCloud;
 }) {
   const changes: FileChange[] = [];
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(i => i.id === integration);
 
   for (const filePath of filesToChange) {
     const fileChangeSpinner = clack.spinner();
-
 
     try {
       let oldContent = undefined;
@@ -188,8 +188,8 @@ export async function generateFileChangesForIntegration({
         file_content: oldContent,
         file_path: filePath,
         documentation,
-        integration_name: INTEGRATION_CONFIG[integration].name,
-        integration_rules: INTEGRATION_CONFIG[integration].generateFilesRules,
+        integration_name: integrationConfig?.name,
+        integration_rules: integrationConfig?.generateFilesRules,
         changed_files: changes
           .map((change) => `${change.filePath}\n${change.newContent}`)
           .join('\n'),
@@ -235,15 +235,15 @@ export async function getRelevantFilesForIntegration({
   integration,
 }: Pick<WizardOptions, 'installDir'> & {
   integration: Integration;
-}) {
-  const filterPatterns = INTEGRATION_CONFIG[integration].filterPatterns;
-  const ignorePatterns = INTEGRATION_CONFIG[integration].ignorePatterns;
+}): Promise<string[]> {
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(i => i.id === integration);
+  const filterPatterns = integrationConfig?.filterPatterns ?? [];
+  const ignorePatterns = integrationConfig?.ignorePatterns ?? [];
 
   const filteredFiles = await fg(filterPatterns, {
     cwd: installDir,
     ignore: ignorePatterns,
   });
-
 
   return filteredFiles;
 }

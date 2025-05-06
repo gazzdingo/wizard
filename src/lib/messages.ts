@@ -3,7 +3,7 @@ import type { UsingCloud, WizardOptions } from '../utils/types';
 import { getCloudUrlFromRegion } from '../utils/urls';
 import type { PackageManager } from '../utils/package-manager';
 import { ISSUES_URL, Integration } from './constants';
-import { INTEGRATION_CONFIG } from './config';
+import { SUPPORTED_INTEGRATIONS } from './config';
 
 export const getPRDescription = ({
   integration,
@@ -12,21 +12,21 @@ export const getPRDescription = ({
   integration: Integration;
   addedEditorRules: boolean;
 }) => {
-  const integrationConfig = INTEGRATION_CONFIG[integration];
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find((config) => config.id === integration);
 
   return `This PR adds an integration for Growthbook.
 
   The following changes were made:
-  ${integrationConfig.changes}
+  ${integrationConfig?.featuresDescription}
   ${addedEditorRules ? `• Added Cursor rules for Growthbook\n` : ''}
   
   
   Note: This used the ${
-    integrationConfig.name
+    integrationConfig?.label
   } wizard to setup Growthbook, this is still in alpha and like all AI, might have got it wrong. Please check the installation carefully!
   
-  Learn more about Growthbook + ${integrationConfig.name}: ${
-    integrationConfig.docsUrl
+  Learn more about Growthbook + ${integrationConfig?.label}: ${
+    integrationConfig?.docsUrl
   }`;
 };
 
@@ -51,13 +51,13 @@ export const getOutroMessage = ({
     ? `${getCloudUrlFromRegion(usingCloud)}/products?source=wizard`
     : undefined;
 
-  const integrationConfig = INTEGRATION_CONFIG[integration];
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find((config) => config.id === integration);
 
   return `
 ${chalk.green('Successfully installed Growthbook!')}  
   
 ${chalk.cyan('Changes made:')}
-${integrationConfig.changes}
+${integrationConfig?.featuresDescription}
 ${addedEditorRules ? `• Added Cursor rules for Growthbook\n` : ''}${
     prUrl ? `• Created a PR for your changes: ${chalk.cyan(prUrl)}\n` : ''
   }${
@@ -66,10 +66,10 @@ ${addedEditorRules ? `• Added Cursor rules for Growthbook\n` : ''}${
       : ''
   }
 ${chalk.yellow('Next steps:')}
-${integrationConfig.nextSteps}
+${integrationConfig?.nextSteps}
 
-Learn more about Growthbook + ${integrationConfig.name}: ${chalk.cyan(
-    integrationConfig.docsUrl,
+Learn more about Growthbook + ${integrationConfig?.label}: ${chalk.cyan(
+    integrationConfig?.docsUrl ?? '',
   )}
 ${continueUrl ? `\nContinue onboarding: ${chalk.cyan(continueUrl)}\n` : ``}
 Note: This uses experimental AI to setup your project. It might have got it wrong, please check!

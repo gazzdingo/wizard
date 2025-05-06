@@ -1,68 +1,42 @@
-import { PostHog } from 'posthog-node';
-import {
-  ANALYTICS_HOST_URL,
-  ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY,
-} from '../lib/constants';
 import { v4 as uuidv4 } from 'uuid';
+import { GrowthBook } from '@growthbook/growthbook';
+
 export class Analytics {
-  private client: PostHog;
+  private client: GrowthBook;
   private tags: Record<string, string | boolean | number | null | undefined> =
     {};
   private distinctId?: string;
   private anonymousId: string;
 
   constructor() {
-    this.client = new PostHog(ANALYTICS_POSTHOG_PUBLIC_PROJECT_WRITE_KEY, {
-      host: ANALYTICS_HOST_URL,
-      flushAt: 1,
-      flushInterval: 0,
-    });
-
     this.tags = {};
-
     this.anonymousId = uuidv4();
-
     this.distinctId = undefined;
+    this.client = new GrowthBook();
   }
 
   setDistinctId(distinctId: string) {
     this.distinctId = distinctId;
-    this.client.alias({
-      distinctId,
-      alias: this.anonymousId,
-    });
+    // this.client.setAttributes({ id: distinctId });
   }
 
   setTag(key: string, value: string | boolean | number | null | undefined) {
     this.tags[key] = value;
   }
 
-  capture(eventName: string, properties?: Record<string, unknown>) {
-    this.client.capture({
-      distinctId: this.distinctId ?? this.anonymousId,
-      event: eventName,
-      properties: {
-        ...this.tags,
-        ...properties,
-      },
-    });
+  capture(_eventName: string, _properties?: Record<string, unknown>) {
+    return;
   }
 
-  async shutdown(status: 'success' | 'error' | 'cancelled') {
+  shutdown(status: 'success' | 'error' | 'cancelled') {
     if (Object.keys(this.tags).length === 0) {
       return;
     }
 
-    this.client.capture({
-      distinctId: this.distinctId ?? this.anonymousId,
-      event: 'setup wizard finished',
-      properties: {
-        status,
-        tags: this.tags,
-      },
+    this.client.log('setup wizard finished', {
+      status,
+      tags: this.tags,
     });
-
-    await this.client.shutdown();
   }
 }
 
