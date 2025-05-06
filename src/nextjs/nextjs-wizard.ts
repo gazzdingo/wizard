@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import {
   askForAIConsent,
+  askForGrowthbookApiKey,
   askForSelfHostedUrl,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
@@ -53,6 +54,15 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   }
 
   const usingCloud = await isUsingCloud();
+
+  const growthbookApiKey = await askForGrowthbookApiKey();
+
+  if (!growthbookApiKey) {
+    clack.log.error('No GrowthBook API key provided');
+    clack.outro('Setup cancelled');
+    return;
+  }
+
 
   const typeScriptDetected = isUsingTypeScript(options);
 
