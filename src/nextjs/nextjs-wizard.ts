@@ -85,10 +85,10 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const { packageManager: packageManagerFromInstallStep } =
     await installPackage({
-      packageName: '@growthbook/growthbook-react',
-      packageNameDisplayLabel: '@growthbook/growthbook-react',
+      packageName: '@growthbook/growthbook',
+      packageNameDisplayLabel: '@growthbook/growthbook',
       alreadyInstalled:
-        !!packageJson?.dependencies?.['@growthbook/growthbook-react'],
+        !!packageJson?.dependencies?.['@growthbook/growthbook'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
