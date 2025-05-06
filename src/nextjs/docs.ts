@@ -1,7 +1,13 @@
 export const getNextjsAppRouterDocs = ({
   language,
+  sdkConnection,
+  attributes,
+  host,
 }: {
   language: 'typescript' | 'javascript';
+  sdkConnection: string;
+  attributes: any[];
+  host: string;
 }) => {
   const tsx = language === 'typescript';
   return `
@@ -18,10 +24,10 @@ Example:
 --------------------------------------------------
 Create the file .env.local in your Next.js app if it doesn't exist yet and add this info there:
 
-NEXT_PUBLIC_GROWTHBOOK_API_HOST=https://cdn.growthbook.io
-NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY= {your-client-key}
+NEXT_PUBLIC_GROWTHBOOK_API_HOST=${host}
+NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY=${sdkConnection}
 # Below is only required if you enabled encryption
-NEXT_PUBLIC_GROWTHBOOK_DECRYPTION_KEY= {your-decryption-key}
+NEXT_PUBLIC_GROWTHBOOK_DECRYPTION_KEY=
 
 
 Our Javascript SDK works out-of-the-box with React Server Components, but we can more deeply integrate it with Next.js by creating a small helper function in app/growthbookServer.ts with the following contents:
@@ -124,8 +130,14 @@ Once you do the initial integration work, it only takes a few seconds to wrap yo
 
 export const getNextjsPagesRouterDocs = ({
   language,
+  sdkConnection,
+  attributes,
+  host,
 }: {
   language: 'typescript' | 'javascript';
+  sdkConnection: string;
+  attributes: any[];
+  host: string;
 }) => {
   const tsx = language === 'typescript';
   return `
@@ -145,8 +157,8 @@ GrowthBook will generate some integration code for you, including a unique SDK C
 GrowthBook Integration Code
 Create the file .env.local if it doesn't exist yet and add your generated key there:
 
-NEXT_PUBLIC_GROWTHBOOK_API_HOST=https://cdn.growthbook.io
-NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY=
+NEXT_PUBLIC_GROWTHBOOK_API_HOST=${host}
+NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY=${sdkConnection}
 # Below is only required if you enabled encryption
 NEXT_PUBLIC_GROWTHBOOK_DECRYPTION_KEY=
 
@@ -180,14 +192,9 @@ export default function MyApp({ Component, pageProps, router }) {
   useEffect(() => {
     gb.setURL(window.location.href);
     growthbook.setAttributes({
-      id: "123",
-      loggedIn: true,
-      deviceId: "abcdef123456",
-      employee: true,
-      company: "acme",
-      country: "US",
-      browser: navigator.userAgent,
-      url: router.pathname,
+     ${attributes
+       .map((attribute) => `${attribute.property}: "${attribute.value}"`)
+       .join(', ')}
     });
   }, [router.pathname]);
 

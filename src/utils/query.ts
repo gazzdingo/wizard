@@ -6,13 +6,41 @@ import OpenAI from 'openai';
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+export const getAttributes = async (growthbookApiKey: string, host: string) => {
+  const response = await fetch(`${host}/api/v1/attributes`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${growthbookApiKey}`,
+    },
+  });
+
+  const data = (await response.json()) as { attributes: any[] };
+  return data?.attributes;
+};
+
+export const getSdkConnections = async (
+  growthbookApiKey: string,
+  host: string,
+) => {
+  const response = await fetch(`${host}/api/v1/sdk-connections`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${growthbookApiKey}`,
+    },
+  });
+
+  const data = (await response.json()) as { connections: any[] };
+  return data?.connections;
+};
 
 export const query = async <S>({
   message,
   // usingCloud,
   schema,
-  // wizardHash,
-}: {
+}: // wizardHash,
+{
   message: string;
   usingCloud: UsingCloud;
   schema: ZodSchema<S>;

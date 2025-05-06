@@ -3,6 +3,7 @@ import {
   askForAIConsent,
   askForGrowthbookApiKey,
   askForSelfHostedUrl,
+  chooseSdkConnection,
   confirmContinueIfNoOrDirtyGitRepo,
   ensurePackageIsInstalled,
   getOrAskForProjectData,
@@ -37,7 +38,7 @@ import {
   createPRStep,
   runPrettierStep,
 } from '../steps';
-
+import { getAttributes, getSdkConnections } from '../utils/query';
 export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   printWelcome({
     wizardName: 'GrowthBook Next.js Wizard',
@@ -62,7 +63,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     clack.outro('Setup cancelled');
     return;
   }
-
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -97,36 +97,28 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     await installPackage({
       packageName: '@growthbook/growthbook',
       packageNameDisplayLabel: '@growthbook/growthbook',
-      alreadyInstalled:
-        !!packageJson?.dependencies?.['@growthbook/growthbook'],
+      alreadyInstalled: !!packageJson?.dependencies?.['@growthbook/growthbook'],
       forceInstall: options.forceInstall,
       askBeforeUpdating: false,
       installDir: options.installDir,
       integration: Integration.nextjs,
     });
-
-  await installPackage({
-    packageName: '@growthbook/growthbook',
-    packageNameDisplayLabel: '@growthbook/growthbook',
-    packageManager: packageManagerFromInstallStep,
-    alreadyInstalled:
-      !!packageJson?.dependencies?.['@growthbook/growthbook'],
-    forceInstall: options.forceInstall,
-    askBeforeUpdating: false,
-    installDir: options.installDir,
-    integration: Integration.nextjs,
-  });
-
   const router = await getNextJsRouter(options);
-
+  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
+  const sdkConnection = (await chooseSdkConnection(sdkConnections)) as {
+    id: string;
+  };
+  const attributes = await getAttributes(growthbookApiKey, host);
   const relevantFiles = await getRelevantFilesForIntegration({
     installDir: options.installDir,
     integration: Integration.nextjs,
   });
-
   const installationDocumentation = getInstallationDocumentation({
     router,
     language: typeScriptDetected ? 'typescript' : 'javascript',
+    sdkConnection: sdkConnection.id,
+    attributes,
+    host,
   });
 
   clack.log.info(
@@ -193,19 +185,30 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   clack.outro(outroMessage);
 
-   analytics.shutdown('success');
+  analytics.shutdown('success');
 }
 
 function getInstallationDocumentation({
   router,
   language,
+  sdkConnection,
+  attributes,
+  host,
 }: {
   router: NextJsRouter;
   language: 'typescript' | 'javascript';
+  sdkConnection: string;
+  attributes: any[];
+  host: string;
 }) {
   if (router === NextJsRouter.PAGES_ROUTER) {
-    return getNextjsPagesRouterDocs({ language });
+    return getNextjsPagesRouterDocs({
+      language,
+      sdkConnection,
+      attributes,
+      host,
+    });
   }
 
-  return getNextjsAppRouterDocs({ language });
+  return getNextjsAppRouterDocs({ language, sdkConnection, attributes, host });
 }

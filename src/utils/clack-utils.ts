@@ -61,7 +61,7 @@ export function abort(message?: string, status?: number): Promise<never> {
 export async function abortIfCancelled<T>(
   input: T | Promise<T>,
 ): Promise<Exclude<T, symbol>> {
-   analytics.shutdown('cancelled');
+  analytics.shutdown('cancelled');
 
   if (clack.isCancel(await input)) {
     clack.cancel('Wizard setup cancelled.');
@@ -796,7 +796,7 @@ export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
       ? true
       : await abortIfCancelled(
           clack.select({
-            message: 'This setup wizard uses AI, are you happy to continue? ✨',
+            message: 'This setup as uses AI, are you happy to continue? ✨',
             options: [
               {
                 label: 'Yes',
@@ -855,5 +855,20 @@ export async function isUsingCloud(): Promise<UsingCloud> {
     );
 
     return usingCloud;
+  });
+}
+export async function chooseSdkConnection(sdkConnections: any) {
+  return await traceStep('choose-sdk-connection', async () => {
+    const sdkConnection = await abortIfCancelled(
+      clack.select({
+        message: 'Select the SDK connection you want to use',
+        options: sdkConnections.map((sdkConnection: any) => ({
+          label: sdkConnection.name,
+          value: sdkConnection.id,
+        })),
+      }),
+    );
+
+    return sdkConnection;
   });
 }
