@@ -61,12 +61,16 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   const host = usingCloud
     ? 'https://app.growthbook.io'
     : await askForSelfHostedUrl();
-  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
+  const growthbookApiKey = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,
   });
-
+  if (!growthbookApiKey) {
+    clack.log.error('login failed');
+    clack.outro('Setup cancelled');
+    return;
+  }
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@growthbook/growthbook-svelte',
     packageJson,
@@ -112,14 +116,14 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
     integration: Integration.svelte,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.svelte,
     filesToChange,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,
@@ -128,7 +132,7 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   const { relativeEnvFilePath, addedEnvVariables } =
     await addOrUpdateEnvironmentVariablesStep({
       variables: {
-        PUBLIC_GROWTHBOOK_CLIENT_KEY: projectApiKey,
+        PUBLIC_GROWTHBOOK_CLIENT_KEY: growthbookApiKey,
         PUBLIC_GROWTHBOOK_API_HOST: host,
       },
       installDir: options.installDir,

@@ -21,6 +21,8 @@ import {
 import { analytics } from './analytics';
 import clack from './clack';
 import { getCloudUrlFromRegion } from './urls';
+import { v4 as uuidv4 } from 'uuid';
+import opn from 'opn';
 
 interface ProjectData {
   projectApiKey: string;
@@ -483,17 +485,13 @@ export async function getOrAskForProjectData(
     usingCloud: UsingCloud;
     host: string;
   },
-): Promise<{
-  wizardHash: string;
-  host: string;
-  projectApiKey: string;
-}> {
+): Promise<string| null> {
   const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
-  const { host, projectApiKey, wizardHash } = await traceStep('login', () =>
+  const apiKey = await traceStep('login', () =>
     askForWizardLogin(_options),
   );
 
-  if (!projectApiKey) {
+  if (!apiKey) {
     clack.log.error(`Didn't receive a project API key. This shouldn't happen :(
 
 Please let us know if you think this is a bug in the wizard:
@@ -507,23 +505,51 @@ You can find your Project API key here:
 ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
-  return {
-    wizardHash,
-    host: host || DEFAULT_HOST_URL,
-    projectApiKey: projectApiKey || DUMMY_PROJECT_API_KEY,
-  };
+  return apiKey
 }
 
-async function askForWizardLogin(
-  _options: WizardOptions,
-): Promise<ProjectData> {
-  // Placeholder implementation
-  return {
-    wizardHash: 'placeholder-wizard-hash', // Replace with actual hash later
-    projectApiKey: DUMMY_PROJECT_API_KEY, // Use dummy key for now
-    host: DEFAULT_HOST_URL, // Use default host for now
-    distinctId: 'placeholder-distinct-id', // Replace with actual ID later
-  };
+interface IdTokenResponse {
+  idToken?: string;
+}
+
+async function pollForIdToken(host: string, wizardHash: string): Promise<string | null> {
+  const startTime = Date.now();
+  const timeout = 5 * 60 * 1000; // 5 minutes in milliseconds
+  const interval = 5000; // 5 seconds in milliseconds
+
+  while (Date.now() - startTime < timeout) {
+    const response = await fetch(`http://localhost:3100/auth/wizard-hash?wizardHash=${wizardHash}`);
+    console.log(`${host}/auth/wizard-hash?wizardHash=${wizardHash}`);
+    const data = await response.json() as IdTokenResponse;
+    console.log(data);
+    if (data?.idToken) {
+      return data.idToken;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, interval));
+  }
+
+  return null;
+}
+
+export async function askForWizardLogin(
+  _options: WizardOptions & {
+    usingCloud: UsingCloud;
+    host: string;
+  },
+): Promise<string| null> {
+  const wizardHash = uuidv4();
+
+  const url = `${_options.host}?wizardHash=${wizardHash}`;
+  clack.log.info(`Please open this URL in your browser to continue: ${url}`);
+  await opn(url, {wait: false});
+
+  const idToken = await pollForIdToken(_options.host, wizardHash);
+  if (!idToken) {
+  clack.cancel("Failed to login");
+  }
+
+  return idToken
 }
 
 /**

@@ -1,7 +1,6 @@
 /* eslint-disable max-lines */
 import {
   askForAIConsent,
-  askForGrowthbookApiKey,
   askForSelfHostedUrl,
   chooseSdkConnection,
   confirmContinueIfNoOrDirtyGitRepo,
@@ -60,16 +59,8 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     ? 'https://app.growthbook.io'
     : await askForSelfHostedUrl();
 
-  const growthbookApiKey = await askForGrowthbookApiKey();
 
-  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
-  const sdkConnection = await chooseSdkConnection(sdkConnections);
-  const attributes = await getAttributes(growthbookApiKey, host);
-  if (!growthbookApiKey) {
-    clack.log.error('No GrowthBook API key provided');
-    clack.outro('Setup cancelled');
-    return;
-  }
+
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -83,11 +74,24 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
+  const growthbookApiKey = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,
   });
+  if (!growthbookApiKey) {
+    clack.log.error('login failed');
+    clack.outro('Setup cancelled');
+    return;
+  }
+  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
+  const sdkConnection = await chooseSdkConnection(sdkConnections);
+  const attributes = await getAttributes(growthbookApiKey, host);
+  if (!growthbookApiKey) {
+    clack.log.error('No GrowthBook API key provided');
+    clack.outro('Setup cancelled');
+    return;
+  }
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@growthbook/growthbook',
@@ -127,14 +131,14 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     integration: Integration.nextjs,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.nextjs,
     filesToChange,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,
@@ -143,7 +147,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const { relativeEnvFilePath, addedEnvVariables } =
     await addOrUpdateEnvironmentVariablesStep({
       variables: {
-        NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY: projectApiKey,
+        NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY: growthbookApiKey,
         NEXT_PUBLIC_GROWTHBOOK_API_HOST: host,
       },
       installDir: options.installDir,

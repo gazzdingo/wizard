@@ -64,11 +64,17 @@ export async function runReactNativeWizard(
     analytics.setTag('react-native-version', reactNativeVersion);
   }
 
-  const { projectApiKey, wizardHash } = await getOrAskForProjectData({
+  const growthbookApiKey = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,
   });
+
+  if (!growthbookApiKey) {
+    clack.log.error('login failed');
+    clack.outro('Setup cancelled');
+    return;
+  }
 
   const sdkAlreadyInstalled = hasPackageInstalled(
     '@growthbook/growthbook-react-native',
@@ -110,7 +116,7 @@ export async function runReactNativeWizard(
   const installationDocumentation = getReactNativeDocumentation({
     language: typeScriptDetected ? 'typescript' : 'javascript',
     host,
-    projectApiKey,
+    projectApiKey:growthbookApiKey,
   });
 
   clack.log.info(`Reviewing GrowthBook documentation for React Native`);
@@ -119,14 +125,14 @@ export async function runReactNativeWizard(
     integration: Integration.reactNative,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.reactNative,
     filesToChange,
-    wizardHash,
+    wizardHash:growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,

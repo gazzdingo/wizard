@@ -7,7 +7,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 export const getAttributes = async (growthbookApiKey: string, host: string) => {
-  const response = await fetch(`${host}/api/v1/attributes`, {
+  const response = await fetch(`localhost:3100/api/v1/attributes`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ export const getSdkConnections = async (
   growthbookApiKey: string,
   host: string,
 ) => {
-  const response = await fetch(`${host}/api/v1/sdk-connections`, {
+  const response = await fetch(`http://localhost:3100/sdk-connections`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -32,6 +32,7 @@ export const getSdkConnections = async (
   });
 
   const data = (await response.json()) as { connections: any[] };
+  console.log(data)
   return data?.connections;
 };
 
