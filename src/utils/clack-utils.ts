@@ -857,12 +857,15 @@ export async function isUsingCloud(): Promise<UsingCloud> {
     return usingCloud;
   });
 }
-export async function chooseSdkConnection(sdkConnections: any) {
+export async function chooseSdkConnection(sdkConnections: {
+  id: string;
+  name: string;
+}[]): Promise<string> {
   return await traceStep('choose-sdk-connection', async () => {
-    const sdkConnection = await abortIfCancelled(
+    const sdkConnection: string = await abortIfCancelled(
       clack.select({
         message: 'Select the SDK connection you want to use',
-        options: sdkConnections.map((sdkConnection: any) => ({
+        options: sdkConnections.map((sdkConnection) => ({
           label: sdkConnection.name,
           value: sdkConnection.id,
         })),

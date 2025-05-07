@@ -31,3 +31,5 @@ plugins
 .eslintcache
 .vscode/launch.json
 .env
+
+.env.local

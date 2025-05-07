@@ -53,11 +53,18 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     clack.outro('Setup cancelled');
     return;
   }
-
+ 
   const usingCloud = await isUsingCloud();
+
+  const host = usingCloud
+    ? 'https://app.growthbook.io'
+    : await askForSelfHostedUrl();
 
   const growthbookApiKey = await askForGrowthbookApiKey();
 
+  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
+  const sdkConnection = await chooseSdkConnection(sdkConnections);
+  const attributes = await getAttributes(growthbookApiKey, host);
   if (!growthbookApiKey) {
     clack.log.error('No GrowthBook API key provided');
     clack.outro('Setup cancelled');
@@ -75,10 +82,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const nextVersion = getPackageVersion('next', packageJson);
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
-
-  const host = usingCloud
-    ? 'https://app.growthbook.io'
-    : await askForSelfHostedUrl();
 
   const { projectApiKey, wizardHash } = await getOrAskForProjectData({
     ...options,
@@ -104,11 +107,6 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       integration: Integration.nextjs,
     });
   const router = await getNextJsRouter(options);
-  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
-  const sdkConnection = (await chooseSdkConnection(sdkConnections)) as {
-    id: string;
-  };
-  const attributes = await getAttributes(growthbookApiKey, host);
   const relevantFiles = await getRelevantFilesForIntegration({
     installDir: options.installDir,
     integration: Integration.nextjs,
@@ -116,7 +114,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
   const installationDocumentation = getInstallationDocumentation({
     router,
     language: typeScriptDetected ? 'typescript' : 'javascript',
-    sdkConnection: sdkConnection.id,
+    sdkConnection,
     attributes,
     host,
   });

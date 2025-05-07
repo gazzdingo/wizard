@@ -49,4 +49,4 @@ To run a specific test application
 
 ## Writing Tests
 
-Each test file should contain a single test suite that tests the PostHog Wizard for a specific framework. The test suite should contain a `beforeAll` and `afterAll` function that starts and stops the test application respectively.
+Each test file should contain a single test suite that tests the Growthbook Wizard for a specific framework. The test suite should contain a `beforeAll` and `afterAll` function that starts and stops the test application respectively.
