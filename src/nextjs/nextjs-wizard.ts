@@ -56,8 +56,11 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   const usingCloud = await isUsingCloud();
 
-  const {host, apiHost} = usingCloud
-    ? {host: 'https://app.growthbook.io', apiHost: 'https://api.growthbook.io'}
+  const { host, apiHost } = usingCloud
+    ? {
+        host: 'https://app.growthbook.io',
+        apiHost: 'https://api.growthbook.io',
+      }
     : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
@@ -72,7 +75,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
 
   analytics.setTag('nextjs-version', getNextJsVersionBucket(nextVersion));
 
-  const {token, orgId} = await getOrAskForProjectData({
+  const { token, orgId } = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,
@@ -83,14 +86,19 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     clack.outro('Setup cancelled');
     return;
   }
-  let sdkConnections = await getSdkConnections(token, apiHost, orgId) as {id: string, name: string}[];
-  let sdkConnection = await chooseSdkConnection(true,sdkConnections);
+  let sdkConnections = (await getSdkConnections(token, apiHost, orgId)) as {
+    id: string;
+    name: string;
+  }[];
+  let sdkConnection = await chooseSdkConnection(true, sdkConnections);
   if (sdkConnection === 'new') {
     await openNewConnection(host);
-    sdkConnections = await getSdkConnections(token, apiHost, orgId) as {id: string, name: string}[];
+    sdkConnections = (await getSdkConnections(token, apiHost, orgId)) as {
+      id: string;
+      name: string;
+    }[];
     sdkConnection = await chooseSdkConnection(false, sdkConnections);
   }
-
 
   const attributes = await getAttributes(token, apiHost);
   if (!token) {

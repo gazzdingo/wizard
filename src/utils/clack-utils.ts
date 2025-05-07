@@ -486,9 +486,11 @@ export async function getOrAskForProjectData(
     host: string;
     apiHost: string;
   },
-): Promise<{token: string, orgId: string}> {
+): Promise<{ token: string; orgId: string }> {
   const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
-  const {token, orgId} = await traceStep('login', () => askForWizardLogin(_options));
+  const { token, orgId } = await traceStep('login', () =>
+    askForWizardLogin(_options),
+  );
 
   if (!token) {
     clack.log.error(`Didn't receive a project API key. This shouldn't happen :(
@@ -504,7 +506,7 @@ You can find your Project API key here:
 ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
-  return {token, orgId};
+  return { token, orgId };
 }
 
 interface IdTokenResponse {
@@ -514,7 +516,7 @@ interface IdTokenResponse {
 async function pollForIdToken(
   apiHost: string,
   wizardHash: string,
-): Promise<{token: string, orgId: string}> {
+): Promise<{ token: string; orgId: string }> {
   const startTime = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes in milliseconds
   const interval = 5000; // 5 seconds in milliseconds
@@ -530,12 +532,13 @@ async function pollForIdToken(
           Authorization: `Bearer ${tokenData.idToken}`,
         },
       });
-      const userDataJson = await userData.json() as {organizations: {id: string}[]};
+      const userDataJson = (await userData.json()) as {
+        organizations: { id: string }[];
+      };
       console.log(userDataJson);
       const orgId = userDataJson?.organizations?.[0]?.id;
 
-      return {token: tokenData.idToken, orgId};
-
+      return { token: tokenData.idToken, orgId };
     }
 
     await new Promise((resolve) => setTimeout(resolve, interval));
@@ -550,19 +553,19 @@ export async function askForWizardLogin(
     host: string;
     apiHost: string;
   },
-): Promise<{token: string, orgId: string}> {
+): Promise<{ token: string; orgId: string }> {
   const wizardHash = uuidv4();
 
   const url = `${_options.host}?wizardHash=${wizardHash}`;
   clack.log.info(`Please open this URL in your browser to continue: ${url}`);
   await opn(url, { wait: false });
 
-  const {token, orgId} = await pollForIdToken(_options.apiHost, wizardHash);
+  const { token, orgId } = await pollForIdToken(_options.apiHost, wizardHash);
   if (!token) {
     clack.cancel('Failed to login');
   }
 
-  return {token, orgId};
+  return { token, orgId };
 }
 
 /**
@@ -867,18 +870,18 @@ export async function askForSelfHostedUrl(): Promise<{
       clack.text({
         message: 'What is your self hosted Growthbook URL?',
         placeholder: 'https://app.growthbook.io',
-        defaultValue: "http://localhost:3000"
+        defaultValue: 'http://localhost:3000',
       }),
     );
     const apiHost = await abortIfCancelled(
       clack.text({
         message: 'What is your self hosted Growthbook API?',
         placeholder: 'https://api.growthbook.io',
-        defaultValue: "http://localhost:3100"
+        defaultValue: 'http://localhost:3100',
       }),
     );
 
-    return {host, apiHost};
+    return { host, apiHost };
   });
 }
 
@@ -919,10 +922,14 @@ export async function chooseSdkConnection(
       clack.select({
         message: 'Select the SDK connection you want to use',
         options: [
-          ...(showNewConnection ? [{
-            label: 'New Connection',
-            value: 'new',
-          }] : []),
+          ...(showNewConnection
+            ? [
+                {
+                  label: 'New Connection',
+                  value: 'new',
+                },
+              ]
+            : []),
           ...sdkConnections.map((sdkConnection) => ({
             label: sdkConnection.name,
             value: sdkConnection.id,
@@ -935,13 +942,13 @@ export async function chooseSdkConnection(
   });
 }
 export async function openNewConnection(host: string): Promise<void> {
-  await opn(`${host}/sdks`, {wait: false});
+  await opn(`${host}/sdks`, { wait: false });
   await traceStep('open-new-connection', async () => {
     // create a continue button
     await abortIfCancelled(
       clack.select({
         message: 'Continue',
-        options: [{label: 'Continue', value: true}],
+        options: [{ label: 'Continue', value: true }],
       }),
     );
   });

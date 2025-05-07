@@ -46,8 +46,11 @@ export async function runReactNativeWizard(
   }
 
   const usingCloud = await isUsingCloud();
-  const {host, apiHost} = usingCloud
-    ? {host: 'https://app.growthbook.io', apiHost: 'https://api.growthbook.io'}
+  const { host, apiHost } = usingCloud
+    ? {
+        host: 'https://app.growthbook.io',
+        apiHost: 'https://api.growthbook.io',
+      }
     : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
@@ -64,7 +67,7 @@ export async function runReactNativeWizard(
     analytics.setTag('react-native-version', reactNativeVersion);
   }
 
-  const {token, orgId} = await getOrAskForProjectData({
+  const { token, orgId } = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,

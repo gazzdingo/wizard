@@ -58,10 +58,13 @@ export async function runSvelteWizard(options: WizardOptions): Promise<void> {
   if (svelteVersion) {
     analytics.setTag('svelte-version', svelteVersion);
   }
-  const {host, apiHost} = usingCloud
-    ? {host: 'https://app.growthbook.io', apiHost: 'https://api.growthbook.io'}
+  const { host, apiHost } = usingCloud
+    ? {
+        host: 'https://app.growthbook.io',
+        apiHost: 'https://api.growthbook.io',
+      }
     : await askForSelfHostedUrl();
-  const {token, orgId} = await getOrAskForProjectData({
+  const { token, orgId } = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,

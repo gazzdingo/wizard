@@ -6,12 +6,17 @@ import OpenAI from 'openai';
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-export const getAttributes = async (growthbookApiKey: string, apiHost: string) => {
+export const  getAttributes = async (
+  growthbookApiKey: string,
+  apiHost: string,
+  orgId: string,
+) => {
   const response = await fetch(`${apiHost}/api/v1/attributes`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${growthbookApiKey}`,
+      'X-Organization': orgId,
     },
   });
 
@@ -34,7 +39,7 @@ export const getSdkConnections = async (
   });
 
   const data = (await response.json()) as { connections: any[] };
-  console.log(data)
+  console.log(data);
   return data?.connections;
 };
 
