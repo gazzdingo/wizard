@@ -100,7 +100,7 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     sdkConnection = await chooseSdkConnection(false, sdkConnections);
   }
 
-  const attributes = await getAttributes(token, apiHost);
+  const attributes = await getAttributes(token, apiHost, orgId);
   if (!token) {
     clack.log.error('No GrowthBook API key provided');
     clack.outro('Setup cancelled');
@@ -125,83 +125,86 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
       integration: Integration.nextjs,
     });
   const router = await getNextJsRouter(options);
-  const relevantFiles = await getRelevantFilesForIntegration({
-    installDir: options.installDir,
-    integration: Integration.nextjs,
-  });
-  const installationDocumentation = getInstallationDocumentation({
-    router,
-    language: typeScriptDetected ? 'typescript' : 'javascript',
-    sdkConnection,
-    attributes,
-    host,
-  });
 
-  clack.log.info(
-    `Reviewing GrowthBook documentation for ${getNextJsRouterName(router)}`,
-  );
+  try {
+    const relevantFiles = await getRelevantFilesForIntegration({
+      installDir: options.installDir,
+      integration: Integration.nextjs,
+    });
+    const installationDocumentation = getInstallationDocumentation({
+      router,
+      language: typeScriptDetected ? 'typescript' : 'javascript',
+      sdkConnection,
+      attributes,
+      host,
+    });
 
-  const filesToChange = await getFilesToChange({
-    integration: Integration.nextjs,
-    relevantFiles,
-    documentation: installationDocumentation,
-    wizardHash: token,
-    usingCloud,
-  });
+    clack.log.info(
+      `Reviewing GrowthBook documentation for ${getNextJsRouterName(router)}`,
+    );
 
-  await generateFileChangesForIntegration({
-    integration: Integration.nextjs,
-    filesToChange,
-    wizardHash: token,
-    installDir: options.installDir,
-    documentation: installationDocumentation,
-    usingCloud,
-  });
+    const filesToChange = await getFilesToChange({
+      integration: Integration.nextjs,
+      relevantFiles,
+      documentation: installationDocumentation,
+      wizardHash: token,
+      usingCloud,
+    });
 
-  const { relativeEnvFilePath, addedEnvVariables } =
-    await addOrUpdateEnvironmentVariablesStep({
-      variables: {
-        NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY: token,
-        NEXT_PUBLIC_GROWTHBOOK_API_HOST: host,
-      },
+    await generateFileChangesForIntegration({
+      integration: Integration.nextjs,
+      filesToChange,
+      wizardHash: token,
+      installDir: options.installDir,
+      documentation: installationDocumentation,
+      usingCloud,
+    });
+
+    const { relativeEnvFilePath, addedEnvVariables } =
+      await addOrUpdateEnvironmentVariablesStep({
+        variables: {
+          NEXT_PUBLIC_GROWTHBOOK_CLIENT_KEY: token,
+          NEXT_PUBLIC_GROWTHBOOK_API_HOST: host,
+        },
+        installDir: options.installDir,
+        integration: Integration.nextjs,
+      });
+
+    const packageManagerForOutro =
+      packageManagerFromInstallStep ?? (await getPackageManager(options));
+
+    await runPrettierStep({
       installDir: options.installDir,
       integration: Integration.nextjs,
     });
 
-  const packageManagerForOutro =
-    packageManagerFromInstallStep ?? (await getPackageManager(options));
+    const addedEditorRules = await addEditorRulesStep({
+      rulesName: 'next-rules.md',
+      installDir: options.installDir,
+      integration: Integration.nextjs,
+      default: options.default,
+    });
 
-  await runPrettierStep({
-    installDir: options.installDir,
-    integration: Integration.nextjs,
-  });
+    const prUrl = await createPRStep({
+      installDir: options.installDir,
+      integration: Integration.nextjs,
+      addedEditorRules,
+    });
 
-  const addedEditorRules = await addEditorRulesStep({
-    rulesName: 'next-rules.md',
-    installDir: options.installDir,
-    integration: Integration.nextjs,
-    default: options.default,
-  });
+    const outroMessage = getOutroMessage({
+      options,
+      integration: Integration.nextjs,
+      usingCloud,
+      addedEditorRules,
+      packageManager: packageManagerForOutro,
+      envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,
+      prUrl,
+    });
 
-  const prUrl = await createPRStep({
-    installDir: options.installDir,
-    integration: Integration.nextjs,
-    addedEditorRules,
-  });
-
-  const outroMessage = getOutroMessage({
-    options,
-    integration: Integration.nextjs,
-    usingCloud,
-    addedEditorRules,
-    packageManager: packageManagerForOutro,
-    envFileChanged: addedEnvVariables ? relativeEnvFilePath : undefined,
-    prUrl,
-  });
-
-  clack.outro(outroMessage);
-
-  analytics.shutdown('success');
+    clack.outro(outroMessage);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function getInstallationDocumentation({

@@ -6,12 +6,12 @@ import OpenAI from 'openai';
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-export const  getAttributes = async (
+export const getAttributes = async (
   growthbookApiKey: string,
   apiHost: string,
   orgId: string,
 ) => {
-  const response = await fetch(`${apiHost}/api/v1/attributes`, {
+  const response = await fetch(`${apiHost}/organization`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -20,8 +20,9 @@ export const  getAttributes = async (
     },
   });
 
-  const data = (await response.json()) as { attributes: any[] };
-  return data?.attributes;
+  const data = await response.json();
+  // @ts-expect-error
+  return data.organization.settings.attributeSchema;
 };
 
 export const getSdkConnections = async (
@@ -39,7 +40,6 @@ export const getSdkConnections = async (
   });
 
   const data = (await response.json()) as { connections: any[] };
-  console.log(data);
   return data?.connections;
 };
 

@@ -193,7 +193,10 @@ export default function MyApp({ Component, pageProps, router }) {
     gb.setURL(window.location.href);
     growthbook.setAttributes({
      ${attributes
-       .map((attribute) => `${attribute.property}: "${attribute.value}"`)
+       .map(
+         (attribute) =>
+           `${attribute.property}: "FILL THIS WITH EXAMPLE CODE OR PULL FROM THE FILE BEING UPDATED"`,
+       )
        .join(', ')}
     });
   }, [router.pathname]);
