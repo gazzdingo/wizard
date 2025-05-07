@@ -64,14 +64,14 @@ export async function runReactNativeWizard(
     analytics.setTag('react-native-version', reactNativeVersion);
   }
 
-  const growthbookApiKey = await getOrAskForProjectData({
+  const {token, orgId} = await getOrAskForProjectData({
     ...options,
     usingCloud,
     host,
     apiHost,
   });
 
-  if (!growthbookApiKey) {
+  if (!token) {
     clack.log.error('login failed');
     clack.outro('Setup cancelled');
     return;
@@ -117,7 +117,7 @@ export async function runReactNativeWizard(
   const installationDocumentation = getReactNativeDocumentation({
     language: typeScriptDetected ? 'typescript' : 'javascript',
     host,
-    projectApiKey: growthbookApiKey,
+    projectApiKey: token,
   });
 
   clack.log.info(`Reviewing GrowthBook documentation for React Native`);
@@ -126,14 +126,14 @@ export async function runReactNativeWizard(
     integration: Integration.reactNative,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash: growthbookApiKey,
+    wizardHash: token,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.reactNative,
     filesToChange,
-    wizardHash: growthbookApiKey,
+    wizardHash: token,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,

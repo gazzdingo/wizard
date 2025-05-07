@@ -6,8 +6,8 @@ import OpenAI from 'openai';
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-export const getAttributes = async (growthbookApiKey: string, host: string) => {
-  const response = await fetch(`localhost:3100/api/v1/attributes`, {
+export const getAttributes = async (growthbookApiKey: string, apiHost: string) => {
+  const response = await fetch(`${apiHost}/api/v1/attributes`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -21,18 +21,20 @@ export const getAttributes = async (growthbookApiKey: string, host: string) => {
 
 export const getSdkConnections = async (
   growthbookApiKey: string,
-  host: string,
+  apiHost: string,
+  orgId: string,
 ) => {
-  const response = await fetch(`http://localhost:3100/sdk-connections`, {
+  const response = await fetch(`${apiHost}/sdk-connections`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${growthbookApiKey}`,
+      'X-Organization': orgId,
     },
   });
 
   const data = (await response.json()) as { connections: any[] };
-  console.log(data);
+  console.log(data)
   return data?.connections;
 };
 

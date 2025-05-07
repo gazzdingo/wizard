@@ -486,11 +486,11 @@ export async function getOrAskForProjectData(
     host: string;
     apiHost: string;
   },
-): Promise<string | null> {
+): Promise<{token: string, orgId: string}> {
   const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
-  const apiKey = await traceStep('login', () => askForWizardLogin(_options));
+  const {token, orgId} = await traceStep('login', () => askForWizardLogin(_options));
 
-  if (!apiKey) {
+  if (!token) {
     clack.log.error(`Didn't receive a project API key. This shouldn't happen :(
 
 Please let us know if you think this is a bug in the wizard:
@@ -504,7 +504,7 @@ You can find your Project API key here:
 ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
-  return apiKey;
+  return {token, orgId};
 }
 
 interface IdTokenResponse {
@@ -514,7 +514,7 @@ interface IdTokenResponse {
 async function pollForIdToken(
   apiHost: string,
   wizardHash: string,
-): Promise<string | null> {
+): Promise<{token: string, orgId: string}> {
   const startTime = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes in milliseconds
   const interval = 5000; // 5 seconds in milliseconds
@@ -523,17 +523,25 @@ async function pollForIdToken(
     const response = await fetch(
       `${apiHost}/auth/wizard-hash?wizardHash=${wizardHash}`,
     );
-    console.log(`${apiHost}/auth/wizard-hash?wizardHash=${wizardHash}`);
-    const data = (await response.json()) as IdTokenResponse;
-    console.log(data);
-    if (data?.idToken) {
-      return data.idToken;
+    const tokenData = (await response.json()) as IdTokenResponse;
+    if (tokenData?.idToken) {
+      const userData = await fetch(`${apiHost}/user`, {
+        headers: {
+          Authorization: `Bearer ${tokenData.idToken}`,
+        },
+      });
+      const userDataJson = await userData.json() as {organizations: {id: string}[]};
+      console.log(userDataJson);
+      const orgId = userDataJson?.organizations?.[0]?.id;
+
+      return {token: tokenData.idToken, orgId};
+
     }
 
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
-  return null;
+  throw new Error('Failed to login');
 }
 
 export async function askForWizardLogin(
@@ -542,19 +550,19 @@ export async function askForWizardLogin(
     host: string;
     apiHost: string;
   },
-): Promise<string | null> {
+): Promise<{token: string, orgId: string}> {
   const wizardHash = uuidv4();
 
   const url = `${_options.host}?wizardHash=${wizardHash}`;
   clack.log.info(`Please open this URL in your browser to continue: ${url}`);
   await opn(url, { wait: false });
 
-  const idToken = await pollForIdToken(_options.apiHost, wizardHash);
-  if (!idToken) {
+  const {token, orgId} = await pollForIdToken(_options.apiHost, wizardHash);
+  if (!token) {
     clack.cancel('Failed to login');
   }
 
-  return idToken;
+  return {token, orgId};
 }
 
 /**
@@ -900,6 +908,7 @@ export async function isUsingCloud(): Promise<UsingCloud> {
   });
 }
 export async function chooseSdkConnection(
+  showNewConnection: boolean,
   sdkConnections: {
     id: string;
     name: string;
@@ -909,13 +918,31 @@ export async function chooseSdkConnection(
     const sdkConnection: string = await abortIfCancelled(
       clack.select({
         message: 'Select the SDK connection you want to use',
-        options: sdkConnections.map((sdkConnection) => ({
-          label: sdkConnection.name,
-          value: sdkConnection.id,
-        })),
+        options: [
+          ...(showNewConnection ? [{
+            label: 'New Connection',
+            value: 'new',
+          }] : []),
+          ...sdkConnections.map((sdkConnection) => ({
+            label: sdkConnection.name,
+            value: sdkConnection.id,
+          })),
+        ],
       }),
     );
 
     return sdkConnection;
+  });
+}
+export async function openNewConnection(host: string): Promise<void> {
+  await opn(`${host}/sdks`, {wait: false});
+  await traceStep('open-new-connection', async () => {
+    // create a continue button
+    await abortIfCancelled(
+      clack.select({
+        message: 'Continue',
+        options: [{label: 'Continue', value: true}],
+      }),
+    );
   });
 }
