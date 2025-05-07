@@ -48,7 +48,7 @@ async function runWizard(argv: Args) {
   };
 
   clack.intro(`Welcome to the GrowthBook setup wizard ✨`);
-  
+
   const integration = await getIntegrationForSetup(wizardOptions);
 
   analytics.setTag('integration', integration);
@@ -67,7 +67,6 @@ async function runWizard(argv: Args) {
       await runReactNativeWizard(wizardOptions);
       break;
     default:
-       
   }
 }
 

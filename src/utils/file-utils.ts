@@ -97,7 +97,8 @@ export async function getFilesToChange({
     documentation,
     file_list: relevantFiles.join('\n'),
     integration_name: integration,
-    integration_rules: SUPPORTED_INTEGRATIONS.find(i => i.id === integration)?.filterFilesRules,
+    integration_rules: SUPPORTED_INTEGRATIONS.find((i) => i.id === integration)
+      ?.filterFilesRules,
   });
 
   const filterFilesResponse = await query({
@@ -157,7 +158,9 @@ export async function generateFileChangesForIntegration({
   usingCloud: UsingCloud;
 }) {
   const changes: FileChange[] = [];
-  const integrationConfig = SUPPORTED_INTEGRATIONS.find(i => i.id === integration);
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(
+    (i) => i.id === integration,
+  );
 
   for (const filePath of filesToChange) {
     const fileChangeSpinner = clack.spinner();
@@ -236,7 +239,9 @@ export async function getRelevantFilesForIntegration({
 }: Pick<WizardOptions, 'installDir'> & {
   integration: Integration;
 }): Promise<string[]> {
-  const integrationConfig = SUPPORTED_INTEGRATIONS.find(i => i.id === integration);
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(
+    (i) => i.id === integration,
+  );
   const filterPatterns = integrationConfig?.filterPatterns ?? [];
   const ignorePatterns = integrationConfig?.ignorePatterns ?? [];
 

@@ -52,15 +52,12 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     clack.outro('Setup cancelled');
     return;
   }
- 
+
   const usingCloud = await isUsingCloud();
 
-  const host = usingCloud
-    ? 'https://app.growthbook.io'
+  const {host, apiHost} = usingCloud
+    ? {host: 'https://app.growthbook.io', apiHost: 'https://api.growthbook.io'}
     : await askForSelfHostedUrl();
-
-
-
 
   const typeScriptDetected = isUsingTypeScript(options);
 
@@ -78,15 +75,16 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     ...options,
     usingCloud,
     host,
+    apiHost,
   });
   if (!growthbookApiKey) {
     clack.log.error('login failed');
     clack.outro('Setup cancelled');
     return;
   }
-  const sdkConnections = await getSdkConnections(growthbookApiKey, host);
+  const sdkConnections = await getSdkConnections(growthbookApiKey, apiHost);
   const sdkConnection = await chooseSdkConnection(sdkConnections);
-  const attributes = await getAttributes(growthbookApiKey, host);
+  const attributes = await getAttributes(growthbookApiKey, apiHost);
   if (!growthbookApiKey) {
     clack.log.error('No GrowthBook API key provided');
     clack.outro('Setup cancelled');
@@ -131,14 +129,14 @@ export async function runNextjsWizard(options: WizardOptions): Promise<void> {
     integration: Integration.nextjs,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash:growthbookApiKey,
+    wizardHash: growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.nextjs,
     filesToChange,
-    wizardHash:growthbookApiKey,
+    wizardHash: growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,

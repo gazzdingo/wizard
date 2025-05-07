@@ -46,8 +46,8 @@ export async function runReactNativeWizard(
   }
 
   const usingCloud = await isUsingCloud();
-  const host = usingCloud
-    ? 'https://app.growthbook.io'
+  const {host, apiHost} = usingCloud
+    ? {host: 'https://app.growthbook.io', apiHost: 'https://api.growthbook.io'}
     : await askForSelfHostedUrl();
 
   const typeScriptDetected = isUsingTypeScript(options);
@@ -68,6 +68,7 @@ export async function runReactNativeWizard(
     ...options,
     usingCloud,
     host,
+    apiHost,
   });
 
   if (!growthbookApiKey) {
@@ -116,7 +117,7 @@ export async function runReactNativeWizard(
   const installationDocumentation = getReactNativeDocumentation({
     language: typeScriptDetected ? 'typescript' : 'javascript',
     host,
-    projectApiKey:growthbookApiKey,
+    projectApiKey: growthbookApiKey,
   });
 
   clack.log.info(`Reviewing GrowthBook documentation for React Native`);
@@ -125,14 +126,14 @@ export async function runReactNativeWizard(
     integration: Integration.reactNative,
     relevantFiles,
     documentation: installationDocumentation,
-    wizardHash:growthbookApiKey,
+    wizardHash: growthbookApiKey,
     usingCloud,
   });
 
   await generateFileChangesForIntegration({
     integration: Integration.reactNative,
     filesToChange,
-    wizardHash:growthbookApiKey,
+    wizardHash: growthbookApiKey,
     installDir: options.installDir,
     documentation: installationDocumentation,
     usingCloud,

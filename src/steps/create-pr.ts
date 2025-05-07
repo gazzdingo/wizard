@@ -129,246 +129,247 @@ interface CreatePRStepOptions {
   defaultTitle?: string;
 }
 
-export const createPRStep = (opts: CreatePRStepOptions) => traceStep('create-pr', async () => {
-  const {
-    defaultBranchName = 'growthbook-integration',
-    defaultTitle = 'feat: add GrowthBook integration',
-    integration,
-    installDir,
-    addedEditorRules,
-  } = opts;
-
-  if (!isInGitRepo()) {
-    clack.log.warn('Not in a git repository. Cannot create a pull request.');
-    return;
-  }
-
-  // Get current branch
-  const currentBranchResult = await getCurrentBranch(installDir);
-  if (!currentBranchResult.success || !currentBranchResult.data) {
-    analytics.capture('wizard interaction', {
-      action: 'skipping pr creation',
-      reason: 'failed to get current branch',
-      error: currentBranchResult.error,
+export const createPRStep = (opts: CreatePRStepOptions) =>
+  traceStep('create-pr', async () => {
+    const {
+      defaultBranchName = 'growthbook-integration',
+      defaultTitle = 'feat: add GrowthBook integration',
       integration,
-    });
+      installDir,
+      addedEditorRules,
+    } = opts;
 
-    if (DEBUG) {
-      clack.log.error(
-        currentBranchResult.error ?? 'Failed to get current branch',
-      );
+    if (!isInGitRepo()) {
+      clack.log.warn('Not in a git repository. Cannot create a pull request.');
+      return;
     }
 
-    return;
-  }
-  const baseBranch = currentBranchResult.data;
+    // Get current branch
+    const currentBranchResult = await getCurrentBranch(installDir);
+    if (!currentBranchResult.success || !currentBranchResult.data) {
+      analytics.capture('wizard interaction', {
+        action: 'skipping pr creation',
+        reason: 'failed to get current branch',
+        error: currentBranchResult.error,
+        integration,
+      });
 
-  if (!['main', 'master'].includes(baseBranch)) {
+      if (DEBUG) {
+        clack.log.error(
+          currentBranchResult.error ?? 'Failed to get current branch',
+        );
+      }
+
+      return;
+    }
+    const baseBranch = currentBranchResult.data;
+
+    if (!['main', 'master'].includes(baseBranch)) {
+      analytics.capture('wizard interaction', {
+        action: 'skipping pr creation',
+        reason: 'not on main or master',
+        base_branch: baseBranch,
+        integration,
+      });
+
+      if (DEBUG) {
+        clack.log.error(`Not on main or master. Skipping PR creation.`);
+      }
+      return;
+    }
+
+    // Check GitHub auth
+    const authResult = await checkGitHubAuth(installDir);
+    if (!authResult.success) {
+      analytics.capture('wizard interaction', {
+        action: 'skipping pr creation',
+        reason: 'not logged into github',
+        integration,
+      });
+
+      if (DEBUG) {
+        clack.log.error(authResult.error ?? 'Failed to check github auth');
+      }
+
+      return;
+    }
+
+    const newBranch = defaultBranchName;
+
+    // Check if branch exists
+    const branchExistsResult = await checkBranchExists(newBranch, installDir);
+    if (!branchExistsResult.success) {
+      analytics.capture('wizard interaction', {
+        action: 'skipping pr creation',
+        reason: 'branch already exists',
+        error: branchExistsResult.error,
+        integration,
+      });
+
+      if (DEBUG) {
+        clack.log.error(
+          branchExistsResult.error ?? 'Failed to check branch exists',
+        );
+      }
+
+      return;
+    }
+
+    const prTitle = defaultTitle;
+    const prDescription = getPRDescription({
+      integration,
+      addedEditorRules,
+    });
+
+    const createPR = await abortIfCancelled(
+      clack.select({
+        message: 'Would you like to create a PR automatically?',
+        initialValue: true,
+        options: [
+          {
+            value: true,
+            label: 'Yes',
+            hint: 'We will create a PR for you',
+          },
+          {
+            value: false,
+            label: 'No',
+            hint: 'You can create a PR manually later',
+          },
+        ],
+      }),
+    );
+
+    if (!createPR) {
+      clack.log.info('Skipping PR creation');
+      return;
+    }
+
+    // Create branch
+    const createBranchResult = await createBranch(newBranch, installDir);
+    if (!createBranchResult.success) {
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to create branch',
+        error: createBranchResult.error,
+        integration,
+      });
+      clack.log.warn('Failed to create branch. Aborting PR creation 🚶‍➡️');
+      return;
+    }
+
+    // Stage changes
+    const stageResult = await stageChanges(installDir);
+    if (!stageResult.success) {
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to stage changes',
+        error: stageResult.error,
+        integration,
+      });
+      clack.log.warn('Failed to stage changes. Aborting PR creation 🚶‍➡️');
+      return;
+    }
+
+    // Check for env files
+    const envCheckResult = await checkForEnvFiles(installDir);
+    if (!envCheckResult.success) {
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to check for env files in staged changes',
+        error: envCheckResult.error,
+        integration,
+      });
+      clack.log.warn(
+        'Failed to check for .env files. Aborting PR creation 🚶‍➡️',
+      );
+      return;
+    }
+
+    if (envCheckResult.data) {
+      clack.log.warn(
+        'Found .env files in staged changes. Aborting PR creation to prevent exposing sensitive data 🔐',
+      );
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'env files detected in staged changes',
+        integration,
+      });
+      return;
+    }
+
+    // Commit changes
+    const commitSpinner = clack.spinner();
+    commitSpinner.start('Committing changes...');
+    const commitResult = await commitChanges(prTitle, installDir);
+    if (!commitResult.success) {
+      commitSpinner.stop(
+        'Failed to commit changes. Aborting PR creation 🚶‍➡️',
+      );
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to commit changes',
+        error: commitResult.error,
+        integration,
+      });
+      return;
+    }
+    commitSpinner.stop('Changes committed successfully.');
+
+    // Push branch
+    const pushSpinner = clack.spinner();
+    pushSpinner.start('Pushing branch to remote...');
+    const pushResult = await pushBranch(newBranch, installDir);
+    if (!pushResult.success) {
+      pushSpinner.stop('Failed to push branch. Aborting PR creation 🚶‍➡️');
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to push branch',
+        error: pushResult.error,
+        integration,
+      });
+      return;
+    }
+    pushSpinner.stop('Branch pushed successfully.');
+
+    // Create PR
+    const prSpinner = clack.spinner();
+    prSpinner.start(
+      `Creating a PR on branch '${newBranch}' with base '${baseBranch}'...`,
+    );
+    const prResult = await createGitHubPR(
+      baseBranch,
+      newBranch,
+      prTitle,
+      prDescription,
+      installDir,
+    );
+    if (!prResult.success || !prResult.data) {
+      prSpinner.stop(
+        `Failed to create PR on branch '${newBranch}'. Aborting PR creation 🚶‍➡️`,
+      );
+      analytics.capture('wizard interaction', {
+        action: 'aborting pr creation',
+        reason: 'failed to create pr',
+        error: prResult.error,
+        integration,
+      });
+      return;
+    }
+
+    const prUrl = prResult.data;
+    prSpinner.stop(
+      `Successfully created PR! 🎉 You can review it here: ${chalk.cyan(
+        prUrl,
+      )}`,
+    );
+
     analytics.capture('wizard interaction', {
-      action: 'skipping pr creation',
-      reason: 'not on main or master',
+      action: 'pr created',
+      branch: newBranch,
       base_branch: baseBranch,
       integration,
     });
 
-    if (DEBUG) {
-      clack.log.error(`Not on main or master. Skipping PR creation.`);
-    }
-    return;
-  }
-
-  // Check GitHub auth
-  const authResult = await checkGitHubAuth(installDir);
-  if (!authResult.success) {
-    analytics.capture('wizard interaction', {
-      action: 'skipping pr creation',
-      reason: 'not logged into github',
-      integration,
-    });
-
-    if (DEBUG) {
-      clack.log.error(authResult.error ?? 'Failed to check github auth');
-    }
-
-    return;
-  }
-
-  const newBranch = defaultBranchName;
-
-  // Check if branch exists
-  const branchExistsResult = await checkBranchExists(newBranch, installDir);
-  if (!branchExistsResult.success) {
-    analytics.capture('wizard interaction', {
-      action: 'skipping pr creation',
-      reason: 'branch already exists',
-      error: branchExistsResult.error,
-      integration,
-    });
-
-    if (DEBUG) {
-      clack.log.error(
-        branchExistsResult.error ?? 'Failed to check branch exists',
-      );
-    }
-
-    return;
-  }
-
-  const prTitle = defaultTitle;
-  const prDescription = getPRDescription({
-    integration,
-    addedEditorRules,
+    return prUrl;
   });
-
-  const createPR = await abortIfCancelled(
-    clack.select({
-      message: 'Would you like to create a PR automatically?',
-      initialValue: true,
-      options: [
-        {
-          value: true,
-          label: 'Yes',
-          hint: 'We will create a PR for you',
-        },
-        {
-          value: false,
-          label: 'No',
-          hint: 'You can create a PR manually later',
-        },
-      ],
-    }),
-  );
-
-  if (!createPR) {
-    clack.log.info('Skipping PR creation');
-    return;
-  }
-
-  // Create branch
-  const createBranchResult = await createBranch(newBranch, installDir);
-  if (!createBranchResult.success) {
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to create branch',
-      error: createBranchResult.error,
-      integration,
-    });
-    clack.log.warn('Failed to create branch. Aborting PR creation 🚶‍➡️');
-    return;
-  }
-
-  // Stage changes
-  const stageResult = await stageChanges(installDir);
-  if (!stageResult.success) {
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to stage changes',
-      error: stageResult.error,
-      integration,
-    });
-    clack.log.warn('Failed to stage changes. Aborting PR creation 🚶‍➡️');
-    return;
-  }
-
-  // Check for env files
-  const envCheckResult = await checkForEnvFiles(installDir);
-  if (!envCheckResult.success) {
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to check for env files in staged changes',
-      error: envCheckResult.error,
-      integration,
-    });
-    clack.log.warn(
-      'Failed to check for .env files. Aborting PR creation 🚶‍➡️',
-    );
-    return;
-  }
-
-  if (envCheckResult.data) {
-    clack.log.warn(
-      'Found .env files in staged changes. Aborting PR creation to prevent exposing sensitive data 🔐',
-    );
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'env files detected in staged changes',
-      integration,
-    });
-    return;
-  }
-
-  // Commit changes
-  const commitSpinner = clack.spinner();
-  commitSpinner.start('Committing changes...');
-  const commitResult = await commitChanges(prTitle, installDir);
-  if (!commitResult.success) {
-    commitSpinner.stop(
-      'Failed to commit changes. Aborting PR creation 🚶‍➡️',
-    );
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to commit changes',
-      error: commitResult.error,
-      integration,
-    });
-    return;
-  }
-  commitSpinner.stop('Changes committed successfully.');
-
-  // Push branch
-  const pushSpinner = clack.spinner();
-  pushSpinner.start('Pushing branch to remote...');
-  const pushResult = await pushBranch(newBranch, installDir);
-  if (!pushResult.success) {
-    pushSpinner.stop('Failed to push branch. Aborting PR creation 🚶‍➡️');
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to push branch',
-      error: pushResult.error,
-      integration,
-    });
-    return;
-  }
-  pushSpinner.stop('Branch pushed successfully.');
-
-  // Create PR
-  const prSpinner = clack.spinner();
-  prSpinner.start(
-    `Creating a PR on branch '${newBranch}' with base '${baseBranch}'...`,
-  );
-  const prResult = await createGitHubPR(
-    baseBranch,
-    newBranch,
-    prTitle,
-    prDescription,
-    installDir,
-  );
-  if (!prResult.success || !prResult.data) {
-    prSpinner.stop(
-      `Failed to create PR on branch '${newBranch}'. Aborting PR creation 🚶‍➡️`,
-    );
-    analytics.capture('wizard interaction', {
-      action: 'aborting pr creation',
-      reason: 'failed to create pr',
-      error: prResult.error,
-      integration,
-    });
-    return;
-  }
-
-  const prUrl = prResult.data;
-  prSpinner.stop(
-    `Successfully created PR! 🎉 You can review it here: ${chalk.cyan(
-      prUrl,
-    )}`,
-  );
-
-  analytics.capture('wizard interaction', {
-    action: 'pr created',
-    branch: newBranch,
-    base_branch: baseBranch,
-    integration,
-  });
-
-  return prUrl;
-});

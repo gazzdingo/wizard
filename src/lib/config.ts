@@ -38,7 +38,9 @@ export const SUPPORTED_INTEGRATIONS: ReadonlyArray<IntegrationConfig> = [
       { id: 'nextjs-pages', label: 'Pages Router' },
     ],
     detect: ({ installDir }) => {
-      const packageJson = JSON.parse(readFileSync(join(installDir, 'package.json'), 'utf-8'));
+      const packageJson = JSON.parse(
+        readFileSync(join(installDir, 'package.json'), 'utf-8'),
+      );
       return Promise.resolve(hasPackageInstalled('next', packageJson));
     },
   },
@@ -52,11 +54,13 @@ export const SUPPORTED_INTEGRATIONS: ReadonlyArray<IntegrationConfig> = [
     nextSteps:
       '• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the useFeature() hook\n• Set up experiments using useExperiment() and <Experiment> components\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Upload environment variables to your production environment',
     detect: ({ installDir }) => {
-      const packageJson = JSON.parse(readFileSync(join(installDir, 'package.json'), 'utf-8'));
+      const packageJson = JSON.parse(
+        readFileSync(join(installDir, 'package.json'), 'utf-8'),
+      );
       return Promise.resolve(
         hasPackageInstalled('react', packageJson) ||
-        hasPackageInstalled('react-dom', packageJson) ||
-        hasPackageInstalled('@types/react', packageJson)
+          hasPackageInstalled('react-dom', packageJson) ||
+          hasPackageInstalled('@types/react', packageJson),
       );
     },
   },
@@ -70,7 +74,9 @@ export const SUPPORTED_INTEGRATIONS: ReadonlyArray<IntegrationConfig> = [
     nextSteps:
       "• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the 'feature' store or useFeature() hook\n• Set up experiments using 'experiment' store or useExperiment() hook\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Upload environment variables to your production environment",
     detect: ({ installDir }) => {
-      const packageJson = JSON.parse(readFileSync(join(installDir, 'package.json'), 'utf-8'));
+      const packageJson = JSON.parse(
+        readFileSync(join(installDir, 'package.json'), 'utf-8'),
+      );
       return Promise.resolve(hasPackageInstalled('svelte', packageJson));
     },
   },
@@ -84,7 +90,9 @@ export const SUPPORTED_INTEGRATIONS: ReadonlyArray<IntegrationConfig> = [
     nextSteps:
       '• Set user attributes using gb.setAttributes() when users log in or attributes change\n• Implement feature flags using the useFeature() hook\n• Set up experiments using useExperiment() and <Experiment> components\n• Add tracking for experiment exposures using trackingCallback or an analytics integration\n• Ensure features are loaded/refreshed appropriately for mobile lifecycle',
     detect: ({ installDir }) => {
-      const packageJson = JSON.parse(readFileSync(join(installDir, 'package.json'), 'utf-8'));
+      const packageJson = JSON.parse(
+        readFileSync(join(installDir, 'package.json'), 'utf-8'),
+      );
       return Promise.resolve(hasPackageInstalled('react-native', packageJson));
     },
   },

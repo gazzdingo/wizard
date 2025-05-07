@@ -484,12 +484,11 @@ export async function getOrAskForProjectData(
   _options: WizardOptions & {
     usingCloud: UsingCloud;
     host: string;
+    apiHost: string;
   },
-): Promise<string| null> {
+): Promise<string | null> {
   const cloudUrl = getCloudUrlFromRegion(_options.usingCloud);
-  const apiKey = await traceStep('login', () =>
-    askForWizardLogin(_options),
-  );
+  const apiKey = await traceStep('login', () => askForWizardLogin(_options));
 
   if (!apiKey) {
     clack.log.error(`Didn't receive a project API key. This shouldn't happen :(
@@ -505,28 +504,33 @@ You can find your Project API key here:
 ${chalk.cyan(`${cloudUrl}/settings/project#variables`)}`);
   }
 
-  return apiKey
+  return apiKey;
 }
 
 interface IdTokenResponse {
   idToken?: string;
 }
 
-async function pollForIdToken(host: string, wizardHash: string): Promise<string | null> {
+async function pollForIdToken(
+  apiHost: string,
+  wizardHash: string,
+): Promise<string | null> {
   const startTime = Date.now();
   const timeout = 5 * 60 * 1000; // 5 minutes in milliseconds
   const interval = 5000; // 5 seconds in milliseconds
 
   while (Date.now() - startTime < timeout) {
-    const response = await fetch(`http://localhost:3100/auth/wizard-hash?wizardHash=${wizardHash}`);
-    console.log(`${host}/auth/wizard-hash?wizardHash=${wizardHash}`);
-    const data = await response.json() as IdTokenResponse;
+    const response = await fetch(
+      `${apiHost}/auth/wizard-hash?wizardHash=${wizardHash}`,
+    );
+    console.log(`${apiHost}/auth/wizard-hash?wizardHash=${wizardHash}`);
+    const data = (await response.json()) as IdTokenResponse;
     console.log(data);
     if (data?.idToken) {
       return data.idToken;
     }
 
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
 
   return null;
@@ -536,20 +540,21 @@ export async function askForWizardLogin(
   _options: WizardOptions & {
     usingCloud: UsingCloud;
     host: string;
+    apiHost: string;
   },
-): Promise<string| null> {
+): Promise<string | null> {
   const wizardHash = uuidv4();
 
   const url = `${_options.host}?wizardHash=${wizardHash}`;
   clack.log.info(`Please open this URL in your browser to continue: ${url}`);
-  await opn(url, {wait: false});
+  await opn(url, { wait: false });
 
-  const idToken = await pollForIdToken(_options.host, wizardHash);
+  const idToken = await pollForIdToken(_options.apiHost, wizardHash);
   if (!idToken) {
-  clack.cancel("Failed to login");
+    clack.cancel('Failed to login');
   }
 
-  return idToken
+  return idToken;
 }
 
 /**
@@ -845,16 +850,27 @@ export async function askForAIConsent(options: Pick<WizardOptions, 'default'>) {
 /**
  * ask the user what there self hosted url is
  */
-export async function askForSelfHostedUrl(): Promise<string> {
+export async function askForSelfHostedUrl(): Promise<{
+  host: string;
+  apiHost: string;
+}> {
   return await traceStep('ask-for-host', async () => {
-    const selfHostedUrl = await abortIfCancelled(
+    const host = await abortIfCancelled(
       clack.text({
         message: 'What is your self hosted Growthbook URL?',
         placeholder: 'https://app.growthbook.io',
+        defaultValue: "http://localhost:3000"
+      }),
+    );
+    const apiHost = await abortIfCancelled(
+      clack.text({
+        message: 'What is your self hosted Growthbook API?',
+        placeholder: 'https://api.growthbook.io',
+        defaultValue: "http://localhost:3100"
       }),
     );
 
-    return selfHostedUrl;
+    return {host, apiHost};
   });
 }
 
@@ -883,10 +899,12 @@ export async function isUsingCloud(): Promise<UsingCloud> {
     return usingCloud;
   });
 }
-export async function chooseSdkConnection(sdkConnections: {
-  id: string;
-  name: string;
-}[]): Promise<string> {
+export async function chooseSdkConnection(
+  sdkConnections: {
+    id: string;
+    name: string;
+  }[],
+): Promise<string> {
   return await traceStep('choose-sdk-connection', async () => {
     const sdkConnection: string = await abortIfCancelled(
       clack.select({

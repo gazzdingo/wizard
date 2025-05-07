@@ -32,7 +32,7 @@ export const getSdkConnections = async (
   });
 
   const data = (await response.json()) as { connections: any[] };
-  console.log(data)
+  console.log(data);
   return data?.connections;
 };
 

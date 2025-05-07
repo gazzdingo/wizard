@@ -12,7 +12,9 @@ export const getPRDescription = ({
   integration: Integration;
   addedEditorRules: boolean;
 }) => {
-  const integrationConfig = SUPPORTED_INTEGRATIONS.find((config) => config.id === integration);
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(
+    (config) => config.id === integration,
+  );
 
   return `This PR adds an integration for Growthbook.
 
@@ -51,7 +53,9 @@ export const getOutroMessage = ({
     ? `${getCloudUrlFromRegion(usingCloud)}/products?source=wizard`
     : undefined;
 
-  const integrationConfig = SUPPORTED_INTEGRATIONS.find((config) => config.id === integration);
+  const integrationConfig = SUPPORTED_INTEGRATIONS.find(
+    (config) => config.id === integration,
+  );
 
   return `
 ${chalk.green('Successfully installed Growthbook!')}  
